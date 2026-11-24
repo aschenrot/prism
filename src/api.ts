@@ -1,4 +1,4 @@
-import type { Editable, ProjectRecord, RecordList, TrashList } from '../shared/records';
+import type { Editable, ProjectRecord, RecordList, TrashList, PropertyChanges } from '../shared/records';
 import type { ProjectInfo, RepositoryIndex } from '../shared/projects';
 import type { GitHistory } from '../shared/delivery';
 import type { VerificationResult } from '../shared/verification';
@@ -33,6 +33,8 @@ export const api = {
   restoreTrash:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/trash/'+encodeURIComponent(id)+'/restore',json('POST',{expectedRevision})),
   list:(project:string)=>request<RecordList>(base(project)+'/records'),
   create:(project:string,title:string,type:Editable['type'])=>request<ProjectRecord>(base(project)+'/records',json('POST',{title,type})),
+  duplicate:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/duplicate',json('POST',{expectedRevision})),
+  updateProperties:(project:string,id:string,expectedRevision:string,changes:PropertyChanges)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/properties',json('PUT',{expectedRevision,changes})),
   update:(project:string,id:string,expectedRevision:string,changes:Editable)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id),json('PUT',{expectedRevision,changes})),
   verification:(project:string)=>request<VerificationResult>(base(project)+'/verification'),
   changes:(project:string)=>request<GitHistory>(base(project)+'/changes'),

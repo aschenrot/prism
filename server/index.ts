@@ -3,7 +3,7 @@ import fastifyStatic from '@fastify/static';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ZodError } from 'zod';
-import { createSchema, idSchema, updateSchema } from '../shared/records';
+import { createSchema, idSchema, updateSchema, propertyUpdateSchema } from '../shared/records';
 import { ConflictError, MissingError } from './store';
 import { loadProjects } from './projects';
 import { indexRepository, readRepositoryFile } from './repository';
@@ -53,6 +53,8 @@ app.put('/api/projects/:projectId/records/:id', async request => {
   return projectFor(request).store.update(id,input.expectedRevision,input.changes);
 });
 const expectedRevision=z.string().regex(/^[a-f0-9]{64}$/);
+app.put('/api/projects/:projectId/records/:id/properties',async request=>{const id=idSchema.parse((request.params as {id:string}).id);const input=propertyUpdateSchema.parse(request.body);return projectFor(request).store.updateProperties(id,input.expectedRevision,input.changes);});
+app.post('/api/projects/:projectId/records/:id/duplicate',async(request,reply)=>{const id=idSchema.parse((request.params as {id:string}).id);const input=z.strictObject({expectedRevision}).parse(request.body);return reply.code(201).send(await projectFor(request).store.duplicate(id,input.expectedRevision));});
 app.get('/api/projects/:projectId/trash',async request=>projectFor(request).store.listTrash());
 app.post('/api/projects/:projectId/records/:id/trash',async request=>{const id=idSchema.parse((request.params as {id:string}).id);const input=z.strictObject({expectedRevision}).parse(request.body);return projectFor(request).store.moveToTrash(id,input.expectedRevision);});
 app.post('/api/projects/:projectId/trash/:id/restore',async request=>{const id=idSchema.parse((request.params as {id:string}).id);const input=z.strictObject({expectedRevision}).parse(request.body);return projectFor(request).store.restoreTrash(id,input.expectedRevision);});

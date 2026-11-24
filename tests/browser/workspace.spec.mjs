@@ -188,7 +188,7 @@ test('sort headers reserve their width and date sorting orders authored records'
 
 test('record menus support keyboard and collection removal without losing search context',async({page,request})=>{
  const record=await create(request,'Menu fixture target'),otherRecord=await create(request,'Menu fixture other');await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Menu fixture');
- const trigger=page.getByRole('button',{name:'Actions for '+record.title,exact:true});await trigger.focus();await page.keyboard.press('ArrowDown');const menu=page.getByRole('menu',{name:'Actions for '+record.title});await expect(menu.getByRole('menuitem',{name:'Edit',exact:true})).toBeFocused();await page.keyboard.press('ArrowDown');await expect(menu.getByRole('menuitem',{name:'Move to trash',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(menu).toBeHidden();await expect(trigger).toBeFocused();
+ const trigger=page.getByRole('button',{name:'Actions for '+record.title,exact:true});await trigger.focus();await page.keyboard.press('ArrowDown');const menu=page.getByRole('menu',{name:'Actions for '+record.title});await expect(menu.getByRole('menuitem',{name:'Edit',exact:true})).toBeFocused();await page.keyboard.press('ArrowDown');await expect(menu.getByRole('menuitem',{name:'Duplicate',exact:true})).toBeFocused();await page.keyboard.press('End');await expect(menu.getByRole('menuitem',{name:'Move to trash',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(menu).toBeHidden();await expect(trigger).toBeFocused();
  await trigger.click();await page.getByRole('button',{name:'Actions for '+otherRecord.title,exact:true}).click();await expect(menu).toBeHidden();await page.keyboard.press('Escape');
  await action(page,'Move to trash',record.title);const dialog=page.getByRole('dialog',{name:'Move record to trash?'});await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await expect(trigger).toBeFocused();await action(page,'Move to trash',record.title);await dialog.getByRole('button',{name:'Move to trash',exact:true}).click();
  await expect(page).toHaveURL(/\/work$/);await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Menu fixture');await expect(trigger).toHaveCount(0);await expect(page.getByRole('link',{name:otherRecord.title,exact:true})).toBeVisible();await expect(page.getByText('Moved '+record.title+' to Trash.',{exact:true})).toBeVisible();
@@ -200,4 +200,25 @@ test('relationship search limits candidates and saves only compatible selected t
  const search=page.getByLabel('Search compatible records',{exact:true}),select=page.getByLabel('Target record',{exact:true});
  await search.fill('search target');await expect(select.locator('option')).toHaveCount(2);await expect(select.locator('option[value="'+incompatible.id+'"]')).toHaveCount(0);await select.selectOption(target.id);await page.getByRole('button',{name:'Add relationship',exact:true}).click();await expect(page.getByRole('button',{name:'Add relationship',exact:true})).toBeDisabled();await expect(select.locator('option[value="'+target.id+'"]')).toHaveCount(0);
  await save(page).click();await expect(page.getByText('No unsaved changes',{exact:true})).toBeVisible();expect((await recordOnDisk(request,source.id)).relationships).toContainEqual({kind:'implements',target:target.id});
+});
+
+test('inline properties and bounded bulk selection preserve recovery and report actual results',async({page,request})=>{
+ const a=await create(request,'Bulk fixture Alpha'),b=await create(request,'Bulk fixture Beta'),c=await create(request,'Bulk fixture protected');
+ await open(page,c);await edit(page);await title(page).fill('Protected local draft');await keep(page).click();
+ await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Bulk fixture');
+ await page.getByRole('combobox',{name:'Status for '+a.title,exact:true}).selectOption('In progress');await expect(page.getByText(a.title+' saved.',{exact:true})).toBeVisible();
+ expect((await recordOnDisk(request,a.id)).status).toBe('In progress');await expect(page).toHaveURL(/\/work$/);
+ await page.getByRole('checkbox',{name:'Select all visible records'}).check();await expect(page.getByText('3 selected',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Edit selected',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Edit 3 selected records'});await dialog.getByLabel('Priority',{exact:true}).selectOption('High');await dialog.getByRole('button',{name:'Apply changes'}).click();
+ const result=page.getByRole('dialog',{name:'Bulk edit results'});await expect(result.getByText('2 confirmed · 1 not updated or unconfirmed')).toBeVisible();await expect(result.getByText(c.title,{exact:true})).toBeVisible();
+ expect((await recordOnDisk(request,b.id)).priority).toBe('High');expect((await recordOnDisk(request,c.id)).priority).toBe('Normal');await result.getByRole('button',{name:'Done',exact:true}).click();
+ await page.getByRole('checkbox',{name:'Select '+a.title,exact:true}).check();await page.getByRole('textbox',{name:'Search records'}).fill(b.title);await expect(page.getByText('1 selected',{exact:true})).toHaveCount(0);
+ await open(page,c);await page.getByRole('button',{name:'Resume draft'}).click();await expect(title(page)).toHaveValue('Protected local draft');await keep(page).click();
+});
+test('duplicate starts independent work and copy link is a stable project record address',async({page,request,context})=>{
+ const source=await create(request,'Duplicate fixture');const saved=await update(request,source,{status:'Ready',priority:'High',body:'Copied notes',tags:['current','custom'],relationships:['missing-example']});
+ await context.grantPermissions(['clipboard-read','clipboard-write']);await open(page,saved);await action(page,'Copy record link');
+ await expect(page.getByText(saved.title+' · record link copied.',{exact:true})).toBeVisible();expect(await page.evaluate(()=>navigator.clipboard.readText())).toMatch(new RegExp('/#/projects/'+project+'/records/'+saved.id+'$'));
+ await action(page,'Duplicate');await expect(title(page)).toHaveValue(saved.title+' (copy)');const copyId=page.url().split('/').pop();expect(copyId).not.toBe(saved.id);
+ const copy=await recordOnDisk(request,copyId);expect(copy.body).toBe('Copied notes');expect(copy.status).toBe('Concept');expect(copy.priority).toBe('High');expect(copy.relationships).toEqual([]);expect(copy.tags).toEqual(['custom']);expect((await recordOnDisk(request,saved.id)).revision).toBe(saved.revision);
 });

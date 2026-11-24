@@ -32,6 +32,9 @@ export const recordSchema = metadataSchema.extend({ body: z.string().max(500_000
 export const editableSchema = z.strictObject({title:metadataShape.title,type:metadataShape.type,status:metadataShape.status,priority:metadataShape.priority,accent:metadataShape.accent,tags:metadataShape.tags,relationships:metadataShape.relationships,body:z.string().max(500_000)});
 export const updateSchema = z.object({ expectedRevision: z.string().regex(/^[a-f0-9]{64}$/), changes: editableSchema }).strict();
 export const createSchema = z.object({title: z.string().trim().min(1).max(160), type:z.enum(types)}).strict();
+export const propertyChangesSchema=z.strictObject({status:metadataShape.status.optional(),priority:metadataShape.priority.optional()}).refine(v=>v.status!==undefined||v.priority!==undefined,'Choose a property to change');
+export const propertyUpdateSchema=z.strictObject({expectedRevision:updateSchema.shape.expectedRevision,changes:propertyChangesSchema});
+export type PropertyChanges=z.infer<typeof propertyChangesSchema>;
 export type Editable = z.infer<typeof editableSchema>;
 export type ProjectRecord = z.infer<typeof recordSchema> & { revision: string };
 // Trash preserves the original record and revision; no permanent deletion API.
