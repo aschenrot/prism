@@ -2,11 +2,13 @@ import type { ProjectInfo } from './projects';
 import type { ProjectRecord } from './records';
 import { defaultFilters,selectRecords,type Filters,type ViewInput,type SavedView } from './views';
 export type RecordMode=ViewInput['mode'];
-export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes'|'Trash';
+export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes'|'Trash'|'Schemas';
 // Global visual order is independent of each destination's recommended mode.
-export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Slides','Audit','Repository','Changes','Overview','Trash'] as const satisfies readonly DestinationMode[];
-export type Destination={id:string;label:string;description:string;group:string;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
-const dest=(id:string,label:string,description:string,group:string,mode:DestinationMode,type:Filters['type']='All records',modes:DestinationMode[]=[mode]):Destination=>({id,label,description,group,mode,type,modes});
+export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Slides','Audit','Repository','Changes','Overview','Trash','Schemas'] as const satisfies readonly DestinationMode[];
+export const navigationGroups=['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio','Configuration'] as const;
+export type NavigationGroup=typeof navigationGroups[number];
+export type Destination={id:string;label:string;description:string;group:NavigationGroup;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
+const dest=(id:string,label:string,description:string,group:NavigationGroup,mode:DestinationMode,type:Filters['type']='All records',modes:DestinationMode[]=[mode]):Destination=>({id,label,description,group,mode,type,modes});
 const common=[
   dest('overview','Overview','Current milestones, active work and what needs attention.','Workspace','Overview'),
   dest('work','Work','Plan tasks and review their status.','Management','Table','Task',['Table','Board']),
@@ -18,7 +20,8 @@ const common=[
   dest('architecture','Architecture','Explore systems and their connections.','Knowledge','Relationships','System',['Relationships','Wiki','Table']),
   dest('presentations','Presentations','Present live project information.','Studio','Slides','All records',['Slides']),
   dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Slides']),
-  dest('trash','Trash','Restore records that were moved out of active collections.','Workspace','Trash')
+  dest('trash','Trash','Restore records that were moved out of active collections.','Workspace','Trash'),
+  dest('schemas','Schemas','Configure project properties without rewriting record values.','Configuration','Schemas')
 ];
 export function destinationsFor(project:ProjectInfo):Destination[]{
   const result=[...common];

@@ -2,8 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readdir, readFile, lstat, realpath, rename, unlink, writeFile, link, rmdir } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
 import { parse, stringify } from 'yaml';
-import { readProjectSchema } from './projectSchema';
-import { changedCustomKeys,customPropertyIssue } from '../shared/customProperties';
+import { readProjectSchema,writeProjectSchema } from './projectSchema';
+import { changedCustomKeys,customPropertyIssue,type ProjectPropertySchema } from '../shared/customProperties';
 import { idSchema, metadataSchema, recordSchema, editableSchema, propertyChangesSchema, type PropertyChanges, type Editable, type ProjectRecord, type RecordList, type TrashList } from '../shared/records';
 
 export class ConflictError extends Error {}
@@ -25,6 +25,7 @@ export class RecordStore {
     return task;
   }
   schema(){return readProjectSchema(dirname(this.dir));}
+  updateSchema(expectedRevision:string,definition:ProjectPropertySchema){return this.serialize(()=>writeProjectSchema(dirname(this.dir),expectedRevision,definition));}
   async get(id: string): Promise<ProjectRecord> {return this.readAt(id,this.path(id));}
   private async readAt(id:string,path:string):Promise<ProjectRecord>{
     let raw: string;

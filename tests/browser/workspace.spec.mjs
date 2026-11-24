@@ -333,3 +333,42 @@ test('schema-driven properties recover drafts and reject stale schema writes wit
   await open(page,otherRecord,other);await expect(page.getByRole('region',{name:'Custom properties'})).toHaveCount(0);
  }finally{await unlink(schemaPath).catch(()=>{});}
 });
+
+test('schema administration creates, renames and retires fields without rewriting saved values',async({page,request})=>{
+ const schemaPath=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'other','schema.yaml'),otherPrefix='/api/projects/'+other;
+ try{
+  await page.goto('/#/projects/'+other+'/schemas');
+  const panel=page.getByRole('region',{name:'Project schema administration'});
+  await expect(panel.getByText(/No schema yet/)).toBeVisible();
+  await panel.getByRole('button',{name:'New property'}).click();
+  const form=panel.getByRole('form',{name:'Create property definition'});
+  await form.getByLabel('Property ID',{exact:true}).fill('budget');
+  await form.getByLabel('Property label',{exact:true}).fill('Budget');
+  await form.getByLabel('Value kind',{exact:true}).selectOption('number');
+  await page.getByRole('link',{name:'Work',exact:true}).click();
+  await expect(form.getByLabel('Property label',{exact:true})).toHaveValue('Budget');
+  await expect(page.getByText('Save or cancel the schema definition before navigating.',{exact:true})).toBeVisible();
+  await form.getByRole('button',{name:'Save property'}).click();
+  await expect(panel.getByText('Schema saved. Record values were not rewritten.')).toBeVisible();
+  const schema=await (await request.get(otherPrefix+'/schema')).json();expect(schema.definition.fields[0].id).toBe('budget');
+  expect((await (await request.get(prefix+'/schema')).json()).configured).toBe(false);
+  const record=await create(request,'Schema admin record','Task',other);
+  await open(page,record,other);await edit(page);await page.getByLabel('Budget',{exact:true}).fill('125');
+  await save(page).click();await expect(page.getByText('Saved to disk',{exact:true})).toBeVisible();
+  const saved=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.id===record.id);
+  expect(saved.customProperties.budget).toBe(125);
+  await page.getByRole('button',{name:'Return to record',exact:true}).click();
+  await page.getByRole('link',{name:'Schemas',exact:true}).click();await panel.getByRole('button',{name:'Edit Budget',exact:true}).click();
+  const editForm=panel.getByRole('form',{name:'Edit property definition'});
+  await expect(editForm.getByLabel('Property ID',{exact:true})).toBeDisabled();
+  await editForm.getByLabel('Property label',{exact:true}).fill('Project budget');
+  await editForm.getByLabel('Retire property (preserve all values)',{exact:true}).check();
+  await editForm.getByRole('button',{name:'Save property'}).click();
+  await expect(panel.getByRole('button',{name:'Edit Project budget',exact:true})).toBeVisible();
+  const current=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.id===record.id);expect(current.revision).toBe(saved.revision);
+  await open(page,current,other);await expect(page.getByRole('region',{name:'Custom properties'}).getByText(/Preserved inactive value/)).toBeVisible();
+  const rejected=await request.put(otherPrefix+'/schema',{data:{expectedRevision:schema.revision,definition:{version:1,fields:[]}}});expect(rejected.status()).toBe(409);
+  const latest=await (await request.get(otherPrefix+'/schema')).json();expect(latest.definition.fields[0].retired).toBe(true);
+  const removal=await request.put(otherPrefix+'/schema',{data:{expectedRevision:latest.revision,definition:{version:1,fields:[]}}});expect(removal.status()).toBe(422);
+ }finally{await unlink(schemaPath).catch(()=>{});}
+});

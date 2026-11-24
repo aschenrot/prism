@@ -33,3 +33,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K02 — **Find and manage work** — Review the final M1 schema, search, template, inbox and management-view capabilities using the delivered product workflows. Expected: cohesive workflows with clear scope, accessible interaction and no duplicate source of truth. Refine concrete cases as the corresponding increments are implemented.
 
 - [ ] K03 — **Edit configured properties safely** — In a disposable project with a version-1 schema, edit text, number, date, enum, boolean and record-reference properties. Keep a draft, reopen, and save after reviewing an externally changed schema. Expected: recoverable values, clear validation, stable property identity, stale-schema rejection, no data loss or leakage to another project.
+
+- [ ] K04 — **Manage schema definitions without rewriting values** — In a disposable project open Schemas, create a numeric or choice property, save a record value, rename and retire the definition, then reactivate it. Expected: stable identity, clear usage and impact, retained value, protected stale writes and no implicit type conversion or removal.

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { destinationsFor,overviewFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,modeOrder } from '../shared/navigation';
+import { destinationsFor,overviewFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,modeOrder,navigationGroups } from '../shared/navigation';
 import { recordSchema,type ProjectRecord,type Editable } from '../shared/records';
 import type { SavedView } from '../shared/views';
 import type { ProjectInfo } from '../shared/projects';
@@ -54,6 +54,7 @@ test('navigation changes destination, view and filters together without an inter
 test('all contextual toolbars retain a canonical relative order independent of default',()=>{
   const projects=[project,{...project,profiles:['core','game'] as ProjectInfo['profiles']}, {...project,storage:'standalone' as const}];
   for(const p of projects)for(const d of destinationsFor(p)){
+    assert.ok(navigationGroups.includes(d.group));
     const ordered=orderedModes(d);
     assert.deepEqual(ordered,modeOrder.filter(mode=>d.modes.includes(mode)));
     assert.deepEqual(new Set(ordered),new Set(d.modes));

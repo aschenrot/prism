@@ -38,3 +38,5 @@ Owner corrected Protect Main on 2026-11-24. Direct ruleset read confirms all fou
 
 ## Subsequent integrated baseline
 PR #15 merged preserving the verified tree at 34b8c2cc8c865ece6279ada09e8bd247ffbc1a36. Required matrix run 45391421549, synthetic checkout 3a915503b73e1353aebbb9ec97f93941b808ff07, inspected all four logs: 63 unit tests and 18 browser scenarios each, all passed; clean eligible evidence, zero skips/flakes/failures, both audits zero vulnerabilities. Main run 45391844584 completed successfully across all four jobs. Current M1 schema increment starts from this main revision.
+
+PR #16 integrated at 5a09cfa376e31d82350de225bb7a18efa895ee39 after full required matrix 45453922493 passed (67 unit / 19 browser each; tested checkout 92a7bdb658c28e4c34355cd24235842b693c1e11, identical tree). First run cancelled after observed accessible label regression; corrected without weakening tests. Main verification separate.

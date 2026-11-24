@@ -17,10 +17,11 @@ import BrowserVerification from './BrowserVerification';
 import HostedVerification from './HostedVerification';
 import { deliveryLabel,type GitHistory } from '../shared/delivery';
 import WorkspaceOverview from './WorkspaceOverview';
-import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,type DestinationMode } from '../shared/navigation';
+import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,navigationGroups,type DestinationMode } from '../shared/navigation';
 import { Knowledge } from './Knowledge';
 import { viewPreferences } from './viewPreferences';
 import { draftStorage } from './draftStorage';
+import SchemaAdministration from './SchemaAdministration';
 import { useProjectSchema,CustomPropertyFields } from './CustomProperties';
 import { changedCustomKeys,customPropertyIssue,type CustomValue } from '../shared/customProperties';
 import { freshDraft,isDirty,changedSinceCheckpoint,type EditorDraft } from '../shared/editor';
@@ -42,7 +43,7 @@ import { selectRecords,sortBy,sortDirection,modes,type Filters,type SavedView,ty
 
 const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen}] as const;
 type View = DestinationMode;
-const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,increments:Layers3,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,changes:GitBranch,presentations:Presentation,library:Database,trash:Trash2,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image};
+const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,increments:Layers3,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,changes:GitBranch,presentations:Presentation,library:Database,trash:Trash2,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image,schemas:Database};
 const excerpt = (body:string) => body.trim().split('\n').find(line => line.trim() && !line.startsWith('#')) || 'No description yet.';
 function RecordCard({record,selected,onSelect,onEdit,onTrash,href,gallery=false,disabled=false}:{record:ProjectRecord;selected:boolean;onSelect:()=>void;onEdit:()=>void;onTrash:()=>void;href:string;gallery?:boolean;disabled?:boolean}) {
   return <div className="collection-card"><RouteLink className={'record-card '+(selected?'selected ':'')+(gallery?'gallery-card':'')} href={href} onNavigate={onSelect}>
@@ -305,7 +306,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   const trashIncoming=trashTarget?[...new Map(relationshipsFor(records,trashTarget.id).incoming.map(link=>[link.id,link.record])).values()]:[];
   const findings=auditRecords(records);
   const projectSwitchHint=project.storage==='repository'?'Connected repository':'Local workspace';
-  const navigationGuard=workPending?'Record changes are being saved.':bulkTargets?'Close bulk editing before navigating.':trash.isPending?'Moving a record to trash.':trashTarget?'Close the record removal dialog before navigating.':busy?(editing?'Save, keep your draft, or cancel editing before leaving.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
+  const navigationGuard=workPending?'Record changes are being saved.':bulkTargets?'Close bulk editing before navigating.':trash.isPending?'Moving a record to trash.':trashTarget?'Close the record removal dialog before navigating.':busy?(editing?'Save, keep your draft, or cancel editing before leaving.':view==='Schemas'?'Save or cancel the schema definition before navigating.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
   // The same guard covers sidebar, related links, breadcrumbs and browser history.
   useLayoutEffect(()=>{router.setGuard(navigationGuard);if(!navigationGuard)router.clearNotice();return()=>router.setGuard('');},[navigationGuard]);
   useEffect(()=>{if(!creating&&!create.isPending&&!trash.isPending&&!workPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[creating,create.isPending,trash.isPending,workPending]);
@@ -326,7 +327,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   return <RecordCommandContext.Provider value={{duplicate:duplicateRecord,copy:target=>{void copyRecordLink(target);}}}><div className="shell workspace-shell routed-shell">
     <aside className="sidebar"><div className="brand"><div className="brand-mark"><Layers3 size={22}/></div><div>prism<span>PROJECT WORKSPACE</span></div></div>
       <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>switchProject(e.target.value)}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select></div>
-      <nav className="purpose-nav" aria-label="Project navigation">{['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio'].map(group=>{
+      <nav className="purpose-nav" aria-label="Project navigation">{navigationGroups.map(group=>{
         const items=destinations.filter(d=>d.group===group&&d.id!=='library'&&d.id!=='trash');if(!items.length)return null;
         return <div className="nav-group" key={group}>{group!=='Workspace'&&<div className="nav-label">{group}</div>}{items.map(d=>{const Icon=destinationIcons[d.id]||Database;return <RouteLink key={d.id} className={'nav-item purpose-item '+(destinationId===d.id?'active':'')} aria-current={destinationId===d.id?(route.kind==='record'?'location':'page'):undefined} href={categoryHref(d.id)} onNavigate={()=>navigate(d.id)}><Icon size={16}/><span>{d.label}</span></RouteLink>;})}</div>;
       })}<div className="nav-group library-nav"><RouteLink className={'nav-item purpose-item '+(destinationId==='library'?'active':'')} aria-current={destinationId==='library'?(route.kind==='collection'?'page':'location'):undefined} href={categoryHref('library')} onNavigate={()=>navigate('library')}><Database size={16}/><span>Data library</span></RouteLink><button className="nav-item purpose-item" aria-expanded={showSaved} onClick={()=>setShowSaved(v=>!v)}><ChevronRight size={15} className={showSaved?'expanded-chevron':''}/><span>Saved views</span></button>{showSaved&&<SavedViews projectId={projectId} current={currentView} active={savedView} onApply={applySaved} onClear={clearSaved} scope={router.entryKey} disabled={busy||creating||workPending||!!bulkTargets}/>}</div></nav>
@@ -352,10 +353,11 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
       {query.isPending&&<div className="empty">Opening your workspace…</div>}
       {query.error&&<div className="warning" role="alert"><AlertTriangle size={16}/> {query.error.message}</div>}
       {!!query.data?.errors.length&&<div className="warning" role="alert">{query.data.errors.map(e=><div key={e.file}>{e.file}: {e.message}</div>)}</div>}
-      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Changes','Wiki','Relationships','Trash'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
+      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Changes','Wiki','Relationships','Trash','Schemas'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
       {view==='Overview'&&!query.isPending&&<WorkspaceOverview project={project} records={records} findings={findings.length} incomplete={!!query.error||!!query.data?.errors.length} history={history} historyError={historyQuery.isError} onSelect={select} onNavigate={navigate} hrefFor={hrefFor}/>}
       {(view==='Wiki'||view==='Relationships')&&<Knowledge key={destinationId+':'+(savedView?.id||'default')+':'+view} mode={view} visible={visible} records={records} onEdit={select} onDirectEdit={openEditor} onTrash={moveToTrash} disabled={controlsDisabled} focus={router.entry.context?.focus} hrefFor={hrefFor} onFocus={id=>router.replaceContext({...contextFor(navigation),slide:router.entry.context?.slide,focus:id})}/>}
       {view==='Trash'&&<TrashView projectId={projectId}/>}
+      {view==='Schemas'&&<SchemaAdministration projectId={projectId} records={records} incomplete={!!query.error||!!query.data?.errors.length} onBusyChange={setBusy}/>}
       {view==='Changes'&&<Changes history={history} loading={historyQuery.isFetching} error={historyQuery.isError} onRefresh={refreshHistory} records={records} onSelect={select} hrefFor={hrefFor}/>}
       {view==='Repository'&&<Suspense fallback={<div className="empty" role="status">Loading repository view…</div>}><Repository projectId={projectId}/></Suspense>}
       {view==='Audit'&&project.storage==='repository'&&<><LocalVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><BrowserVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><HostedVerification projectId={projectId} repository={project.githubRepository} history={historyQuery.isError?undefined:history}/></>}
