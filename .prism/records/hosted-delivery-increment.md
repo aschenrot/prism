@@ -6,6 +6,7 @@ status: In progress
 priority: High
 accent: teal
 tags: [current, quality, management]
+githubPullRequests: [{repository: aschenrot/prism, number: 14}]
 relationships:
   - ci-import
   - delivery-evidence
@@ -18,3 +19,6 @@ relationships:
     target: m1-milestone-acceptance
 ---
 M1 increment: expose real GitHub evidence without duplicating authored planning or claiming completion. First slice: configured public workflow metadata in Quality, explicit refresh, source/run/revision provenance and safe failure states. Next slice: explicit PR association to delivery increments and matrix job evidence. No remote write access or automatic task completion. Integration requires the exact green hosted matrix and developer review. Shared consolidated M1 acceptance is intentionally deferred; only its hosted evidence cases relate to this increment. See development-workflow-decision for delegation and current integration blocker.
+
+## Scoped hosted evidence
+Explicit repository-qualified GitHub PR references are now canonical metadata, preserved by regular record mutations and excluded from duplication. Reference #14 is authored deliberately. Remote lookup resolves only the configured repository and reference; run association requires a matching provider base-repository ID and PR number, not branch/title guesses. Recent results can be incomplete. Job detail reads are attempt-specific and bounded to 50 jobs; no job metadata attests actual checkout, artifact coverage or human acceptance. PR/job view prepared; full current CI pending. Authored reference editing is through reviewed Markdown frontmatter initially; schema-driven authoring belongs to the next M1 engine increment.

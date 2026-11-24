@@ -14,6 +14,7 @@ import { draftStorage } from './draftStorage';
 import RouteLink from './RouteLink';
 import RecordActions from './RecordActions';
 import IncrementPanel,{MilestoneScope} from './IncrementPanel';
+import ScopedHostedEvidence from './ScopedHostedEvidence';
 const MarkdownBody=lazy(()=>import('./Markdown'));
 function ReviewLink({projectId,test,head,href,onOpen}:{projectId:string;test:ProjectRecord;head:string|undefined;href:string;onOpen:()=>void}){
   const parsed=acceptanceDefinition(test);
@@ -23,7 +24,7 @@ function ReviewLink({projectId,test,head,href,onOpen}:{projectId:string;test:Pro
   const action=parsed.state!=='available'?'Open test':query.isPending||query.isError||!head?'Open review':run?.decision==='open'?'Resume acceptance':run?'View review':'Start acceptance';
   return <RouteLink className="record-review-link acceptance-entry" href={href} onNavigate={onOpen}><span><strong>{test.title}</strong><small>{run?run.progress.passed+' / '+run.progress.total+' cases passed · '+(run.decision==='open'?'Review in progress':run.decision):total?total+' cases · '+(query.isError?'Run history unavailable':query.isPending?'Reading review history…':'No current review recorded'):test.status+' · '+test.priority+' priority'}</small></span><span className="review-entry-action">{action}<ArrowRight size={16}/></span></RouteLink>;
 }
-export default function RecordPage({projectId,record,records,incomplete,unavailable,onOpen,hrefFor,onEdit,onBusyChange,busy,onTrash,trashError,repository,history,historyLoading,historyError,onRefresh}:{projectId:string;record:ProjectRecord;records:ProjectRecord[];incomplete:boolean;unavailable:boolean;onOpen:(id:string)=>void;hrefFor:(id:string)=>string;onEdit:()=>void;onBusyChange:(busy:boolean)=>void;busy:boolean;onTrash:()=>void;trashError?:string;repository:boolean;history:GitHistory|undefined;historyLoading:boolean;historyError:boolean;onRefresh:()=>void}){
+export default function RecordPage({projectId,githubRepository,record,records,incomplete,unavailable,onOpen,hrefFor,onEdit,onBusyChange,busy,onTrash,trashError,repository,history,historyLoading,historyError,onRefresh}:{projectId:string;githubRepository?:string;record:ProjectRecord;records:ProjectRecord[];incomplete:boolean;unavailable:boolean;onOpen:(id:string)=>void;hrefFor:(id:string)=>string;onEdit:()=>void;onBusyChange:(busy:boolean)=>void;busy:boolean;onTrash:()=>void;trashError?:string;repository:boolean;history:GitHistory|undefined;historyLoading:boolean;historyError:boolean;onRefresh:()=>void}){
   const links=relationshipsFor(records,record.id);
   const tests=[...new Map([...links.outgoing,...links.incoming].flatMap(link=>link.record?.type==='Test'&&link.id!==record.id?[[link.id,link.record] as const]:[])).values()];
   const recovery=draftStorage.read(projectId,record.id);
@@ -42,6 +43,7 @@ export default function RecordPage({projectId,record,records,incomplete,unavaila
     {unavailable&&<p role="alert" className="warning">The record is unavailable on disk. This is the last loaded version.</p>}
     {recovery.state==='available'&&<p className="record-recovery-note">An unsaved recovery draft exists. The page below shows the saved record. <button className="secondary" type="button" disabled={unavailable||busy} onClick={onEdit}>Resume draft</button></p>}
     {record.type==='Increment'&&<IncrementPanel projectId={projectId} increment={record} records={records} history={historyError?undefined:history} repository={repository} incomplete={incomplete} onOpen={onOpen} hrefFor={hrefFor}/>}
+    {record.type==='Increment'&&repository&&<ScopedHostedEvidence projectId={projectId} repository={githubRepository} increment={record} unavailable={unavailable}/>}
     {record.type==='Milestone'&&<MilestoneScope milestone={record} records={records} onOpen={onOpen} hrefFor={hrefFor}/>}
     {record.type!=='Increment'&&tests.length>0&&<section className="record-review" aria-label="Linked acceptance tests"><div className="eyebrow"><ListChecks size={16}/> VERIFICATION &amp; ACCEPTANCE</div><h2>Linked tests</h2><p>Start or resume a linked review. Results remain separate from implementation status.</p>{tests.map(test=><ReviewLink key={test.id} projectId={projectId} test={test} head={head} href={hrefFor(test.id)} onOpen={()=>onOpen(test.id)}/>)}</section>}
     {parsed.state==='invalid'&&<p className="warning" role="alert">{parsed.message} Use Edit test definition to repair the case format.</p>}
