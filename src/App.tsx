@@ -68,8 +68,9 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   const [session,setSession]=useState<EditorDraft>(()=>initial.state==='available'?initial.draft:freshDraft(record));
   const [draftHistory,setDraftHistory]=useState(emptyDraftHistory);
   const [autosaveEnabled,setAutosaveEnabled]=useState(false),[autosaveMessage,setAutosaveMessage]=useState('');
+  const autosaveTouchedAt=useRef(Date.now()),lastAutosaveAttempt=useRef<EditorDraft|null>(null);
   const [foreground,setForeground]=useState(()=>document.visibilityState==='visible');
-  useEffect(()=>{const sync=()=>setForeground(document.visibilityState==='visible');document.addEventListener('visibilitychange',sync);return()=>document.removeEventListener('visibilitychange',sync);},[]);
+  useEffect(()=>{const sync=()=>{if(document.visibilityState==='visible')autosaveTouchedAt.current=Date.now();setForeground(document.visibilityState==='visible');};document.addEventListener('visibilitychange',sync);return()=>document.removeEventListener('visibilitychange',sync);},[]);
   const pauseAutosave=(reason:string)=>{setAutosaveEnabled(false);setAutosaveMessage('Autosave paused: '+reason);};
   const token=useRef(initial.token);
   const checkpoint=useRef<EditorDraft|null>(initial.state==='available'?initial.draft:null);
@@ -97,12 +98,12 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
     setRecovery(result.state);setRecoveryMessage(result.message);return false;
   };
   const applySession=(next:EditorDraft)=>{
-    setSession(next);setValidation('');persist(isDirty(next)?next:null);
+    autosaveTouchedAt.current=Date.now();setSession(next);setValidation('');persist(isDirty(next)?next:null);if(autosaveEnabled)setAutosaveMessage(isDirty(next)?'Autosave waiting for idle valid changes.':'No unsaved changes.');
   };
   const changeSession=(next:EditorDraft,group?:string)=>{
     const now=Date.now();setDraftHistory(history=>recordDraftEdit(history,session,next,group,now));applySession(next);
   };
-  const replaceSession=(next:EditorDraft)=>{if(autosaveEnabled)pauseAutosave('Review applied. Enable again or save manually.');setDraftHistory(emptyDraftHistory());applySession(next);};
+  const replaceSession=(next:EditorDraft)=>{setDraftHistory(emptyDraftHistory());applySession(next);if(autosaveEnabled)pauseAutosave('Review applied. Enable again or save manually.');};
   const update=<K extends keyof Editable>(key:K,value:Editable[K])=>changeSession({...session,...(key==='type'&&draft.customTypeId&&schema&&!schemaStale?{schemaRevision:schema.revision}:{}),draft:{...draft,[key]:value},updatedAt:new Date().toISOString()},key==='title'||key==='body'||key==='tags'?key:undefined);
   const changeCustom=(id:string,value:CustomValue|undefined)=>{
     if(!schema||schemaStale)return;
@@ -190,8 +191,9 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   useEffect(()=>{
     if(!autosaveEnabled||mutation.isPending)return;
     if(autoBlock){pauseAutosave(autoBlock);return;}
-    if(!dirty||!foreground)return;
-    const timer=window.setTimeout(()=>{if(document.visibilityState==='visible')attemptSave(true);},AUTOSAVE_IDLE_MS);
+    if(!dirty||!foreground||lastAutosaveAttempt.current===session)return;
+    const remaining=Math.max(0,AUTOSAVE_IDLE_MS-(Date.now()-autosaveTouchedAt.current));
+    const timer=window.setTimeout(()=>{if(document.visibilityState==='visible'){lastAutosaveAttempt.current=session;attemptSave(true);}},remaining);
     return()=>window.clearTimeout(timer);
   },[autosaveEnabled,autoBlock,dirty,foreground,session,mutation.isPending,schema?.revision,records]);
   return <aside className={"inspector"+(expanded?" expanded-inspector":"")} aria-label="Record editor"><div className="inspector-top"><span>{record.type.toUpperCase()} / EDIT RECORD</span><div className="inspector-tools"><button type="button" className="icon-button" aria-label={expanded?"Collapse record editor":"Expand record editor"} onClick={onExpand}>{expanded?<Minimize2 size={17}/>:<Maximize2 size={17}/>}</button><button type="button" className="secondary" disabled={mutation.isPending} onClick={close}><ArrowLeft size={15}/>{dirty?"Keep draft & close":"Return to record"}</button></div></div>
@@ -200,7 +202,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
       {recordUnavailable&&<div className="warning" role="alert">The record file is missing or invalid. Your editor stays open. Export or keep the draft, or restore the file to resume saving.</div>}
       <div className="draft-state" role="status">{recovered&&dirty?'Recovered unsaved draft · ':''}{dirty?(recovery==='stored'?'Recovery copy stored locally':'Recovery not confirmed'):'No unsaved changes'}</div>
       {recoveryMessage&&<div className="warning" role="alert">{recoveryMessage}{recovery==='invalid'&&<button type="button" className="secondary" disabled={mutation.isPending} onClick={discard}>Discard unreadable recovery</button>}{recovery!=='invalid'&&dirty&&<button type="button" className="secondary" disabled={mutation.isPending} onClick={()=>persist(session)}>Retry recovery storage</button>}</div>}
-      <div className="autosave-control"><label><input type="checkbox" checked={autosaveEnabled} disabled={mutation.isPending} onChange={event=>{if(event.target.checked){if(autoBlock){pauseAutosave(autoBlock);return;}setAutosaveEnabled(true);setAutosaveMessage('Autosave enabled for this editing session.');}else{setAutosaveEnabled(false);setAutosaveMessage('Autosave off. Save manually or keep your draft.');}}}/> Autosave valid changes</label><small>Off by default. When enabled, valid changes save after 1.8 seconds of inactivity while this tab is visible. Each save resets draft undo history.</small>{autosaveMessage&&<p role="status">{autosaveMessage}</p>}{autosaveEnabled&&dirty&&!foreground&&<p role="status">Autosave waits until this tab is visible.</p>}</div>
+      <div className="autosave-control"><label><input type="checkbox" checked={autosaveEnabled} disabled={mutation.isPending} onChange={event=>{if(event.target.checked){if(autoBlock){pauseAutosave(autoBlock);return;}autosaveTouchedAt.current=Date.now();lastAutosaveAttempt.current=null;setAutosaveEnabled(true);setAutosaveMessage('Autosave enabled for this editing session.');}else{setAutosaveEnabled(false);setAutosaveMessage('Autosave off. Save manually or keep your draft.');}}}/> Autosave valid changes</label><small>Off by default. When enabled, valid changes save after 1.8 seconds of inactivity while this tab is visible. Each save resets draft undo history.</small>{autosaveMessage&&<p role="status">{autosaveMessage}</p>}{autosaveEnabled&&dirty&&!foreground&&<p role="status">Autosave waits until this tab is visible.</p>}</div>
       <div className="draft-history-controls" role="group" aria-label="Draft editing history"><button type="button" className="secondary" disabled={historyBlocked||!draftHistory.past.length} onClick={()=>historyStep('undo')}>Undo draft edit</button><button type="button" className="secondary" disabled={historyBlocked||!draftHistory.future.length} onClick={()=>historyStep('redo')}>Redo draft edit</button><small>Unsaved edits only · resets on save, reload or conflict review</small></div>
       <fieldset disabled={mutation.isPending||(stale&&dirty)||conflictResponse}>
       <label>Title<input value={draft.title} maxLength={160} required onChange={e=>update('title',e.target.value)}/></label>
