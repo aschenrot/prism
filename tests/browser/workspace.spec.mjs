@@ -522,7 +522,7 @@ test('board status moves use canonical revisions, keyboard control and recovery 
  const board=page.getByRole('region',{name:'Status board'}),concept=board.getByRole('region',{name:'Concept column'}),progress=board.getByRole('region',{name:'In progress column'}),ready=board.getByRole('region',{name:'Ready column'});
  const move=name=>board.getByRole('combobox',{name:'Move '+name+' to status',exact:true});
  await expect(concept.getByRole('heading',{name:a.title,exact:true})).toBeVisible();
- await concept.locator('.board-card-shell').filter({has:concept.getByRole('heading',{name:a.title,exact:true})}).locator('.board-grip').dragTo(progress.locator('.column-heading'));
+ await concept.locator('.board-card-shell').filter({has:page.getByRole('heading',{name:a.title,exact:true})}).locator('.board-grip').dragTo(progress.locator('.column-heading'));
  await expect(progress.getByRole('heading',{name:a.title,exact:true})).toBeVisible();expect((await recordOnDisk(request,a.id)).status).toBe('In progress');
  await move(a.title).focus();await move(a.title).selectOption('Ready');await expect(ready.getByRole('heading',{name:a.title,exact:true})).toBeVisible();await expect(move(a.title)).toBeFocused();
  await move(b.title).selectOption('Ready');await expect(page.getByText('Recovery draft or unavailable recovery storage; resolve it before editing.',{exact:true})).toBeVisible();expect((await recordOnDisk(request,b.id)).status).toBe('Concept');
