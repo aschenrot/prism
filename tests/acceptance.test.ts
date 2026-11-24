@@ -91,3 +91,10 @@ test('review handoff identifies exact revision and pending cases without claimin
   const one=applyAcceptanceUpdate(data,{action:'case',expectedRevision:expected,caseId:'A01',outcome:'Failed',notes:'<b>Mismatch</b> @someone'},date);
   const summary=reviewSummary(one);assert.ok(summary.includes(head));assert.ok(summary.includes(definitionRevision));assert.ok(summary.includes('**Failed**'));assert.ok(summary.includes('**Pending**'));assert.ok(summary.includes('Local npm verification: not recorded'));assert.ok(summary.includes('&lt;b&gt;Mismatch&lt;/b&gt; &#64;someone'));assert.ok(!summary.includes('@someone'));
 });
+
+test('review handoff escapes original text once, including existing entities and Markdown punctuation',()=>{
+  const run=applyAcceptanceUpdate(data,{action:'case',expectedRevision:expected,caseId:'A01',outcome:'Failed',notes:"&lt; @a #9 **bold**\r\nnext"},date);
+  assert.ok(reviewSummary(run).includes("&amp;lt; &#64;a \\#9 \\*\\*bold\\*\\* / next"));
+  const second=applyAcceptanceUpdate(data,{action:'case',expectedRevision:expected,caseId:'A01',outcome:'Failed',notes:"[label](url)\\\rline"},date);
+  assert.ok(reviewSummary(second).includes("\\[label\\]\\(url\\)\\\\ / line"));
+});

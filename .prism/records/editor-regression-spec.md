@@ -16,7 +16,7 @@ relationships:
 ## Purpose
 Preserve the 31 original technical checks from editor-acceptance at 86b85781646721e5d95b0332af5a1e799f2325cf. These are regression requirements, not a second mandatory owner checklist and not results. The owner evaluates the smaller UX acceptance record; developer-owned automated checks and any uncovered risks remain separate.
 
-## Initial automation coverage (written, not executed)
+## Initial automation coverage
 - npm run verify: A01; unit tests for record and view persistence, conflict reconciliation, project scope, validated history and recovery storage, acceptance run persistence and decision rules.
 - Browser test "cancel fresh edits...": cancel fresh and resumed sessions, B02, canonical preservation, earlier recovery checkpoint.
 - "recover incomplete edits...": B01/B02/B03/B04/B05, including empty title and notes.
@@ -28,6 +28,9 @@ Preserve the 31 original technical checks from editor-acceptance at 86b857816467
 - New unit tests: session-checkpoint comparison and recovery restoration; sanitized revision-specific review summary with actual pending/failed cases.
 
 Coverage is not yet exhaustive: complete tag-input cases, discard/export downloads, alternative disk choice and repeated conflicts in the browser, storage unavailable in browser, same-ID cross-project isolation in browser, full native popstate/new-tab/saved-view/reader/scroll behavior, competing and historical review tabs, screenshot/visual comparisons and accessibility automation are still open. Some underlying rules are covered by unit tests. Do not mark any missing or unexecuted case passed. Before merge, assess remaining risks and record any explicit limits; no implied full regression coverage.
+
+## Observed initial run
+Owner-reported diagnostic run, 2026-11-24, Git HEAD d03af8ed2e2a6c5d4a1e79a2a06d70ec06aa493d, Windows x64 Node v26.13.1, Playwright 1.65.1 Chromium: all seven browser scenarios passed in 19.4 seconds; zero failed, flaky or skipped. Build and browser exit codes 0; cleanAtStart and cleanAtEnd both false; eligible false. Report directory 9b8e2d6d-b7b2-4630-9037-7183e1ec7669. npm verification: 234 packages installed, typecheck and production build passed, 44 tests (42 passed, one failed, one expected Windows file-symlink permission skip), both audits zero vulnerabilities. Failed assertion in review-summary escaping caused by escaping the # of an already generated numeric entity. Corrected with a single-pass transformation and added regression coverage. The dirty-tree results do not establish a passing clean-revision gate. No manual UX approval supplied.
 
 ## A. Automated gate
 - [ ] A01 — **Run local verification** — On feat/editor-reliability with a clean working tree, run npm run verify. Expected: clean install, typecheck, tests, production build and both audits succeed; final output identifies the exact clean revision. Record skips and warnings.

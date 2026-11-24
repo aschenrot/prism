@@ -1,7 +1,7 @@
 import { acceptanceProgress,type AcceptanceRunData } from './acceptance';
 import { verificationState } from './verification';
 // Keep user-provided content literal in a PR comment; no raw HTML or @mentions.
-function text(value:string){return value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/@/g,'&#64;').replace(/\\|[\x60*_~\[\]()#!|]/g,m=>'\\'+m).replace(/\r?\n/g,' / ').trim();}
+function text(value:string){return value.replace(/[&<>@\\\x60*_~\[\]()#!|]|\r\n?|\n/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m==='@'?'&#64;':m==='\r'||m==='\n'||m==='\r\n'?' / ':'\\'+m).trim();}
 export function reviewSummary(run:AcceptanceRunData){
   const p=acceptanceProgress(run);
   const lines=['## Prism acceptance review','',
