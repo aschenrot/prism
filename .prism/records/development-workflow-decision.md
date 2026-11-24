@@ -1,7 +1,7 @@
 ---
 id: development-workflow-decision
 type: Decision
-title: Local verification and short-lived development branches
+title: Revision-bound verification and delegated M1 integration
 status: Ready
 priority: High
 accent: violet
@@ -18,3 +18,6 @@ Prism owns internal tasks, requirements and milestones; Git owns history; GitHub
 
 ## Public preview follow-up (2026-11-24)
 Owner selected AGPL-3.0-only and wants to move toward public CI. Prepare automatic public PR/main checks while retaining the private automatic-run guard. Local automated checks remain required until actual hosted verification and required checks are adopted; manual UX acceptance and explicit merge approval remain unchanged. See public-preview-readiness.
+
+## Adopted M1 delegation (2026-11-24)
+Owner approved delegated implementation, technical review and integration through M1, with consolidated milestone-level human product review. This supersedes local-only and individual owner approval for in-scope verified increments. Preserve PR review, exact tested revision and tree, full green hosted matrix, security review and regular merge history. No merge when checks fail, base/head changes without reverification, or protections prevent it. Escalate architecture/product direction, breaking or destructive migrations, security/licensing concerns, scope deviations and access blockers. Manual acceptance remains pending, not inferred. Outside M1 the standing authority ends. Required status checks on main must be configured by the owner; manually inspect current full matrix until enforcement is observed. See docs/development-workflow.md. The active Protect Main ruleset has required_linear_history and repository settings only permit merge commits; PR #13 regular merge rejected HTTP 405. Await owner settings correction without bypass. Stacked development is permitted but integration order remains explicit.
