@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdtemp,writeFile,rm,readFile,symlink,mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { projectPropertySchema,customValuesSchema,customPropertyIssue,changedCustomKeys } from '../shared/customProperties';
+import { projectPropertySchema,customValuesSchema,customPropertyIssue,changedCustomKeys,schemaTransitionIssue } from '../shared/customProperties';
 import { RecordStore,CustomPropertyError,ConflictError } from '../server/store';
 import { editableRecord } from '../shared/editor';
-import { readProjectSchema } from '../server/projectSchema';
+import { readProjectSchema,SchemaWriteConflict,SchemaWriteRejected } from '../server/projectSchema';
 const definition={version:1,fields:[{id:'effort',label:'Effort',kind:'number',appliesTo:['Task']},{id:'due',label:'Due',kind:'date'},{id:'state',label:'Review state',kind:'enum',options:[{id:'pending',label:'Pending'}]},{id:'objective',label:'Objective',kind:'reference',targetTypes:['Objective']},{id:'note',label:'Note',kind:'text'},{id:'checked',label:'Checked',kind:'boolean'}]};
 test('versioned property definitions and scalar value limits reject invalid input',()=>{
  const parsed=projectPropertySchema.parse(definition);
@@ -64,5 +64,44 @@ test('custom writes validate exact schema and record revisions, preserve inactiv
   await writeFile(join(a,'schema.yaml'),'malformed: true');
   const final=await store.update(cleared.id,cleared.revision,{...editableRecord(cleared),body:'Still editable'});assert.deepEqual(final.customProperties,cleared.customProperties);
   await assert.rejects(store.update(final.id,final.revision,{...editableRecord(final),customProperties:{effort:0,checked:true}},newSchema.revision),CustomPropertyError);
+ }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test('schema administration is additive, preserves option and field IDs, and permits reversible retirement',()=>{
+ const initial=projectPropertySchema.parse(definition);
+ const transition=(fields:typeof initial.fields)=>schemaTransitionIssue(initial,{version:1,fields});
+ assert.match(transition(initial.fields.slice(1))??'',/Cannot delete/);
+ assert.match(transition(initial.fields.map(f=>f.id==='effort'?{id:f.id,label:f.label,kind:'text'}:f))??'',/immutable/);
+ assert.match(transition(initial.fields.map(f=>f.id==='effort'?{...f,appliesTo:['Document']}:f))??'',/immutable/);
+ assert.match(transition(initial.fields.map(f=>f.kind==='enum'?{...f,options:[{id:'new',label:'New'}]}:f))??'',/option IDs/);
+ assert.equal(transition(initial.fields.map(f=>f.kind==='enum'?{...f,label:'Renamed',options:[...f.options,{id:'ready',label:'Ready'}]}:{...f,retired:true})),undefined);
+ const retired={...initial.fields[0],retired:true};
+ assert.ok(customPropertyIssue(retired,'Task',2,'a'));
+});
+test('revision-checked schema writes do not rewrite record bytes or overwrite stale definitions',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'prism-schema-admin-'));
+ try{
+  const store=await RecordStore.open(root),empty=await store.schema();
+  if(empty.state!=='available')throw Error('Missing schema state');
+  const a=await store.updateSchema(empty.revision,projectPropertySchema.parse(definition));
+  if(a.state!=='available')throw Error('Missing saved schema');
+  assert.equal(a.configured,true);
+  await assert.rejects(store.updateSchema(empty.revision,{version:1,fields:[]}),SchemaWriteConflict);
+  const record=await store.create('Example','Task');
+  const saved=await store.update(record.id,record.revision,{...editableRecord(record),customProperties:{effort:4}},a.revision);
+  const recordPath=join(root,'records',record.id+'.md'),bytes=await readFile(recordPath);
+  await assert.rejects(store.updateSchema(a.revision,{version:1,fields:a.definition.fields.slice(1)}),SchemaWriteRejected);
+  const retired=await store.updateSchema(a.revision,{version:1,fields:a.definition.fields.map(f=>f.id==='effort'?{...f,retired:true}:f)});
+  if(retired.state!=='available')throw Error('No retired definition');
+  assert.deepEqual(await readFile(recordPath),bytes);
+  assert.equal((await store.get(record.id)).customProperties?.effort,4);
+  await assert.rejects(store.update(saved.id,saved.revision,{...editableRecord(saved),customProperties:{effort:5}},retired.revision),CustomPropertyError);
+  const restored=await store.updateSchema(retired.revision,{version:1,fields:retired.definition.fields.map(f=>f.id==='effort'?{...f,retired:false}:f)});
+  if(restored.state!=='available')throw Error('No restored definition');
+  assert.deepEqual(await readFile(recordPath),bytes);
+  assert.equal((await store.update(saved.id,saved.revision,{...editableRecord(saved),customProperties:{effort:5}},restored.revision)).customProperties?.effort,5);
+  await writeFile(join(root,'schema.yaml'),'invalid: true');
+  await assert.rejects(store.updateSchema(restored.revision,restored.definition),SchemaWriteRejected);
+  assert.equal(await readFile(join(root,'schema.yaml'),'utf8'),'invalid: true');
  }finally{await rm(root,{recursive:true,force:true});}
 });

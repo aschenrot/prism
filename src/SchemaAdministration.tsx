@@ -61,7 +61,7 @@ export default function SchemaAdministration({projectId,records,incomplete,onBus
  <fieldset disabled={mutation.isPending}>
  <label>Property ID<input value={draft.id} maxLength={48} disabled={!!session.original} onChange={e=>change({...draft,id:e.target.value})} placeholder="estimated-hours"/></label>
  <label>Property label<input value={draft.label} maxLength={100} onChange={e=>change({...draft,label:e.target.value})}/></label>
- <label>Value kind<select disabled={!!session.original} value={draft.kind} onChange={e=>change(changeKind(draft,e.target.value as PropertyDefinition['kind']))}>{kinds.map(kind=><option key={kind} value={kind}>{labelFor[kind]}</option>)}</select></label>
+ <label>Value kind<select aria-label="Value kind" disabled={!!session.original} value={draft.kind} onChange={e=>change(changeKind(draft,e.target.value as PropertyDefinition['kind']))}>{kinds.map(kind=><option key={kind} value={kind}>{labelFor[kind]}</option>)}</select></label>
  {session.original?<p className="overview-note">Record types: {draft.appliesTo?.join(', ')??'All built-in types'}</p>:<ScopePicker label="Applies to" value={draft.appliesTo} onChange={appliesTo=>change({...draft,appliesTo})}/>}
  {draft.kind==='reference'&&(session.original?<p className="overview-note">Reference targets: {draft.targetTypes?.join(', ')??'All built-in types'}</p>:<ScopePicker label="Reference targets" value={draft.targetTypes} onChange={targetTypes=>change({...draft,targetTypes})}/>)}
  {draft.kind==='enum'&&<div className="schema-options"><strong>Choices</strong>{draft.options.map((option,index)=>{
