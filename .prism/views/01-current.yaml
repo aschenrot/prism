@@ -1,0 +1,10 @@
+version: 1
+id: 01-current
+title: "01 · Current milestone"
+mode: Wiki
+filters:
+  type: "Milestone"
+  status: "In progress"
+  priority: "Any priority"
+  search: ""
+  sort: "Title"

@@ -1,0 +1,10 @@
+version: 1
+id: 04-features
+title: "04 · Feature portfolio"
+mode: Board
+filters:
+  type: "Feature"
+  status: "Any status"
+  priority: "Any priority"
+  search: ""
+  sort: "Priority"

@@ -1,0 +1,10 @@
+version: 1
+id: 07-docs
+title: "07 · Engineering wiki"
+mode: Wiki
+filters:
+  type: "Document"
+  status: "Any status"
+  priority: "Any priority"
+  search: ""
+  sort: "Title"

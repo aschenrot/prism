@@ -1,0 +1,12 @@
+# Copy to .prism/projects.local.yaml, replace paths, and set PRISM_PROJECTS.
+# Roots must already exist. Use absolute paths.
+- id: demo
+  title: Demo game
+  root: /absolute/path/to/prism/workspace
+  storage: standalone
+  profiles: [core, game]
+- id: my-game
+  title: My Bevy game
+  root: /absolute/path/to/my-game
+  storage: repository
+  profiles: [core, game, rust, product, project]

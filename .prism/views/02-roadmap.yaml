@@ -1,0 +1,10 @@
+version: 1
+id: 02-roadmap
+title: "02 · Product roadmap"
+mode: Table
+filters:
+  type: "Milestone"
+  status: "Any status"
+  priority: "Any priority"
+  search: ""
+  sort: "Title"

@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.env*
+*.local
+*.tmp
+.DS_Store
+.prism/cache/
+.prism/projects.local.yaml
+.prism/*.local.json
+
+# Local IDE configuration
+.idea/
+
+# Generated npm audit reports
+audit-report.json

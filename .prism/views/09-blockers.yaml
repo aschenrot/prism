@@ -1,0 +1,10 @@
+version: 1
+id: 09-blockers
+title: "09 · Release blockers"
+mode: Table
+filters:
+  type: "Task"
+  status: "Any status"
+  priority: "High"
+  search: "blocker"
+  sort: "Priority"
