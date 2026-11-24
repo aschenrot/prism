@@ -51,3 +51,7 @@
 ## Workspace navigation
 - Opening a record is a reading/navigation action, never implicitly entering edit mode. Use stable project/record identities in addresses; real links support browser semantics. Keep sidebar and breadcrumb navigation available in the main workspace, and preserve history context separately from canonical data.
 - Breadcrumbs express hierarchy; Back/Forward express visit order. Guard dirty and pending edits across all navigation paths, including browser traversal. Never infer acceptance from a record link or completed-looking UI.
+
+## Acceptance execution and motion
+- For substantial PR reviews author acceptance-tagged Test records with grouped stable case IDs, bold short titles, actions and explicit Expected: outcomes using the supported Markdown convention. Keep definitions separate from local execution files. Do not derive passed results from old checkmarks. Capture actual tested revision, reviewer/environment, case outcomes and explicit decision. Treat historical/finalized runs as read-only; never auto-merge or complete tasks.
+- Motion communicates navigation, not data changes. Keep the shell stable, use short enter-only transitions, reverse direction on Back and honor reduced motion. Do not delay correct state or animate polling/filter updates. Protect unsaved observations across navigation and do not represent unsaved text as persisted evidence.

@@ -29,7 +29,7 @@ export default function WorkspaceOverview({project,records,findings,incomplete,h
         <button className="overview-audit" onClick={()=>onNavigate('quality')}>{findings} record integrity finding{findings===1?'':'s'} <ArrowRight size={14}/></button>
       </section>
     </div>
-    {acceptance.length>0&&<section className="overview-section"><div className="overview-section-head"><div><span className="eyebrow"><ListChecks size={14}/> REVIEW</span><h3>Awaiting acceptance</h3></div></div><p className="overview-note">Open a test to review its instructions and record actual outcomes.</p>{acceptance.map(r=><Row key={r.id} record={r} onSelect={onSelect} hrefFor={hrefFor}/>)}</section>}
+    {acceptance.length>0&&<section className="overview-section"><div className="overview-section-head"><div><span className="eyebrow"><ListChecks size={14}/> REVIEW</span><h3>Awaiting acceptance</h3></div></div><p className="overview-note">Start or resume acceptance directly. Results are tied to the reviewed revision.</p>{acceptance.map(r=><Row key={r.id} record={r} onSelect={onSelect} hrefFor={hrefFor}/>)}</section>}
     <section className="overview-section"><div className="overview-section-head"><div><span className="eyebrow"><ListChecks size={14}/> EXECUTION</span><h3>Active work</h3></div><button className="text-action" onClick={()=>onNavigate('work')}>All tasks <ArrowRight size={14}/></button></div>
       <p className="overview-note">{data.readyTasks} of {data.totalTasks} tasks marked Ready · {data.plannedTasks.length} planned</p>
       {data.activeTasks.length?data.activeTasks.map(r=><Row key={r.id} record={r} onSelect={onSelect} hrefFor={hrefFor}/>):<p className="overview-note">No active tasks.</p>}

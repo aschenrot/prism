@@ -87,3 +87,6 @@ An opened editor stays available if its record disappears externally; saving rem
 
 ## Record navigation
 Open records from Overview, collections or related links to read their content in the main workspace. Edit record / Resume draft explicitly opens the editor; closing returns to the record. Use Back/Forward or browser history to revisit prior pages; use breadcrumbs to return to the owning category or project Overview. Copy the fragment URL to reopen a specific project, collection, saved view or record. Overview / Awaiting acceptance and record Linked tests expose acceptance handoffs without searching saved views. History restores collection mode and filters; scroll restoration is best effort. Browser-local recovery remains distinct from saved Markdown.
+
+## Acceptance review
+For acceptance-tagged Test records with grouped case definitions, a connected Git repository supports native review runs. Start/resume from Overview or linked tasks, record case outcomes and notes, and explicitly finalize the review. Saved runs live in the ignored local `acceptance.local` directory and retain the exact Git and definition revisions; export JSON for sharing or backups. A passed review is manual evidence, not automatic merge approval. Unstructured tests remain readable. Short navigation and case transitions respect reduced motion.
