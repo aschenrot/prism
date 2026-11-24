@@ -17,7 +17,8 @@
     "deps:outdated": "npm outdated",
     "deps:audit": "npm audit",
     "deps:audit:prod": "npm audit --omit=dev",
-    "test:browser": "node scripts/verify-browser.mjs"
+    "test:browser": "node scripts/verify-browser.mjs",
+    "backup": "tsx server/backupCli.ts"
   },
   "dependencies": {
     "@fastify/static": "10.1.12",

@@ -6,6 +6,7 @@ import { ConflictError,MissingError, RecordStore } from './store';
 import { ViewStore } from './views';
 import { TemplateStore } from './templates';
 import { AcceptanceStore } from './acceptance';
+import { rejectIncompleteRestore } from './projectBackup';
 import { gitHistory } from './git';
 import { readVerification } from './verification';
 export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; views:ViewStore; templates:TemplateStore; acceptance:AcceptanceStore };
@@ -25,6 +26,7 @@ export class Projects {
         if(!(await lstat(data)).isDirectory())throw new Error('Project data directory must be a real directory');
       }
       const {root:_,...info}=config;
+      await rejectIncompleteRestore(data);
       const store=await RecordStore.open(data);
       const acceptance=new AcceptanceStore(data,async id=>{
         if(info.storage!=='repository')throw new ConflictError('Revision-bound acceptance requires a connected Git repository');
