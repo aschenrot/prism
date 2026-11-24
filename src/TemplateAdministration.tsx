@@ -33,7 +33,7 @@ export default function TemplateAdministration({projectId,records,onBusyChange}:
  <label>Default priority<select aria-label="Default priority" value={draft.priority} onChange={e=>change({priority:e.target.value as TemplateInput['priority']})}>{priorities.map(p=><option key={p}>{p}</option>)}</select></label>
  <label>Accent<select aria-label="Accent" value={draft.accent} onChange={e=>change({accent:e.target.value as TemplateInput['accent']})}>{accents.map(a=><option key={a}>{a}</option>)}</select></label>
  <label>Tags (comma separated)<input value={draft.tags.join(',')} onChange={e=>change({tags:e.target.value.split(',')})}/></label>
- <label>Default body<textarea rows={8} maxLength={50000} value={draft.body} onChange={e=>change({body:e.target.value})}/></label>
+ <label>Default body<textarea aria-label="Default body" rows={8} maxLength={50000} value={draft.body} onChange={e=>change({body:e.target.value})}/></label>
  <CustomPropertyFields query={schema} type={draft.type} entityId={draft.customTypeId} sourceId="" values={draft.customProperties} base={undefined} records={records} schemaStale={false} onChange={(id,value)=>{const next={...draft.customProperties};if(value===undefined)delete next[id];else next[id]=value;change({customProperties:next});}} onReview={()=>{}} onRestore={id=>{const next={...draft.customProperties};delete next[id];change({customProperties:next});}}/>
  {original&&<label className="schema-check"><input type="checkbox" checked={!!draft.retired} onChange={e=>change({retired:e.target.checked})}/> Retire template</label>}
  </fieldset>{error&&<p className="warning" role="alert">{error}</p>}
