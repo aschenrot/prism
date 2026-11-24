@@ -19,7 +19,8 @@ async function recordOnDisk(request,id){
 async function open(page,record,projectId=project){
   await page.goto(url(record.id,projectId));await expect(page.getByRole('heading',{name:record.title,exact:true})).toBeVisible();
 }
-async function edit(page){await page.getByRole('button',{name:'Edit record',exact:true}).click();await expect(page.getByLabel('Title',{exact:true})).toBeVisible();}
+async function action(page,name,recordTitle){const trigger=recordTitle?page.getByRole('button',{name:'Actions for '+recordTitle,exact:true}):page.locator('.record-page').getByRole('button',{name:/^Actions for /});await trigger.click();await page.getByRole('menu').getByRole('menuitem',{name,exact:true}).click();}
+async function edit(page){await action(page,'Edit');await expect(page.getByLabel('Title',{exact:true})).toBeVisible();}
 function title(page){return page.getByLabel('Title',{exact:true});}
 function keep(page){return page.locator('.inspector-top').getByRole('button',{name:'Keep draft & close',exact:true});}
 function acceptDialog(page){page.once('dialog',dialog=>dialog.accept());}
@@ -53,7 +54,7 @@ test('recover incomplete edits after reload and save canonical content',async({p
   await expect(page.getByText('No unsaved changes',{exact:true})).toBeVisible();
   expect((await recordOnDisk(request,record.id)).title).toBe('Recovered title');
   await page.getByRole('button',{name:'Return to record',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Edit record',exact:true})).toBeVisible();
+  await expect(page.locator('.record-page').getByRole('button',{name:/^Actions for /})).toBeVisible();
 });
 test('blocked navigation is a toast and does not lose input; saved collection context returns',async({page,request})=>{
   const record=await create(request,'Navigation fixture');
@@ -153,7 +154,7 @@ test('collection toolbar sorts both directions and opens the editor directly whi
   await page.getByRole('combobox',{name:'Sort direction'}).selectOption('Ascending');await expect(rows).toHaveText([a.title,b.title]);
   await page.getByRole('button',{name:'Title',exact:true}).click();await expect(rows).toHaveText([a.title,b.title]);await page.getByRole('button',{name:'Title',exact:true}).click();await expect(rows).toHaveText([b.title,a.title]);
   await expect(page.locator('th[aria-sort="descending"]')).toHaveText('Title');
-  await page.getByRole('button',{name:'Edit '+a.title,exact:true}).click();await expect(title(page)).toHaveValue(a.title);
+  await action(page,'Edit',a.title);await expect(title(page)).toHaveValue(a.title);
   await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.getByRole('button',{name:'Back',exact:true}).click();
   await expect(search).toHaveValue('Sort sample');await expect(rows).toHaveText([b.title,a.title]);
   await expect(page.locator('.topbar').getByRole('button',{name:'New task'})).toHaveCount(0);
@@ -165,16 +166,16 @@ test('wiki reader follows filters and board cards have direct edit actions',asyn
   await page.goto('/#/projects/'+project+'/documentation');await page.getByRole('button',{name:'Wiki',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Reader');const index=page.getByRole('navigation',{name:'Knowledge index',exact:true});await index.getByRole('button',{name:/^Reader Beta\s*Document$/}).click();await expect(page.locator('.knowledge-heading h2')).toHaveText(b.title);await index.getByRole('button',{name:/^Reader Alpha\s*Document$/}).click();
   await expect(page.locator('.knowledge-heading h2')).toHaveText(a.title);await page.getByRole('textbox',{name:'Search records'}).fill('Reader Beta');await expect(page.locator('.knowledge-heading h2')).toHaveText(b.title);
   await page.getByRole('textbox',{name:'Search records'}).fill('No matches here');await expect(page.locator('.knowledge-heading h2')).toHaveCount(0);
-  const task=await create(request,'Board edit fixture');await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Board',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill(task.title);await page.getByRole('button',{name:'Edit '+task.title,exact:true}).click();await expect(title(page)).toHaveValue(task.title);
+  const task=await create(request,'Board edit fixture');await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Board',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill(task.title);await action(page,'Edit',task.title);await expect(title(page)).toHaveValue(task.title);
 });
 
 test('move to trash is reversible, keeps links and protects an existing recovery draft',async({page,request})=>{
   const record=await create(request,'Trash browser fixture'),source=await create(request,'Linked trash source');await update(request,source,{relationships:[record.id]});
   await open(page,record);await edit(page);await title(page).fill('Unsaved trash draft');await keep(page).click();
-  await page.getByRole('button',{name:'Move to trash',exact:true}).click();const blocked=page.getByRole('dialog',{name:'Cannot move record'});await expect(blocked).toBeVisible();await blocked.getByRole('button',{name:'Close',exact:true}).click();await expect(page.getByRole('button',{name:'Resume draft'})).toBeVisible();
+  await action(page,'Move to trash');const blocked=page.getByRole('dialog',{name:'Cannot move record'});await expect(blocked).toBeVisible();await blocked.getByRole('button',{name:'Close',exact:true}).click();await expect(page.getByRole('button',{name:'Resume draft'})).toBeVisible();
   await page.getByRole('button',{name:'Resume draft'}).click();acceptDialog(page);await page.getByRole('button',{name:'Discard draft',exact:true}).click();
   await page.getByRole('button',{name:'Return to record',exact:true}).click();
-  await page.getByRole('button',{name:'Move to trash',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Move record to trash?'});await expect(dialog.getByText('1 linked record',{exact:true})).toBeVisible();await expect(dialog.getByText(source.title,{exact:true})).toBeVisible();await expect(dialog.getByRole('button',{name:'Cancel',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);expect(await recordOnDisk(request,record.id)).toBeTruthy();await page.getByRole('button',{name:'Move to trash',exact:true}).click();await dialog.getByRole('button',{name:'Move to trash',exact:true}).click();await expect(page).toHaveURL(/\/trash$/);
+  await action(page,'Move to trash');const dialog=page.getByRole('dialog',{name:'Move record to trash?'});await expect(dialog.getByText('1 linked record',{exact:true})).toBeVisible();await expect(dialog.getByText(source.title,{exact:true})).toBeVisible();await expect(dialog.getByRole('button',{name:'Cancel',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);expect(await recordOnDisk(request,record.id)).toBeTruthy();await action(page,'Move to trash');await dialog.getByRole('button',{name:'Move to trash',exact:true}).click();await expect(page).toHaveURL(/\/trash$/);
   await expect(page.getByRole('button',{name:'Restore '+record.title})).toBeVisible();
   expect(await recordOnDisk(request,record.id)).toBeUndefined();expect((await recordOnDisk(request,source.id)).relationships).toContain(record.id);
   await page.getByRole('button',{name:'Restore '+record.title}).click();await expect(page.getByText('Restored '+record.title+'.',{exact:true})).toBeVisible();
@@ -183,4 +184,20 @@ test('move to trash is reversible, keeps links and protects an existing recovery
 
 test('sort headers reserve their width and date sorting orders authored records',async({page,request})=>{
  const a=await create(request,'Dates Alpha'),b=await create(request,'Dates Beta');await update(request,a,{title:'Dates Alpha edited'});await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Dates');const rows=page.locator('.record-table-title');await expect(rows).toHaveCount(2);const headers=page.locator('.table-wrap thead th');const widths=()=>headers.evaluateAll(nodes=>nodes.map(n=>{const rect=n.getBoundingClientRect();return [Math.round(rect.x*10),Math.round(rect.width*10)];}));const before=await widths();await page.getByRole('button',{name:'Title',exact:true}).click();expect(await widths()).toEqual(before);await page.getByRole('button',{name:'Title',exact:true}).click();expect(await widths()).toEqual(before);await page.getByRole('combobox',{name:'Sort by',exact:true}).selectOption('Created');await expect(page.getByRole('combobox',{name:'Sort direction'})).toHaveValue('Descending');const first=Date.parse(a.createdAt)<Date.parse(b.createdAt)?b.title:'Dates Alpha edited';await expect(rows.first()).toHaveText(first);await page.getByRole('combobox',{name:'Sort by',exact:true}).selectOption('Last edited');await expect(rows.first()).toHaveText('Dates Alpha edited');
+});
+
+test('record menus support keyboard and collection removal without losing search context',async({page,request})=>{
+ const record=await create(request,'Menu fixture target'),otherRecord=await create(request,'Menu fixture other');await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Menu fixture');
+ const trigger=page.getByRole('button',{name:'Actions for '+record.title,exact:true});await trigger.focus();await page.keyboard.press('ArrowDown');const menu=page.getByRole('menu',{name:'Actions for '+record.title});await expect(menu.getByRole('menuitem',{name:'Edit',exact:true})).toBeFocused();await page.keyboard.press('ArrowDown');await expect(menu.getByRole('menuitem',{name:'Move to trash',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(menu).toBeHidden();await expect(trigger).toBeFocused();
+ await trigger.click();await page.getByRole('button',{name:'Actions for '+otherRecord.title,exact:true}).click();await expect(menu).toBeHidden();await page.keyboard.press('Escape');
+ await action(page,'Move to trash',record.title);const dialog=page.getByRole('dialog',{name:'Move record to trash?'});await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await expect(trigger).toBeFocused();await action(page,'Move to trash',record.title);await dialog.getByRole('button',{name:'Move to trash',exact:true}).click();
+ await expect(page).toHaveURL(/\/work$/);await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Menu fixture');await expect(trigger).toHaveCount(0);await expect(page.getByRole('link',{name:otherRecord.title,exact:true})).toBeVisible();await expect(page.getByText('Moved '+record.title+' to Trash.',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'View Trash',exact:true}).click();await page.getByRole('button',{name:'Restore '+record.title,exact:true}).click();await expect(page.getByText('Restored '+record.title+'.',{exact:true})).toBeVisible();
+});
+test('relationship search limits candidates and saves only compatible selected targets',async({page,request})=>{
+ const source=await create(request,'Relationship search fixture'),target=await create(request,'Requirement search target','Requirement'),incompatible=await create(request,'Task search target','Task');
+ await open(page,source);await edit(page);await page.getByLabel('Relationship type',{exact:true}).selectOption('implements');
+ const search=page.getByLabel('Search compatible records',{exact:true}),select=page.getByLabel('Target record',{exact:true});
+ await search.fill('search target');await expect(select.locator('option')).toHaveCount(2);await expect(select.locator('option[value="'+incompatible.id+'"]')).toHaveCount(0);await select.selectOption(target.id);await page.getByRole('button',{name:'Add relationship',exact:true}).click();await expect(page.getByRole('button',{name:'Add relationship',exact:true})).toBeDisabled();await expect(select.locator('option[value="'+target.id+'"]')).toHaveCount(0);
+ await save(page).click();await expect(page.getByText('No unsaved changes',{exact:true})).toBeVisible();expect((await recordOnDisk(request,source.id)).relationships).toContainEqual({kind:'implements',target:target.id});
 });

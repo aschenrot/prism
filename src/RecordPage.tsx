@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { acceptanceDefinition,currentAcceptance,isAcceptanceTest } from '../shared/acceptance';
 import { api } from './api';
 import AcceptanceWorkspace from './AcceptanceWorkspace';
-import { ArrowRight, Pencil, ListChecks, Trash2 } from 'lucide-react';
+import { ArrowRight, ListChecks } from 'lucide-react';
 import type { ProjectRecord } from '../shared/records';
 import type { GitHistory } from '../shared/delivery';
 import { relationshipsFor } from '../shared/relationships';
@@ -12,6 +12,7 @@ import { RecordEvidence } from './DeliveryEvidence';
 import Status from './Status';
 import { draftStorage } from './draftStorage';
 import RouteLink from './RouteLink';
+import RecordActions from './RecordActions';
 const MarkdownBody=lazy(()=>import('./Markdown'));
 function ReviewLink({projectId,test,head,href,onOpen}:{projectId:string;test:ProjectRecord;head:string|undefined;href:string;onOpen:()=>void}){
   const parsed=acceptanceDefinition(test);
@@ -34,11 +35,11 @@ export default function RecordPage({projectId,record,records,unavailable,onOpen,
   const reviewHead=!unavailable&&parsed.state==='available'?head:undefined;
   const nativeReview=repository&&!!definition;
   return <article className="record-page">
-    <header className="record-page-heading"><div><div className="eyebrow">{record.type} / {record.id}</div><h1>{record.title}</h1><div className="record-page-meta"><Status value={record.status}/><span>{record.priority} priority</span>{record.tags.map((tag,i)=><span className="record-tag" key={tag+':'+i}>{tag}</span>)}</div></div><div className="record-page-actions"><button className={nativeReview?'secondary':'primary'} onClick={onEdit} disabled={unavailable||busy}><Pencil size={15}/>{recovery.state==='available'?'Resume draft':isAcceptanceTest(record)?'Edit test definition':'Edit record'}</button><button type="button" className="secondary record-trash-action" disabled={unavailable||busy} onClick={onTrash}><Trash2 size={15}/> Move to trash</button></div></header>
+    <header className="record-page-heading"><div><div className="eyebrow">{record.type} / {record.id}</div><h1>{record.title}</h1><div className="record-page-meta"><Status value={record.status}/><span>{record.priority} priority</span>{record.tags.map((tag,i)=><span className="record-tag" key={tag+':'+i}>{tag}</span>)}</div></div><div className="record-page-actions"><RecordActions record={record} onEdit={onEdit} onTrash={onTrash} disabled={unavailable||busy} editLabel={isAcceptanceTest(record)?'Edit test definition':'Edit'}/></div></header>
     {trashError&&<p role="alert" className="warning">{trashError}</p>}
     {(record.createdAt||record.updatedAt)&&<div className="record-dates">{record.createdAt&&<span>Created <time dateTime={record.createdAt}>{new Date(record.createdAt).toLocaleString()}</time></span>}{record.updatedAt&&<span>Last saved <time dateTime={record.updatedAt}>{new Date(record.updatedAt).toLocaleString()}</time></span>}</div>}
     {unavailable&&<p role="alert" className="warning">The record is unavailable on disk. This is the last loaded version.</p>}
-    {recovery.state==='available'&&<p className="record-recovery-note">An unsaved recovery draft exists. The page below shows the saved record.</p>}
+    {recovery.state==='available'&&<p className="record-recovery-note">An unsaved recovery draft exists. The page below shows the saved record. <button className="secondary" type="button" disabled={unavailable||busy} onClick={onEdit}>Resume draft</button></p>}
     {tests.length>0&&<section className="record-review" aria-label="Linked acceptance tests"><div className="eyebrow"><ListChecks size={16}/> VERIFICATION &amp; ACCEPTANCE</div><h2>Linked tests</h2><p>Start or resume a linked review. Results remain separate from implementation status.</p>{tests.map(test=><ReviewLink key={test.id} projectId={projectId} test={test} head={head} href={hrefFor(test.id)} onOpen={()=>onOpen(test.id)}/>)}</section>}
     {parsed.state==='invalid'&&<p className="warning" role="alert">{parsed.message} Use Edit test definition to repair the case format.</p>}
     {parsed.state==='available'&&!repository&&<p className="overview-note">Revision-bound review runs require an independent Git repository. The test definition remains readable.</p>}

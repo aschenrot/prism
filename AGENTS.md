@@ -63,3 +63,6 @@
 ## Collection operations
 - Place search and contextual creation in shared collection controls, not global navigation. Sort direction is explicit and persisted, with backward-compatible legacy defaults; stable tie-breaks. Reader focus must respect filters. Use the same revision-checked editor for direct edit actions and guard asynchronous navigation against stale entry identity.
 - Removal is reversible trash, never permanent deletion. Preserve original bytes, IDs, inbound relationships and evidence. Warn about affected links, reject unresolved local drafts, validate expected revisions and never overwrite a destination on restore. Use only disposable isolated records for destructive regression tests.
+
+## Shared record commands
+Use the same ellipsis menu for collection and record commands; never make a destructive row click or bypass the existing recovery-aware trash confirmation. Preserve filtered collection context after removal and expose restoration. Provide menu keyboard navigation, focus restoration and outside dismissal; test scroll clipping. Search relationship targets within valid typed endpoints and existing link constraints; do not silently truncate without a count/refine hint.

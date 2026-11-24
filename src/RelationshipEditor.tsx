@@ -5,14 +5,21 @@ import { normalizeRelationship,relationshipKey,relationshipLabels,relationshipIs
 export default function RelationshipEditor({sourceId,sourceType,links,records,onChange}:{sourceId:string;sourceType:Editable['type'];links:Relationship[];records:ProjectRecord[];onChange:(links:Relationship[])=>void}){
   const [kind,setKind]=useState<RelationshipKind>('related-to');
   const [target,setTarget]=useState('');
+  const [search,setSearch]=useState('');
   const byId=new Map(records.map(r=>[r.id,r]));
   const candidates=records.filter(r=>r.id!==sourceId&&!relationshipIssue(kind,sourceType,r.type)&&!links.some(link=>relationshipKey(link)===kind+':'+r.id));
-  const canAdd=candidates.some(r=>r.id===target)&&links.length<200;
+  const terms=search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const matches=candidates.filter(r=>{const text=[r.title,r.id,r.type,...r.tags].join(' ').toLowerCase();return terms.every(term=>text.includes(term));}).sort((a,b)=>a.title.localeCompare(b.title)||a.id.localeCompare(b.id));
+  const visible=matches.slice(0,50);
+  const canAdd=visible.some(r=>r.id===target)&&links.length<200;
   return <div className="relationship-editor">
     <div className="eyebrow">RELATIONSHIPS</div>
-    <label>Relationship type<select value={kind} onChange={e=>{setKind(e.target.value as RelationshipKind);setTarget('');}}>{relationshipKinds.map(k=><option key={k} value={k}>{relationshipLabels[k].outgoing}</option>)}</select></label>
-    <label>Target record<select value={canAdd?target:''} onChange={e=>setTarget(e.target.value)}><option value="">Choose a compatible record…</option>{candidates.map(r=><option key={r.id} value={r.id}>{r.title} ({r.type})</option>)}</select></label>
+    <label>Relationship type<select value={kind} onChange={e=>{setKind(e.target.value as RelationshipKind);setTarget('');setSearch('');}}>{relationshipKinds.map(k=><option key={k} value={k}>{relationshipLabels[k].outgoing}</option>)}</select></label>
+    <label>Search compatible records<input type="search" maxLength={300} placeholder="Title, ID, type or tag…" value={search} onChange={e=>{setSearch(e.target.value);setTarget('');}}/></label>
+    <p className="link-empty" role="status">{matches.length} compatible {matches.length===1?'record':'records'}{matches.length>50?' · showing first 50, refine your search':''}</p>
+    <label>Target record<select value={canAdd?target:''} disabled={!visible.length||links.length>=200} onChange={e=>setTarget(e.target.value)}><option value="">Choose a compatible record…</option>{visible.map(r=><option key={r.id} value={r.id}>{r.title} ({r.type})</option>)}</select></label>
     <button className="secondary" type="button" disabled={!canAdd} onClick={()=>{if(canAdd){onChange([...links,{kind,target}]);setTarget('');}}}>Add relationship</button>
+    {!!candidates.length&&!matches.length&&<p className="link-empty">No matching compatible records. Try a different search.</p>}
     {!candidates.length&&<p className="link-empty">No compatible unlinked records for this relationship.</p>}
     <div className="draft-links">{links.map((link,i)=>{
       const edge=normalizeRelationship(link),destination=byId.get(edge.target);
