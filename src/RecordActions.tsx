@@ -1,7 +1,7 @@
 import { createContext,useContext,useId,useLayoutEffect,useRef,useState } from 'react';
-import { Ellipsis,Pencil,Trash2,Copy,Link2 } from 'lucide-react';
+import { Ellipsis,Pencil,Trash2,Copy,Link2,Inbox } from 'lucide-react';
 import type { ProjectRecord } from '../shared/records';
-export const RecordCommandContext=createContext<{duplicate:(record:ProjectRecord)=>void;copy:(record:ProjectRecord)=>void}|null>(null);
+export const RecordCommandContext=createContext<{duplicate:(record:ProjectRecord)=>void;copy:(record:ProjectRecord)=>void;triage:(record:ProjectRecord)=>void}|null>(null);
 type Props={record:ProjectRecord;onEdit:()=>void;onTrash:()=>void;disabled?:boolean;editLabel?:string};
 export default function RecordActions({record,onEdit,onTrash,disabled=false,editLabel='Edit'}:Props){
   const commands=useContext(RecordCommandContext);
@@ -47,7 +47,7 @@ export default function RecordActions({record,onEdit,onTrash,disabled=false,edit
       else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();event.stopPropagation();const next=event.key==='Home'?0:event.key==='End'?list.length-1:event.key==='ArrowDown'?(index+1)%list.length:(index-1+list.length)%list.length;list[next]?.focus();}
     }}>
       <button role="menuitem" tabIndex={-1} type="button" onClick={()=>run(onEdit)}><Pencil size={15}/>{editLabel}</button>
-      {commands&&<><button role="menuitem" tabIndex={-1} type="button" onClick={()=>run(()=>commands.duplicate(record))}><Copy size={15}/>Duplicate</button><button role="menuitem" tabIndex={-1} type="button" onClick={()=>run(()=>commands.copy(record))}><Link2 size={15}/>Copy record link</button></>}
+      {commands&&<><button role="menuitem" tabIndex={-1} type="button" onClick={()=>run(()=>commands.duplicate(record))}><Copy size={15}/>Duplicate</button><button role="menuitem" tabIndex={-1} type="button" onClick={()=>run(()=>commands.copy(record))}><Link2 size={15}/>Copy record link</button><button role="menuitem" tabIndex={-1} type="button" onClick={()=>run(()=>commands.triage(record))}><Inbox size={15}/>{record.inbox?'Finish triage':'Add to inbox'}</button></>}
       <div className="record-actions-divider" role="separator"/>
       <button role="menuitem" tabIndex={-1} type="button" className="record-actions-danger" onClick={()=>run(onTrash)}><Trash2 size={15}/>Move to trash</button>
     </div>
