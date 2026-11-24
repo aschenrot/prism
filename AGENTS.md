@@ -35,3 +35,7 @@
 ## Integration policy
 - Hosted GitHub Actions is optional and manual-only; local automated verification and human acceptance are the merge gate. Use npm run verify on a clean committed revision; do not claim a dirty or historical report as current evidence. Keep local reports under ignored .prism/cache, and record reviewed outcomes in PRs.
 - After foundation PR #1 is locally verified and accepted, use short-lived topic branches from main, focused PRs and regular history-preserving merge commits. Do not squash or rebase already attributed commits. Never merge without explicit owner approval. Prism owns the internal backlog; GitHub Issues are optional intake, not duplicate tasks.
+
+## Interaction consistency
+- Repeated controls retain a canonical relative order. Default selection and contextual availability must not reorder them. Resolve destination, mode and filters together; never render an unrelated intermediate view intentionally.
+- Keep personal presentation preferences separate from canonical project data and saved views. Validate persisted values against current available modes, provide safe fallback when storage is unavailable, and never rewrite shared definitions implicitly.

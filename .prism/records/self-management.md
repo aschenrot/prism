@@ -6,7 +6,7 @@ status: "In progress"
 priority: "High"
 accent: "teal"
 tags: ["roadmap","current","brief"]
-relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license","typed-link-slice","ux-navigation","interaction-hit-areas","delivery-evidence","git-evidence-slice","local-verification","development-workflow-decision","navigation-stability"]
+relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license","typed-link-slice","ux-navigation","interaction-hit-areas","delivery-evidence","git-evidence-slice","local-verification","development-workflow-decision","navigation-stability","view-preferences"]
 ---
 Current milestone. Use Prism's own repository as the primary development workspace.
 

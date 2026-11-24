@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { destinationsFor,overviewFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters } from '../shared/navigation';
+import { destinationsFor,overviewFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,modeOrder } from '../shared/navigation';
 import { recordSchema,type ProjectRecord,type Editable } from '../shared/records';
 import type { SavedView } from '../shared/views';
 import type { ProjectInfo } from '../shared/projects';
@@ -38,7 +38,7 @@ test('navigation changes destination, view and filters together without an inter
   assert.equal(before.view,'Table');assert.equal(before.filters.type,'Task');
   const next=navigationFor(requirements);
   assert.equal(next.destinationId,'requirements');assert.equal(next.view,'Relationships');assert.equal(next.filters.type,'Requirement');
-  assert.equal(requirements.modes[0],next.view);
+  assert.deepEqual(orderedModes(requirements),['Table','Wiki','Relationships']);
   assert.equal(navigationMode(next,requirements,'Board'),next);
   assert.equal(navigationMode(next,requirements,'Table').view,'Table');
   assert.equal(navigationFor(docs).view,'Wiki');
@@ -49,4 +49,20 @@ test('navigation changes destination, view and filters together without an inter
   const reset=resetNavigationFilters(opened,nav.find(d=>d.id==='library')!);
   assert.equal(reset.savedView,null);assert.equal(reset.filters.type,'All records');assert.equal(reset.filters.search,'');
   assert.equal(reset.view,'Gallery');
+});
+
+test('all contextual toolbars retain a canonical relative order independent of default',()=>{
+  const projects=[project,{...project,profiles:['core','game'] as ProjectInfo['profiles']}, {...project,storage:'standalone' as const}];
+  for(const p of projects)for(const d of destinationsFor(p)){
+    const ordered=orderedModes(d);
+    assert.deepEqual(ordered,modeOrder.filter(mode=>d.modes.includes(mode)));
+    assert.deepEqual(new Set(ordered),new Set(d.modes));
+    assert.ok(ordered.includes(d.mode));
+  }
+  const nav=destinationsFor(project);
+  const requirements=nav.find(d=>d.id==='requirements')!;
+  assert.equal(navigationFor(requirements).view,'Relationships');
+  assert.equal(navigationFor(requirements,'Wiki').view,'Wiki');
+  assert.equal(navigationFor(requirements,'Board').view,'Relationships');
+  assert.equal(navigationFor(requirements,'unknown').view,'Relationships');
 });

@@ -79,3 +79,5 @@ Repository-mode projects with independent Git metadata expose Engineering / Chan
 ## Local verification and review
 
 Stop the development server, commit intended changes, and run `npm run verify` from the Prism repository. This performs npm ci (replaces node_modules), typecheck, tests, build and both dependency audits; the audits and installation need npm registry access or suitable cached packages. A nonzero exit is not a passing gate. The ignored report `.prism/cache/verification/latest.json` is displayed in Quality / Audit. It identifies the tested revision and recorded clean-tree checks, not current dirty state or manual acceptance. Hosted Actions runs only when manually dispatched. Use [development workflow](docs/development-workflow.md) for PR review and history-preserving merges.
+
+View tabs retain a consistent relative order across categories. Prism uses the recommended mode on first visit and remembers explicit mode choices per configured project and category in the current browser profile. Saved views still open with their authored mode. Preferences stay local and are not committed to Git.

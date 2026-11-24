@@ -3,6 +3,8 @@ import type { ProjectRecord } from './records';
 import { defaultFilters,selectRecords,type Filters,type ViewInput,type SavedView } from './views';
 export type RecordMode=ViewInput['mode'];
 export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes';
+// Global visual order is independent of each destination's recommended mode.
+export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Slides','Audit','Repository','Changes','Overview'] as const satisfies readonly DestinationMode[];
 export type Destination={id:string;label:string;description:string;group:string;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
 const dest=(id:string,label:string,description:string,group:string,mode:DestinationMode,type:Filters['type']='All records',modes:DestinationMode[]=[mode]):Destination=>({id,label,description,group,mode,type,modes});
 const common=[
@@ -53,8 +55,12 @@ export function overviewFor(records:ProjectRecord[]){
 
 // A single navigation snapshot defines destination, view, filters and saved-view identity.
 export type NavigationState={destinationId:string;view:DestinationMode;filters:Filters;savedView:SavedView|null};
-export function navigationFor(destination:Destination):NavigationState{
-  return {destinationId:destination.id,view:destination.mode,filters:{...defaultFilters,type:destination.type,sort:destination.id==='work'?'Priority':'Title'},savedView:null};
+export function orderedModes(destination:Destination):DestinationMode[]{
+  return modeOrder.filter(mode=>destination.modes.includes(mode));
+}
+export function navigationFor(destination:Destination,preferred?:unknown):NavigationState{
+  const view=destination.modes.find(mode=>mode===preferred)??destination.mode;
+  return {destinationId:destination.id,view,filters:{...defaultFilters,type:destination.type,sort:destination.id==='work'?'Priority':'Title'},savedView:null};
 }
 export function navigationForSaved(savedView:SavedView):NavigationState{
   return {destinationId:'library',view:savedView.mode,filters:{...savedView.filters},savedView};
