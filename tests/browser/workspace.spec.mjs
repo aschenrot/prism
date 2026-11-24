@@ -529,4 +529,5 @@ test('board status moves use canonical revisions, keyboard control and recovery 
  await page.route('**/api/projects/'+project+'/records/'+c.id+'/properties',async route=>{await update(request,c,{body:'External change'});await route.continue();},{times:1});
  await move(c.title).selectOption('Ready');await expect(page.getByText('Record changed on disk. Refresh before editing its properties.',{exact:true})).toBeVisible();const latest=await recordOnDisk(request,c.id);expect(latest.status).toBe('Concept');expect(latest.body).toBe('External change');
  await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Board move');
+ await page.getByRole('textbox',{name:'Search records'}).fill(a.title);await page.getByRole('button',{name:'Filter',exact:true}).click();await page.getByLabel('Status',{exact:true}).selectOption('Ready');await move(a.title).focus();await move(a.title).selectOption('Concept');await expect(board.getByText('No matching records. Create a record or change your filters.',{exact:true})).toBeVisible();await expect(board).toBeFocused();
 });

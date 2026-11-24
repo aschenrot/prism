@@ -17,6 +17,7 @@ export default function StatusBoard({records,disabled,pending,onMove,renderCard}
  };
  return <section ref={board} tabIndex={-1} aria-label="Status board">
  <p className="board-instructions">Drag a card by its handle or use Move to. Changes save the record status; cards follow the current sort and filters.</p>
+ {!records.length&&<p role="status">No matching records. Create a record or change your filters.</p>}
  <div className="board">{statuses.map(status=>{
   const items=records.filter(r=>r.status===status);
   return <section key={status} className={'column'+(hover===status?' board-drop-target':'')} aria-label={status+' column'}
