@@ -12,3 +12,6 @@ Universal inbox and templates; search records, docs and source with a rebuildabl
 
 
 First search slice: see project-search. Build a bounded read-on-demand projection from canonical saved records and allowed repository files; no persistent database yet. Explicit matched fields and incomplete scan counts, isolated project scope. Templates and inbox follow separately.
+
+
+Reusable record templates: see record-templates. Separate versioned project-owned definitions; validated application into independent records. Inbox triage remains separate.
