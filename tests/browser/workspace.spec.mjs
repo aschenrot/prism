@@ -668,6 +668,7 @@ test('category navigation never automatically opens an empty collection search a
  await page.goBack();await expect(input).toHaveValue(record.title);await expect(page.getByRole('link',{name:record.title,exact:true})).toBeVisible();
  await page.getByRole('link',{name:record.title,exact:true}).click();await expect(page.getByRole('heading',{name:record.title,exact:true})).toBeVisible();await expect(input).toHaveCount(0);await expect(toolbar).toHaveCount(0);
  await page.goBack();await expect(input).toHaveValue(record.title);
+ await toolbar.getByRole('button',{name:'Clear search',exact:true}).click();await expect(input).toHaveValue('');await expect(input).toBeFocused();await input.fill(record.title);
  await toolbar.getByRole('button',{name:'Clear and close search',exact:true}).click();await expect(input).toHaveCount(0);await expect(trigger).toBeFocused();
  await nav.getByRole('link',{name:'Quality',exact:true}).click();await expect(page).toHaveURL(/\/quality$/);await expect(toolbar).toHaveCount(0);
  await nav.getByRole('link',{name:'Data library',exact:true}).click();await page.getByRole('button',{name:'Search',exact:true}).click();await expect(page.getByLabel('Search this project',{exact:true})).toBeVisible();await expect(input).toHaveCount(0);await expect(toolbar).toHaveCount(0);

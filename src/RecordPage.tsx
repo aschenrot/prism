@@ -31,6 +31,7 @@ export default function RecordPage({projectId,githubRepository,record,records,in
   const schemaQuery=useProjectSchema(projectId);
   const schema=!schemaQuery.isError&&schemaQuery.data?.state==='available'?schemaQuery.data.definition:undefined;
   const links=relationshipsFor(records,record.id);
+  const linkCount=links.outgoing.length+links.incoming.length;
   const tests=[...new Map([...links.outgoing,...links.incoming].flatMap(link=>link.record?.type==='Test'&&link.id!==record.id?[[link.id,link.record] as const]:[])).values()];
   const recovery=draftStorage.read(projectId,record.id);
   const parsed=acceptanceDefinition(record);
@@ -56,7 +57,7 @@ export default function RecordPage({projectId,githubRepository,record,records,in
     {parsed.state==='available'&&!repository&&<p className="overview-note">Revision-bound review runs require an independent Git repository. The test definition remains readable.</p>}
     {nativeReview&&definition?<AcceptanceWorkspace key={record.id} projectId={projectId} record={record} definition={definition} head={reviewHead} onBusyChange={onBusyChange}/>:<section className="record-reading" aria-label={record.type==='Test'?'Test instructions':'Record content'}><h2>{record.type==='Test'?'Test instructions and results':record.type==='Document'?'Document':'Details'}</h2><Suspense fallback={<p role="status" className="markdown-loading">Loading record content…</p>}><MarkdownBody body={record.body}/></Suspense>{record.type==='Test'&&<p className="overview-note">Markdown checkboxes are read-only. Native execution is available for supported acceptance definitions in Git repositories.</p>}</section>}
     <CustomPropertyReadout projectId={projectId} record={record} records={records}/>
-    <RecordDisclosure title="Relationships" summary={String(links.outgoing.length+links.incoming.length)+" links"}><RecordLinks records={records} id={record.id} onSelect={onOpen} hrefFor={hrefFor}/></RecordDisclosure>
+    <RecordDisclosure title="Relationships" summary={linkCount+(linkCount===1?" link":" links")}><RecordLinks records={records} id={record.id} onSelect={onOpen} hrefFor={hrefFor}/></RecordDisclosure>
     {repository&&<RecordDisclosure title="Implementation evidence" summary={!historyError&&history?.state==="available"?String(linkedCommits(record,history).length)+" linked in loaded history":undefined}><RecordEvidence record={record} history={history} loading={historyLoading} error={historyError} onRefresh={onRefresh}/></RecordDisclosure>}
   </article>;
 }
