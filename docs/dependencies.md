@@ -47,3 +47,6 @@ Lockfile source-control/configuration scope is complete; clean cross-platform CI
 
 ## Current policy: local verification
 Hosted CI is optional, manual-only. Use npm run verify from a clean committed checkout; it runs npm ci, typecheck, tests, build, npm audit --audit-level=high and npm audit --omit=dev --audit-level=high. A failing or unavailable audit is not a pass. This replaces prior mandatory CI policy; previous entries remain historical. Review install scripts independently and never approve them automatically.
+
+## Local verification run after c6a423f
+Owner-reported Windows Node 26.13.1: npm ci installed 231 packages; full and production audits both returned zero vulnerabilities. The existing esbuild@0.28.2 install-script approval warning remains; no approval or dependency change is required to fix the reported TS2339 frontend diagnostic. Review that exact script separately. Test suite reported 22 pass, 1 expected permission skip; typecheck/build failed on the same interface diagnostic. New revision must be verified before merge.

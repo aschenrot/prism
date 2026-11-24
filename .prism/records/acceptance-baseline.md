@@ -13,3 +13,5 @@ User-reported evidence from the dependency migration: Windows, Node 26.13.1; npm
 This is historical evidence, not a guarantee for subsequent commits. The owner later committed the lockfile, inspected at bb3d0f0. That later lockfile is not proof of reproducing this historical test run. Latest CI at b0bcb3f reported failure; no successful newer run is established. Reference: docs/dependencies.md.
 
 The owner has identified exhausted hosted Actions allowance; prior CI failures are historical and no longer a merge gate. New local results are required for the current branch.
+
+Owner-reported local run after c6a423f: locked install succeeded, 22 of 23 tests passed with one expected Windows symlink skip, both audits returned zero vulnerabilities. Typecheck and build failed on the same TS2339 diagnostic in LocalVerification.tsx. The local verifier produced evidence and rejected the gate. See local-verification for scope and required rerun.
