@@ -2,7 +2,7 @@
 id: view-preferences
 type: Task
 title: Consistent view controls and local preferences
-status: In progress
+status: Ready
 priority: High
 accent: teal
 tags: [current, design, usability]
@@ -25,3 +25,6 @@ Owner feedback: the Wiki, Table and Relationships controls change order between 
 - Preserve atomic navigation and dirty record editor state.
 
 Implementation: shared/navigation.ts, src/viewPreferences.ts, src/App.tsx. Tests: tests/navigation.test.ts and tests/view-preferences.test.ts. Runtime verification pending. Browser preferences are scoped by origin and registry project ID; not shared across machines or different origins. Only mode preference is persisted, not filters or active destination.
+
+## Foundation acceptance
+Owner explicitly accepted foundation PR #1. Local verification passed at 859efb773d22544fed85567e01f4623d35f788d0 on Windows, Node 26.13.1: locked install, typecheck, 27 tests passed / one expected file-symlink permission skip, production build and both audits (zero vulnerabilities). Regular merge commit 156700abada6ec691e5fb0e7e4225cc2fffe9af0 has the same tree as the tested head. This is evidence of the accepted baseline, not verification of later editor changes.

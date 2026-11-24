@@ -39,3 +39,23 @@
 ## Interaction consistency
 - Repeated controls retain a canonical relative order. Default selection and contextual availability must not reorder them. Resolve destination, mode and filters together; never render an unrelated intermediate view intentionally.
 - Keep personal presentation preferences separate from canonical project data and saved views. Validate persisted values against current available modes, provide safe fallback when storage is unavailable, and never rewrite shared definitions implicitly.
+
+## Editing reliability
+- Treat an unsaved draft as separate from canonical data. Retain its original revision and editable baseline. Validate at commit, not by trimming away intermediate input on every keystroke. Never replace an external revision without explicit review and a fresh expected-revision check.
+- Recovery is best effort, not a backup. Report storage failure and competing recovery changes; do not silently discard or overwrite recoverable work. Explicit discard, recovery and export must remain distinguishable from canonical save.
+
+## Acceptance handoff
+- Each substantial implementation PR must have a linked, actionable Test record with stable case IDs, setup, action, expected result, exact tested revision/environment and explicit acceptance decision. Leave new checks unchecked until observed. Keep the test discoverable through the Acceptance queue and link from the implementation task; do not duplicate the checklist in chat or PR text as the authoritative copy.
+- Reconcile accepted narrow tasks promptly without claiming broad feature or release acceptance. Separate historical evidence from current next actions. Verification runs use clean revisions; acceptance record edits are reviewed separately and must not include scratch project data.
+
+## Workspace navigation
+- Opening a record is a reading/navigation action, never implicitly entering edit mode. Use stable project/record identities in addresses; real links support browser semantics. Keep sidebar and breadcrumb navigation available in the main workspace, and preserve history context separately from canonical data.
+- Breadcrumbs express hierarchy; Back/Forward express visit order. Guard dirty and pending edits across all navigation paths, including browser traversal. Never infer acceptance from a record link or completed-looking UI.
+
+## Acceptance execution and motion
+- For substantial PR reviews author acceptance-tagged Test records with grouped stable case IDs, bold short titles, actions and explicit Expected: outcomes using the supported Markdown convention. Keep definitions separate from local execution files. Do not derive passed results from old checkmarks. Capture actual tested revision, reviewer/environment, case outcomes and explicit decision. Treat historical/finalized runs as read-only; never auto-merge or complete tasks.
+- Motion communicates navigation, not data changes. Keep the shell stable, use short enter-only transitions, reverse direction on Back and honor reduced motion. Do not delay correct state or animate polling/filter updates. Protect unsaved observations across navigation and do not represent unsaved text as persisted evidence.
+
+## Reduce review burden
+- Developer-owned technical regressions belong in automated tests and a linked regression specification; keep owner acceptance focused on usability, visual quality and judgment. Never replace an unexecuted or uncovered check with a fabricated pass. Browser runs use isolated fixture registries and must refuse an existing live workspace. Require exact locked browser tooling and revision-specific execution evidence before claiming browser verification.
+- Cancel editing restores the recovery state at session entry, distinct from retaining or discarding the entire draft. Guard feedback uses non-blocking notifications; never hide failed saves or override conflicting recovery data. Copy/share only saved review evidence with an explicit owner action.

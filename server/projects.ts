@@ -2,9 +2,12 @@ import { lstat, mkdir, readFile, realpath } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { parse } from 'yaml';
 import { registrySchema, type ProjectConfig, type ProjectInfo } from '../shared/projects';
-import { MissingError, RecordStore } from './store';
+import { ConflictError,MissingError, RecordStore } from './store';
 import { ViewStore } from './views';
-export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; views:ViewStore };
+import { AcceptanceStore } from './acceptance';
+import { gitHistory } from './git';
+import { readVerification } from './verification';
+export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; views:ViewStore; acceptance:AcceptanceStore };
 export class Projects {
   private constructor(private projects:Map<string,OpenProject>) {}
   static async open(configs:ProjectConfig[]) {
@@ -21,7 +24,15 @@ export class Projects {
         if(!(await lstat(data)).isDirectory())throw new Error('Project data directory must be a real directory');
       }
       const {root:_,...info}=config;
-      result.set(info.id,{info,root,store:await RecordStore.open(data),views:await ViewStore.open(data)});
+      const store=await RecordStore.open(data);
+      const acceptance=new AcceptanceStore(data,async id=>{
+        if(info.storage!=='repository')throw new ConflictError('Revision-bound acceptance requires a connected Git repository');
+        const record=await store.get(id),history=await gitHistory(root);
+        if(history.state!=='available')throw new ConflictError('Could not establish an independent Git revision for this project');
+        const verification=await readVerification(root);
+        return {record,head:history.head,verification:verification.state==='available'?verification.report:null};
+      });
+      result.set(info.id,{info,root,store,views:await ViewStore.open(data),acceptance});
     }
     return new Projects(result);
   }

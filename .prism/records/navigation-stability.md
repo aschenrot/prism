@@ -2,7 +2,7 @@
 id: navigation-stability
 type: Task
 title: Stabilize category and view transitions
-status: In progress
+status: Ready
 priority: High
 accent: teal
 tags: [current, design, usability]
@@ -16,3 +16,6 @@ Owner reports a brief flash of Table or another view before the destination sett
 Implementation: atomic navigation snapshot; mode tab order follows destination definition; synchronous Knowledge shell with lazy Markdown body only; key knowledge focus by destination and saved-view identity; stable scrollbar gutter. No intentional table fallback or artificial delay. Preserve dirty inspector state. Regression test covers atomic state and contextual modes. Manual acceptance: switch repeatedly between Work, Requirements, Strategy, Documentation, Decisions, Architecture and saved views on fresh and warm loads; ensure correct selected mode, no unrelated table or old record, no lateral layout jump. Test with clean and dirty inspector. Browser validation pending.
 
 Follow-up: destination-first ordering is superseded by one canonical relative mode order, while default selection remains independent. View preference is resolved before the atomic navigation snapshot is set. See view-preferences. Browser verification remains open.
+
+## Foundation acceptance
+Owner explicitly accepted foundation PR #1. Local verification passed at 859efb773d22544fed85567e01f4623d35f788d0 on Windows, Node 26.13.1: locked install, typecheck, 27 tests passed / one expected file-symlink permission skip, production build and both audits (zero vulnerabilities). Regular merge commit 156700abada6ec691e5fb0e7e4225cc2fffe9af0 has the same tree as the tested head. This is evidence of the accepted baseline, not verification of later editor changes.

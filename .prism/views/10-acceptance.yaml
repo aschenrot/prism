@@ -1,0 +1,10 @@
+version: 1
+id: 10-acceptance
+title: "10 · Acceptance queue"
+mode: Wiki
+filters:
+  type: "Test"
+  status: "In progress"
+  priority: "Any priority"
+  search: "acceptance"
+  sort: "Priority"

@@ -11,6 +11,7 @@ import { gitHistory } from './git';
 import { readVerification } from './verification';
 import { z } from 'zod';
 import { viewInputSchema } from '../shared/views';
+import { startAcceptanceSchema,updateAcceptanceSchema } from '../shared/acceptance';
 
 const projects = await loadProjects();
 const app = Fastify({ logger:true, bodyLimit: 1_000_000 });
@@ -63,6 +64,12 @@ app.delete('/api/projects/:projectId/views/:id',async request=>{
   const input=z.object({expectedRevision}).strict().parse(request.body);
   return projectFor(request).views.remove(viewId(request),input.expectedRevision);
 });
+const acceptanceParams=z.object({testId:idSchema});
+const runParams=z.object({testId:idSchema,runId:idSchema});
+app.get('/api/projects/:projectId/acceptance/:testId',async request=>projectFor(request).acceptance.list(acceptanceParams.parse(request.params).testId));
+app.post('/api/projects/:projectId/acceptance/:testId',async (request,reply)=>reply.code(201).send(await projectFor(request).acceptance.create(acceptanceParams.parse(request.params).testId,startAcceptanceSchema.parse(request.body))));
+app.get('/api/projects/:projectId/acceptance/:testId/:runId',async request=>{const {testId,runId}=runParams.parse(request.params);return projectFor(request).acceptance.get(testId,runId);});
+app.put('/api/projects/:projectId/acceptance/:testId/:runId',async request=>{const {testId,runId}=runParams.parse(request.params);return projectFor(request).acceptance.update(testId,runId,updateAcceptanceSchema.parse(request.body));});
 const dist = resolve('dist');
 if (existsSync(dist)) await app.register(fastifyStatic,{root:dist});
 await app.listen({host:'127.0.0.1',port:4174});
