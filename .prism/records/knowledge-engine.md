@@ -24,6 +24,9 @@ relationships:
   - record-actions-acceptance
   - kind: contains
     target: record-management-increment
+  - kind: contains
+    target: hosted-delivery-increment
+  - m1-milestone-acceptance
 ---
 Dogfood requirements before extending the generic engine. Support custom entity schemas, typed relationships, schema-driven editors, templates, inbox, richer search, persistent edits and project management views. Acceptance: a requirement linked to an objective and task is edited once and updates relevant views; old records remain valid or migrate explicitly.
 
@@ -43,3 +46,6 @@ Accepted PR #10: owner confirmed both automated gates and the UX passed after fi
 
 Owner confirmed the npm and browser gates passed at intermediate PR #11 head 3775a7ae79a111f0ec6be30e9abb44e90eff557e (reported in development chat, no detailed new report counts supplied). This is historical evidence for the menu/relationship slice only. The expanded PR requires fresh exact-revision verification and one combined UX acceptance. No merge approval has been given for PR #11.
 Explicit delivery scope now uses Contains edges, distinct from generic milestone links. Keep a coherent increment across several focused commits; one combined acceptance before merge.
+
+## Current M1 delivery policy
+Owner delegated verified in-scope technical integrations and deferred product acceptance to milestone completion on 2026-11-24. See development-workflow-decision and m1-milestone-acceptance. PR #11 was integrated and accepted as recorded in record-actions-acceptance. PR #13 achieved full hosted verification; integration remains blocked by conflicting linear-history protection. Continue the next increment on a dependent topic branch without bypassing protection. Current implementation scope: hosted-delivery-increment. Historical approval statements above are superseded by the recorded decisions at their respective revisions.
