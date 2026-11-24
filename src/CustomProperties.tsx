@@ -13,13 +13,13 @@ function optionsFor(field:PropertyDefinition,records:ProjectRecord[],sourceId:st
 }
 function PropertyInput({field,value,records,sourceId,onChange,disabled}:{field:PropertyDefinition;value:CustomValue|undefined;records:ProjectRecord[];sourceId:string;onChange:(value:CustomValue|undefined)=>void;disabled:boolean}){
  const options=optionsFor(field,records,sourceId);
- if(field.kind==='boolean')return <label>{field.label}<select disabled={disabled} value={value===true?'yes':value===false?'no':value===undefined?'':'invalid'} onChange={e=>onChange(e.target.value===''?undefined:e.target.value==='yes')}><option value="">Not set</option>{value!==undefined&&typeof value!=='boolean'&&<option value="invalid" disabled>Invalid stored value: {display(value)}</option>}<option value="yes">Yes</option><option value="no">No</option></select></label>;
+ if(field.kind==='boolean')return <label>{field.label}<select aria-label={field.label} disabled={disabled} value={value===true?'yes':value===false?'no':value===undefined?'':'invalid'} onChange={e=>onChange(e.target.value===''?undefined:e.target.value==='yes')}><option value="">Not set</option>{value!==undefined&&typeof value!=='boolean'&&<option value="invalid" disabled>Invalid stored value: {display(value)}</option>}<option value="yes">Yes</option><option value="no">No</option></select></label>;
  if(field.kind==='enum'||field.kind==='reference'){
   const selected=value===undefined?'':typeof value==='string'&&options.some(o=>o.id===value)?value:'__invalid__';
-  return <label>{field.label}<select disabled={disabled} value={selected} onChange={e=>onChange(e.target.value||undefined)}><option value="">Not set</option>{selected==='__invalid__'&&<option value="__invalid__" disabled>Unavailable value: {display(value)}</option>}{options.map(o=><option key={o.id} value={o.id}>{o.label}</option>)}</select></label>;
+  return <label>{field.label}<select aria-label={field.label} disabled={disabled} value={selected} onChange={e=>onChange(e.target.value||undefined)}><option value="">Not set</option>{selected==='__invalid__'&&<option value="__invalid__" disabled>Unavailable value: {display(value)}</option>}{options.map(o=><option key={o.id} value={o.id}>{o.label}</option>)}</select></label>;
  }
  // Keep incomplete numeric/date text in the recoverable draft; validate on save.
- return <label>{field.label}<input disabled={disabled} inputMode={field.kind==='number'?'decimal':undefined} placeholder={field.kind==='date'?'YYYY-MM-DD':undefined} maxLength={2000} value={value===undefined?'':String(value)} onChange={e=>{
+ return <label>{field.label}<input aria-label={field.label} disabled={disabled} inputMode={field.kind==='number'?'decimal':undefined} placeholder={field.kind==='date'?'YYYY-MM-DD':undefined} maxLength={2000} value={value===undefined?'':String(value)} onChange={e=>{
   const raw=e.target.value;
   if(field.kind==='number'&&raw.trim()!==''&&/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(raw)&&Number.isFinite(Number(raw)))onChange(Number(raw));
   else onChange(raw===''&&field.kind!=='text'?undefined:raw);
