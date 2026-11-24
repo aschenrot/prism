@@ -12,8 +12,9 @@ relationships:
   - kind: implements
     target: data-integrity
   - knowledge-engine
+  - editor-acceptance
 ---
-PR #2 scope: keep a versioned recovery copy in browser-local storage per project and record, including base revision and editable baseline. Reopening a record restores unsaved input, even temporarily invalid title/tag text. Closing a dirty editor retains confirmed recovery rather than discarding it. Explicit discard and JSON export remain available. Storage failures and competing local draft edits are visible and prevent silent close. External revisions use a three-way field comparison; overlapping fields require explicit disk/local choices; applying the resolution changes the draft base, never the canonical record. Saving still requires schema validation and expected revision. A server 409 triggers refresh without discarding the draft.
+PR #9 implementation scope: keep a versioned recovery copy in browser-local storage per project and record, including base revision and editable baseline. Reopening a record restores unsaved input, even temporarily invalid title/tag text. Closing a dirty editor retains confirmed recovery rather than discarding it. Explicit discard and JSON export remain available. Storage failures and competing local draft edits are visible and prevent silent close. External revisions use a three-way field comparison; overlapping fields require explicit disk/local choices; applying the resolution changes the draft base, never the canonical record. Saving still requires schema validation and expected revision. A server 409 triggers refresh without discarding the draft.
 
 ## Acceptance
 - Edit a disposable record, close and reopen, reload browser and reopen: recover text and metadata without changing canonical Markdown.
@@ -26,3 +27,5 @@ PR #2 scope: keep a versioned recovery copy in browser-local storage per project
 Limitations: browser storage is not a backup or cross-machine sync; no atomic browser-tab lock, orphan draft browser, automatic save, undo/redo or text-level merge. An already-open record keeps its editor mounted if its canonical file disappears or becomes malformed; save is disabled and draft export remains available. After closing or restarting, restore the file before reopening an orphan draft. Registry project IDs must remain stable; reuse of a project ID may reveal prior browser-local recovery. Manual acceptance pending.
 
 - Manual acceptance additionally covers external removal of the selected file: editor stays open, export remains possible, and save is disabled until a valid record returns.
+
+Current review: implementation at 742f7846e049c13dc63f026a37bd12d56ccb48e5 is in draft PR #9. Follow editor-acceptance for the canonical actionable checklist and actual outcomes. Implementation remains In progress until accepted; no test is pre-marked passed.

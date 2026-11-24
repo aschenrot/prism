@@ -17,6 +17,6 @@ Add typed edges such as implements, verifies, depends-on and blocks, with explic
 - Keep typed and generic links distinct, including when they reference the same record.
 - Test mixed persistence, invalid endpoints, backlinks and metadata preservation using isolated fixtures.
 
-Acceptance pending: run typecheck, tests and build; create a typed link in Prism, reload, inspect the inverse label and verify old projects still open. A verifies link is an authored claim, not proof of test execution. Custom relationship vocabularies, cycle analysis, traceability matrices and evidence integration remain later work.
+The first editing slice was accepted as part of PR #1; see typed-link-slice. Broader traceability and evidence integration remain open. A verifies link is an authored claim, not proof of test execution. Custom relationship vocabularies, cycle analysis, traceability matrices and evidence integration remain later work.
 
-First slice is committed at 637e659212512fbb811bf3d91b05eb3aaaa393b2. The broader feature remains open for verification and subsequent traceability work.
+First slice is committed at 637e659212512fbb811bf3d91b05eb3aaaa393b2. The broader feature remains open for subsequent traceability work.

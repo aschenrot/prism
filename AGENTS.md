@@ -43,3 +43,7 @@
 ## Editing reliability
 - Treat an unsaved draft as separate from canonical data. Retain its original revision and editable baseline. Validate at commit, not by trimming away intermediate input on every keystroke. Never replace an external revision without explicit review and a fresh expected-revision check.
 - Recovery is best effort, not a backup. Report storage failure and competing recovery changes; do not silently discard or overwrite recoverable work. Explicit discard, recovery and export must remain distinguishable from canonical save.
+
+## Acceptance handoff
+- Each substantial implementation PR must have a linked, actionable Test record with stable case IDs, setup, action, expected result, exact tested revision/environment and explicit acceptance decision. Leave new checks unchecked until observed. Keep the test discoverable through the Acceptance queue and link from the implementation task; do not duplicate the checklist in chat or PR text as the authoritative copy.
+- Reconcile accepted narrow tasks promptly without claiming broad feature or release acceptance. Separate historical evidence from current next actions. Verification runs use clean revisions; acceptance record edits are reviewed separately and must not include scratch project data.
