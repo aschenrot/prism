@@ -7,6 +7,7 @@ import { createSchema, idSchema, updateSchema } from '../shared/records';
 import { ConflictError, MissingError } from './store';
 import { loadProjects } from './projects';
 import { indexRepository, readRepositoryFile } from './repository';
+import { gitHistory } from './git';
 import { z } from 'zod';
 import { viewInputSchema } from '../shared/views';
 
@@ -37,6 +38,7 @@ const projectFor = (request:{params:unknown}) => projects.get(idSchema.parse((re
 app.get('/api/projects', async () => projects.list());
 app.get('/api/projects/:projectId/records', async request => projectFor(request).store.list());
 app.get('/api/projects/:projectId/repository', async request => {const p=projectFor(request);return p.info.storage==='repository'?indexRepository(p.root):{files:[],truncated:false};});
+app.get('/api/projects/:projectId/changes',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return gitHistory(p.root);});
 app.get('/api/projects/:projectId/file', async request => {const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readRepositoryFile(p.root,z.object({path:z.string().min(1).max(500)}).parse(request.query).path);});
 app.post('/api/projects/:projectId/records', async (request, reply) => {
   const input = createSchema.parse(request.body);

@@ -15,3 +15,5 @@ Inspect the actual GitHub Actions runs and logs; earlier runs failed. Local succ
 Latest observed: run 45327506174 at b0bcb3fd03dc5817b002eecdffe2a95f49114932 reports failure for all four OS/Node matrix jobs, with no step details returned in the job summaries. Root cause still unknown. https://github.com/aschenrot/prism/actions/runs/45327506174
 
 Acceptance includes clean npm ci from the committed lockfile on Windows and Linux, passing typecheck/test/build and security audit. This is separate from the completed lockfile commit task.
+
+Observed run 45329516315 at bdfa7d32989b313b7fcf23bb294610527262c43c reports failure. No new successful CI result established. https://github.com/aschenrot/prism/actions/runs/45329516315

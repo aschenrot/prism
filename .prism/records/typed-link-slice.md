@@ -13,6 +13,7 @@ relationships:
   - knowledge-engine
   - kind: depends-on
     target: lockfile
+implementationCommits: ["637e659212512fbb811bf3d91b05eb3aaaa393b2"]
 ---
 ## Acceptance
 A record may retain its original string links and add explicit typed edges. The editor offers compatible targets and shows direction; inverse labels are derived, not written as duplicate edges. Malformed edge shapes are rejected; missing or incompatible targets are visible in Audit. Existing metadata and revision checks remain intact.

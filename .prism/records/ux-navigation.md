@@ -11,6 +11,7 @@ relationships:
     target: visual-quality
   - self-management
   - self-workspace
+implementationCommits: ["b0bcb3fd03dc5817b002eecdffe2a95f49114932"]
 ---
 Owner feedback: current information presentation and navigation are confusing. Replace record-type-first navigation with project-purpose destinations and context-specific view choices. Keep the underlying canonical data, typed relationships and saved views.
 

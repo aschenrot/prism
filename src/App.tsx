@@ -11,6 +11,8 @@ import { RecordLinks } from './RecordLinks';
 import RelationshipEditor from './RelationshipEditor';
 import Artwork from './Artwork';
 import Status from './Status';
+import { Changes,RecordEvidence } from './DeliveryEvidence';
+import { deliveryLabel,type GitHistory } from '../shared/delivery';
 import WorkspaceOverview from './WorkspaceOverview';
 import { destinationsFor,type DestinationMode } from '../shared/navigation';
 const Knowledge=lazy(()=>import('./Knowledge').then(module=>({default:module.Knowledge})));
@@ -19,7 +21,7 @@ import { defaultFilters,selectRecords,modes,type Filters,type SavedView,type Vie
 
 const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen}] as const;
 type View = DestinationMode;
-const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,presentations:Presentation,library:Database,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image};
+const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,changes:GitBranch,presentations:Presentation,library:Database,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image};
 const excerpt = (body:string) => body.trim().split('\n').find(line => line.trim() && !line.startsWith('#')) || 'No description yet.';
 function RecordCard({record,selected,onSelect,gallery=false}:{record:ProjectRecord;selected:boolean;onSelect:()=>void;gallery?:boolean}) {
   return <button className={'record-card '+(selected?'selected ':'')+(gallery?'gallery-card':'')} onClick={onSelect} aria-pressed={selected}>
@@ -27,7 +29,7 @@ function RecordCard({record,selected,onSelect,gallery=false}:{record:ProjectReco
     <h3>{record.title}</h3><p>{excerpt(record.body)}</p><div className="card-footer"><span>{record.tags[0] || record.priority+' priority'}</span>{gallery ? <Status value={record.status}/> : <span>{record.priority}</span>}</div></div>
   </button>;
 }
-function Inspector({projectId,record,records,onSelect,onClose,onBusyChange,expanded,onExpand}:{projectId:string;record:ProjectRecord;records:ProjectRecord[];onSelect:(id:string)=>void;onClose:()=>void;onBusyChange:(value:boolean)=>void;expanded:boolean;onExpand:()=>void}) {
+function Inspector({projectId,record,records,onSelect,onClose,onBusyChange,expanded,onExpand,history,historySupported,historyLoading,historyError,onRefreshHistory}:{projectId:string;record:ProjectRecord;records:ProjectRecord[];onSelect:(id:string)=>void;onClose:()=>void;onBusyChange:(value:boolean)=>void;expanded:boolean;onExpand:()=>void;history:GitHistory|undefined;historySupported:boolean;historyLoading:boolean;historyError:boolean;onRefreshHistory:()=>void}) {
   const qc=useQueryClient();
   const [draft,setDraft]=useState<Editable>(()=>editableSchema.parse(recordToEdit(record)));
   const [revision,setRevision]=useState(record.revision);
@@ -60,7 +62,7 @@ function Inspector({projectId,record,records,onSelect,onClose,onBusyChange,expan
       {stale&&dirty&&<div className="warning" role="alert">Changed on disk. Copy any unsaved text before reloading.<button type="button" className="secondary" onClick={reset}>Reload record</button></div>}
       {mutation.error&&<p className="warning" role="alert">{mutation.error.message}</p>}
       <div className="save-row"><span>{dirty?'Unsaved changes':'Saved to disk'}</span><button className="primary" type="submit" disabled={!dirty||stale||mutation.isPending}>{mutation.isPending?'Saving…':'Save'}</button></div>
-    </form><RecordLinks records={records} id={record.id} onSelect={onSelect}/><div className="record-id">ID / {record.id}</div>
+    </form>{historySupported&&<RecordEvidence record={record} history={history} loading={historyLoading} error={historyError} onRefresh={onRefreshHistory}/>}<RecordLinks records={records} id={record.id} onSelect={onSelect}/><div className="record-id">ID / {record.id}</div>
   </aside>;
 }
 function recordToEdit(r:ProjectRecord):Editable {return {title:r.title,type:r.type,status:r.status,priority:r.priority,accent:r.accent,tags:r.tags,relationships:r.relationships,body:r.body};}
@@ -83,6 +85,9 @@ function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;proje
   const qc=useQueryClient();
   const query=useQuery({queryKey:['records',projectId],queryFn:()=>api.list(projectId),refetchInterval:2500});
   const records=query.data?.records||[];
+  const historyQuery=useQuery({queryKey:['changes',projectId],queryFn:()=>api.changes(projectId),enabled:project.storage==='repository',refetchInterval:20000,staleTime:10000,retry:false});
+  const history=historyQuery.data;
+  const refreshHistory=()=>{void historyQuery.refetch();};
   const [view,setView]=useState<View>('Overview'),[filter,setFilter]=useState<Filters['type']>('All records'),[search,setSearch]=useState(''),[selected,setSelected]=useState<string|null>(null),[slide,setSlide]=useState(0),[creating,setCreating]=useState(false),[newTitle,setNewTitle]=useState(''),[newType,setNewType]=useState<Editable['type']>('Idea');
   const [statusFilter,setStatusFilter]=useState<Filters['status']>('Any status'),[priorityFilter,setPriorityFilter]=useState<Filters['priority']>('Any priority'),[sort,setSort]=useState<Filters['sort']>('Title'),[savedView,setSavedView]=useState<SavedView|null>(null);
   const filters:Filters={type:filter,search,status:statusFilter,priority:priorityFilter,sort};
@@ -121,16 +126,17 @@ function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;proje
       {query.isPending&&<div className="empty">Opening your workspace…</div>}
       {query.error&&<div className="warning" role="alert"><AlertTriangle size={16}/> {query.error.message}</div>}
       {!!query.data?.errors.length&&<div className="warning" role="alert">{query.data.errors.map(e=><div key={e.file}>{e.file}: {e.message}</div>)}</div>}
-      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Wiki','Relationships'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
-      {view==='Overview'&&!query.isPending&&<WorkspaceOverview project={project} records={records} findings={findings.length} incomplete={!!query.error||!!query.data?.errors.length} onSelect={select} onNavigate={navigate}/>}
+      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Changes','Wiki','Relationships'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
+      {view==='Overview'&&!query.isPending&&<WorkspaceOverview project={project} records={records} findings={findings.length} incomplete={!!query.error||!!query.data?.errors.length} history={history} historyError={historyQuery.isError} onSelect={select} onNavigate={navigate}/>}
       {(view==='Wiki'||view==='Relationships')&&<Suspense fallback={<div className="empty" role="status">Loading knowledge view…</div>}><Knowledge key={view} mode={view} visible={visible} records={records} onEdit={select}/></Suspense>}
+      {view==='Changes'&&<Changes history={history} loading={historyQuery.isFetching} error={historyQuery.isError} onRefresh={refreshHistory} records={records} onSelect={select}/>}
       {view==='Repository'&&<Suspense fallback={<div className="empty" role="status">Loading repository view…</div>}><Repository projectId={projectId}/></Suspense>}
       {view==='Audit'&&<section className="audit-panel"><div className="audit-summary"><div><span className="eyebrow">RECORDS CHECKED</span><strong>{records.length}</strong></div><div><span className="eyebrow">REVIEW FINDINGS</span><strong>{findings.length}</strong></div></div><p className="audit-description">Deterministic checks of descriptions and record links. These findings are not a code quality or release readiness score.</p>{!findings.length&&!query.isPending&&!query.error&&<p>No record-level findings.</p>}{findings.map(f=><button key={f.id} className="audit-finding" onClick={()=>select(f.recordId)}><AlertTriangle size={17}/><span><strong>{f.title}</strong><small>{f.detail}</small></span><ArrowUpRight size={14}/></button>)}</section>}
       {!!visible.length&&view==='Board'&&<div className="board">{statuses.map(s=><section className="column" key={s}><div className="column-heading"><Status value={s}/><span>{visible.filter(r=>r.status===s).length}</span></div>{visible.filter(r=>r.status===s).map(r=><RecordCard key={r.id} record={r} selected={r.id===selected} onSelect={()=>select(r.id)}/>)}</section>)}</div>}
       {!!visible.length&&view==='Gallery'&&<div className="gallery">{visible.map(r=><RecordCard key={r.id} record={r} selected={r.id===selected} onSelect={()=>select(r.id)} gallery/>)}</div>}
-      {!!visible.length&&view==='Table'&&<div className="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Priority</th></tr></thead><tbody>{visible.map(r=><tr key={r.id} className={'record-table-row'+(selected===r.id?' selected':'')} onClick={()=>select(r.id)}><td><button type="button" aria-pressed={selected===r.id} onClick={e=>{e.stopPropagation();select(r.id);}}><span className={'dot '+r.accent}/>{r.title}</button></td><td>{r.type}</td><td><Status value={r.status}/></td><td>{r.priority}</td></tr>)}</tbody></table></div>}
+      {!!visible.length&&view==='Table'&&<div className="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Priority</th>{destinationId==='work'&&project.storage==='repository'&&<th>Delivery</th>}</tr></thead><tbody>{visible.map(r=><tr key={r.id} className={'record-table-row'+(selected===r.id?' selected':'')} onClick={()=>select(r.id)}><td><button type="button" aria-pressed={selected===r.id} onClick={e=>{e.stopPropagation();select(r.id);}}><span className={'dot '+r.accent}/>{r.title}</button></td><td>{r.type}</td><td><Status value={r.status}/></td><td>{r.priority}</td>{destinationId==='work'&&project.storage==='repository'&&<td className="delivery-cell">{historyQuery.isError?'History unavailable':deliveryLabel(r,history)?.label||(history?.state==='available'?'No link found':historyQuery.isPending?'Loading…':'History unavailable')}</td>}</tr>)}</tbody></table></div>}
       {view==='Slides'&&active&&<Suspense fallback={<div className="empty" role="status">Loading presentation…</div>}><SlideView active={active} slide={slide} count={visible.length} onPrevious={()=>setSlide(n=>Math.max(0,n-1))} onNext={()=>setSlide(n=>Math.min(n+1,visible.length-1))} onEdit={()=>select(active.id)}/></Suspense>}
       </div><footer className="footer"><span>PRISM / DEVELOPMENT PREVIEW</span><span><Command size={12}/> Records are stored as Markdown</span></footer>
-    </main>{record&&<Inspector key={record.id} projectId={projectId} record={record} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>{setSelected(null);setExpanded(false);}} expanded={expanded} onExpand={()=>setExpanded(v=>!v)}/>}
+    </main>{record&&<Inspector key={record.id} projectId={projectId} record={record} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>{setSelected(null);setExpanded(false);}} expanded={expanded} onExpand={()=>setExpanded(v=>!v)} history={history} historySupported={project.storage==='repository'} historyLoading={historyQuery.isFetching} historyError={historyQuery.isError} onRefreshHistory={refreshHistory}/>}
   </div>;
 }

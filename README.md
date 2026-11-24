@@ -71,3 +71,7 @@ Read [architecture](docs/architecture.md), [roadmap](docs/roadmap.md) and [AGENT
 ## Workspace navigation
 
 Open the project Overview for current direction, milestones, blockers and work. Use purpose-oriented sections for product, management, knowledge, engineering and game design. Data library exposes all record types and flexible visualization modes; Saved views remain available as a collapsible navigation section. Expand an opened record using the editor's expand control. These built-in navigation profiles do not yet support custom navigation definitions.
+
+## Delivery evidence
+
+Repository-mode projects with independent Git metadata expose Engineering / Changes, linked commits in Work and record details, and a reconciliation section on Overview. Install Git and use commit-message trailers `Prism-Record: <record-id>`. Exact historical hashes can be authored in `implementationCommits` metadata. No remote calls, automatic task completion or CI import. Unlinked commits are not necessarily errors; history is bounded to the latest 100 HEAD-reachable commits.

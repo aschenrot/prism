@@ -1,5 +1,6 @@
 import type { Editable, ProjectRecord, RecordList } from '../shared/records';
 import type { ProjectInfo, RepositoryIndex } from '../shared/projects';
+import type { GitHistory } from '../shared/delivery';
 import type { SavedView, ViewInput, ViewList } from '../shared/views';
 async function request<T>(path:string, init?:RequestInit):Promise<T> {
   const response = await fetch(path,init);
@@ -20,6 +21,7 @@ export const api = {
   list:(project:string)=>request<RecordList>(base(project)+'/records'),
   create:(project:string,title:string,type:Editable['type'])=>request<ProjectRecord>(base(project)+'/records',json('POST',{title,type})),
   update:(project:string,id:string,expectedRevision:string,changes:Editable)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id),json('PUT',{expectedRevision,changes})),
+  changes:(project:string)=>request<GitHistory>(base(project)+'/changes'),
   repository:(project:string)=>request<RepositoryIndex>(base(project)+'/repository'),
   file:(project:string,path:string)=>request<{path:string;content:string}>(base(project)+'/file?path='+encodeURIComponent(path))
 };

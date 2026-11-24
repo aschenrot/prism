@@ -2,7 +2,7 @@ import type { ProjectInfo } from './projects';
 import type { ProjectRecord } from './records';
 import { defaultFilters,selectRecords,type Filters,type ViewInput } from './views';
 export type RecordMode=ViewInput['mode'];
-export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository';
+export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes';
 export type Destination={id:string;label:string;description:string;group:string;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
 const dest=(id:string,label:string,description:string,group:string,mode:DestinationMode,type:Filters['type']='All records',modes:DestinationMode[]=[mode]):Destination=>({id,label,description,group,mode,type,modes});
 const common=[
@@ -32,7 +32,7 @@ export function destinationsFor(project:ProjectInfo):Destination[]{
       dest('characters','Characters','Review character concepts.','Game design','Gallery','Character',['Gallery','Wiki','Table']),
       dest('assets','Assets','Review asset records and their metadata.','Game design','Gallery','Asset',['Gallery','Table','Wiki']));
   }
-  if(project.storage==='repository')result.splice(result.findIndex(d=>d.id==='presentations'),0,dest('repository','Repository','Inspect original source and documentation.','Engineering','Repository'));
+  if(project.storage==='repository')result.splice(result.findIndex(d=>d.id==='presentations'),0,dest('repository','Repository','Inspect original source and documentation.','Engineering','Repository'),dest('changes','Changes','Review local commits and explicit work references.','Engineering','Changes'));
   return result;
 }
 export function overviewFor(records:ProjectRecord[]){

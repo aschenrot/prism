@@ -18,7 +18,9 @@ const metadataShape = {
   priority: z.enum(priorities),
   accent: z.enum(accents),
   tags: z.array(z.string().trim().min(1).max(60)).max(30),
-  relationships: z.array(relationshipSchema).max(200)
+  relationships: z.array(relationshipSchema).max(200),
+  // Explicit, reviewed historical attribution; not editable via ordinary record mutations.
+  implementationCommits: z.array(z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/)).max(100).optional()
 };
 export const metadataSchema = z.looseObject(metadataShape);
 export const recordSchema = metadataSchema.extend({ body: z.string().max(500_000) });

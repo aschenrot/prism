@@ -11,6 +11,7 @@ relationships:
     target: ux-navigation
   - visual-quality
   - self-management
+implementationCommits: ["bdfa7d32989b313b7fcf23bb294610527262c43c"]
 ---
 Owner feedback: only specific sub-elements of the project selector and table rows are clickable. Source review confirms a small native select nested in a larger visual container and a title-only table button.
 
