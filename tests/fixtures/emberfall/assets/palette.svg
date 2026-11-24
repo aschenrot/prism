@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+<rect width="960" height="540" fill="#10181d"/><path d="M70 90H890V450H70Z" fill="#293d45" stroke="#48606a"/><path d="M480 90V450M70 270H890" stroke="#48606a" stroke-dasharray="3 12"/>
+<g fill="#fca340"><path d="M250 148l22 22-22 22-22-22z"/><path d="M730 148l22 22-22 22-22-22z"/><path d="M610 292l22 22-22 22-22-22z"/></g>
+<rect x="452" y="373" width="56" height="56" fill="#47b8a3"/><rect x="472" y="389" width="16" height="24" fill="#e0edeb"/>
+<g font-family="sans-serif" fill="#e0edeb"><text x="70" y="55" font-size="24" letter-spacing="7">EMBERFALL</text><text x="70" y="490" font-size="13" letter-spacing="3">01 / SANCTUARY — VISUAL STUDY</text></g>
+</svg>

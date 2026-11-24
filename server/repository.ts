@@ -46,11 +46,16 @@ export async function readRepositoryFile(root:string,path:string){
     (parts.length>1&&!['src','docs','crates','examples','tests','benches'].includes(parts[0]))||!classify(path))throw new MissingError('File not available');
   const full=resolve(root,...parts);
   if(!within(root,full))throw new MissingError('File not available');
-  let current=root;
-  for(const part of parts){current=join(current,part);if((await lstat(current)).isSymbolicLink())throw new MissingError('File not available');}
-  const actual=await realpath(full);
-  if(!within(root,actual))throw new MissingError('File not available');
-  const stat=await lstat(actual);
-  if(!stat.isFile()||stat.size>MAX_BYTES)throw new MissingError('File is not available for preview (512 KB limit)');
-  return {path,content:await readFile(actual,'utf8')};
+  try{
+    let current=root;
+    for(const part of parts){current=join(current,part);if((await lstat(current)).isSymbolicLink())throw new MissingError('File not available');}
+    const actual=await realpath(full);
+    if(!within(root,actual))throw new MissingError('File not available');
+    const stat=await lstat(actual);
+    if(!stat.isFile()||stat.size>MAX_BYTES)throw new MissingError('File is not available for preview (512 KB limit)');
+    return {path,content:await readFile(actual,'utf8')};
+  }catch(e){
+    if(typeof e==='object'&&e!==null&&'code' in e&&(e.code==='ENOENT'||e.code==='ENOTDIR'))throw new MissingError('File not available');
+    throw e;
+  }
 }

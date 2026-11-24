@@ -25,7 +25,7 @@ test('saved view persistence, revision conflict, deletion and malformed file rep
   }finally{await rm(root,{recursive:true,force:true});}
 });
 test('Emberfall view definitions and relationship projections',async()=>{
-  const root=resolve('examples/emberfall/.prism');
+  const root=resolve('tests/fixtures/emberfall/.prism');
   const records=(await (await RecordStore.open(root)).list()).records;
   const views=await (await ViewStore.open(root)).list();
   assert.equal(views.errors.length,0);

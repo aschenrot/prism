@@ -37,3 +37,5 @@ Emberfall includes Release review, Product brief, Design wiki and Requirements m
 Copy the entire emberfall directory into a new folder, including its hidden .prism directory. Initialize Git there, generate Cargo.lock when building, and commit authored files. Change the registry's root to the new absolute path. The game does not depend on Prism. This does not create a remote repository automatically.
 
 The example source is provided as a prototype; the Rust build and runtime have not been verified yet.
+
+The automated regression suite now uses a separate frozen fixture under tests/fixtures/emberfall. You may freely add or change example records and saved views without changing test expectations.

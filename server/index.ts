@@ -25,7 +25,12 @@ app.setErrorHandler((err, request, reply) => {
   if (err instanceof ZodError) return reply.code(400).send({error:err.issues.map(i => i.message).join('; ')});
   if (err instanceof ConflictError) return reply.code(409).send({error:err.message});
   if (err instanceof MissingError) return reply.code(404).send({error:err.message});
-  if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({error:'Invalid request'});
+  if (typeof err === 'object' && err !== null && 'statusCode' in err) {
+    const status = err.statusCode;
+    if (typeof status === 'number' && Number.isInteger(status) && status >= 400 && status < 500) {
+      return reply.code(status).send({error:'Invalid request'});
+    }
+  }
   request.log.error(err); return reply.code(500).send({error:'Storage operation failed'});
 });
 const projectFor = (request:{params:unknown}) => projects.get(idSchema.parse((request.params as {projectId:string}).projectId));
