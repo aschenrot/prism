@@ -32,3 +32,10 @@ Official references:
 - https://zod.dev/v4/changelog
 - https://vite.dev/guide/migration
 - https://docs.npmjs.com/cli/commands/npm-install-scripts/
+
+## Windows verification — user-reported 2026-11-24
+Node 26.13.1: typecheck and production build succeeded; 10 tests passed, one file-symlink test skipped because Windows denied permission; both full and production npm audits reported zero vulnerabilities. Vite and tsx resolve to one esbuild 0.28.2. One install-script approval warning remains. No lockfile received yet.
+
+Reported newer major versions: concurrently 10.0.7, lucide-react 1.78.0, motion 14.14.0, TypeScript 7.0.2 and Node types 26.6.6. These are not security blockers in the supplied audit. Node types remain on the lowest supported Node major unless support policy changes. Review major migration guides, icon exports, motion APIs, compiler/Node engine and runner compatibility in separate changes; no blanket upgrades.
+
+The reported initial JS chunk was 660.96 kB minified (201.60 kB gzip). Presentation, knowledge and repository views now load on demand; measure the next production build rather than raising the warning threshold. No new dependencies added by this optimization.

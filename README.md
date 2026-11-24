@@ -29,11 +29,11 @@ Dependency policy: latest compatible stable releases, verified migrations and re
 
 ## Try the Emberfall reference project
 
-A small Bevy game with connected game-design, product, engineering and project records is included under [examples/emberfall](examples/emberfall). Start with `PRISM_PROJECTS=examples/bevy.projects.yaml npm run dev` from the repository root. See [the reference project guide](examples/README.md) for PowerShell, evaluation steps and separate-repository setup.
+A small Bevy game with connected game-design, product, engineering and project records is included under [examples/emberfall](examples/emberfall). Run `npm run dev` from the repository root; Prism automatically loads Emberfall and Starter workspace unless a custom project configuration takes precedence. See [the reference project guide](examples/README.md) for PowerShell, evaluation steps and separate-repository setup.
 
 ## Connect multiple projects
 
-Clone your game separately; no Prism source code is needed in the game repo. Copy [examples/projects.yaml](examples/projects.yaml) to `.prism/projects.local.yaml`, set absolute paths to existing folders, then start:
+Clone your game separately; no Prism source code is needed in the game repo. Copy [examples/projects.yaml](examples/projects.yaml) to `.prism/projects.local.yaml`, set absolute paths to existing folders, then restart Prism. This local registry is discovered automatically. For an explicit override:
 
 ```sh
 PRISM_PROJECTS=.prism/projects.local.yaml npm run dev
@@ -41,7 +41,7 @@ PRISM_PROJECTS=.prism/projects.local.yaml npm run dev
 
 PowerShell: `$env:PRISM_PROJECTS=".prism/projects.local.yaml"; npm run dev`.
 
-The project picker selects configured projects. Repository-mode records live in `<game>/.prism/records/`; keep those tracked in your game repo. Use [the ignore example](examples/connected-repo.gitignore) for generated caches and machine settings. Standalone mode preserves the previous `records/` layout. Paths are configured locally, not accepted by the browser. Profile labels are reserved for future profile-specific features; they do not yet activate adapters.
+Registry precedence: PRISM_PROJECTS, PRISM_PROJECT, .prism/projects.local.yaml, examples/bevy.projects.yaml, then the standalone workspace fallback. Paths are resolved relative to the launch directory. Invalid registries fail visibly instead of silently loading a demo. The project picker selects configured projects. Repository-mode records live in `<game>/.prism/records/`; keep those tracked in your game repo. Use [the ignore example](examples/connected-repo.gitignore) for generated caches and machine settings. Standalone mode preserves the previous `records/` layout. Paths are configured locally, not accepted by the browser. Profile labels are reserved for future profile-specific features; they do not yet activate adapters.
 
 Repository view previews original documentation, source and manifest files in conventional folders. It does not execute scripts or generate Rust API documentation. Audit view checks missing descriptions and unresolved/self-referential record IDs. Source previews are read-only.
 

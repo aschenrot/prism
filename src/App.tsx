@@ -1,29 +1,22 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'motion/react';
-import { Layers3, LayoutGrid, Columns3, Table2, Presentation, Search, Plus, ChevronLeft, ChevronRight, ArrowUpRight, CircleDot, X, Sparkles, FolderOpen, Command, AlertTriangle, BookOpen, ShieldCheck, Network, FileText } from 'lucide-react';
+import { Layers3, LayoutGrid, Columns3, Table2, Presentation, Search, Plus, ChevronRight, ArrowUpRight, X, Sparkles, FolderOpen, Command, AlertTriangle, BookOpen, ShieldCheck, Network, FileText } from 'lucide-react';
 import { accents, editableSchema, priorities, statuses, types, type Editable, type ProjectRecord } from '../shared/records';
 import { api } from './api';
 import type { ProjectInfo } from '../shared/projects';
 import { auditRecords } from '../shared/audit';
-import Repository from './Repository';
+const Repository=lazy(()=>import('./Repository'));
 import SavedViews from './SavedViews';
-import { Knowledge,RecordLinks } from './Knowledge';
+import { RecordLinks } from './RecordLinks';
+import Artwork from './Artwork';
+import Status from './Status';
+const Knowledge=lazy(()=>import('./Knowledge').then(module=>({default:module.Knowledge})));
+const SlideView=lazy(()=>import('./SlideView'));
 import { defaultFilters,selectRecords,modes,type Filters,type SavedView,type ViewInput } from '../shared/views';
 
 const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen}] as const;
 type View = typeof views[number]['name'];
 const excerpt = (body:string) => body.trim().split('\n').find(line => line.trim() && !line.startsWith('#')) || 'No description yet.';
-const statusClass = (status:string) => status === 'Ready' ? 'ready' : status === 'In progress' ? 'progress' : 'concept';
-function Status({value}:{value:string}) { return <span className={'status '+statusClass(value)}><CircleDot size={12}/>{value}</span>; }
-function Artwork({record}:{record:ProjectRecord}) {
-  return <div className={'artwork '+record.accent} aria-hidden="true"><svg viewBox="0 0 300 160" fill="none">
-    <circle cx="150" cy="80" r="62" stroke="currentColor" opacity=".25"/><circle cx="150" cy="80" r="46" stroke="currentColor" opacity=".5"/>
-    <path d="M150 15 220 80 150 145 80 80Z M150 34 199 80 150 126 101 80Z" stroke="currentColor"/>
-    <path d="M150 34 150 126 M101 80H199 M80 80 220 80" stroke="currentColor" opacity=".25"/>
-    <circle cx="150" cy="80" r="12" fill="currentColor" opacity=".8"/>
-  </svg><span>{record.type.toUpperCase()} / PRISM</span></div>;
-}
 function RecordCard({record,selected,onSelect,gallery=false}:{record:ProjectRecord;selected:boolean;onSelect:()=>void;gallery?:boolean}) {
   return <button className={'record-card '+(selected?'selected ':'')+(gallery?'gallery-card':'')} onClick={onSelect} aria-pressed={selected}>
     {gallery && <Artwork record={record}/>}<div className="card-content"><div className="card-kicker"><span className={'dot '+record.accent}/>{record.type}<ArrowUpRight size={14}/></div>
@@ -119,13 +112,13 @@ function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;proje
       {query.error&&<div className="warning" role="alert"><AlertTriangle size={16}/> {query.error.message}</div>}
       {!!query.data?.errors.length&&<div className="warning" role="alert">{query.data.errors.map(e=><div key={e.file}>{e.file}: {e.message}</div>)}</div>}
       {!query.isPending&&!visible.length&&!['Audit','Repository','Wiki','Relationships'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
-      {(view==='Wiki'||view==='Relationships')&&<Knowledge key={view} mode={view} visible={visible} records={records} onEdit={select}/>}
-      {view==='Repository'&&<Repository projectId={projectId}/>}
+      {(view==='Wiki'||view==='Relationships')&&<Suspense fallback={<div className="empty" role="status">Loading knowledge view…</div>}><Knowledge key={view} mode={view} visible={visible} records={records} onEdit={select}/></Suspense>}
+      {view==='Repository'&&<Suspense fallback={<div className="empty" role="status">Loading repository view…</div>}><Repository projectId={projectId}/></Suspense>}
       {view==='Audit'&&<section className="audit-panel"><div className="audit-summary"><div><span className="eyebrow">RECORDS CHECKED</span><strong>{records.length}</strong></div><div><span className="eyebrow">REVIEW FINDINGS</span><strong>{findings.length}</strong></div></div><p className="audit-description">Deterministic checks of descriptions and record links. These findings are not a code quality or release readiness score.</p>{!findings.length&&!query.isPending&&!query.error&&<p>No record-level findings.</p>}{findings.map(f=><button key={f.id} className="audit-finding" onClick={()=>select(f.recordId)}><AlertTriangle size={17}/><span><strong>{f.title}</strong><small>{f.detail}</small></span><ArrowUpRight size={14}/></button>)}</section>}
       {!!visible.length&&view==='Board'&&<div className="board">{statuses.map(s=><section className="column" key={s}><div className="column-heading"><Status value={s}/><span>{visible.filter(r=>r.status===s).length}</span></div>{visible.filter(r=>r.status===s).map(r=><RecordCard key={r.id} record={r} selected={r.id===selected} onSelect={()=>select(r.id)}/>)}</section>)}</div>}
       {!!visible.length&&view==='Gallery'&&<div className="gallery">{visible.map(r=><RecordCard key={r.id} record={r} selected={r.id===selected} onSelect={()=>select(r.id)} gallery/>)}</div>}
       {!!visible.length&&view==='Table'&&<div className="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Priority</th></tr></thead><tbody>{visible.map(r=><tr key={r.id} className={selected===r.id?'selected':''}><td><button onClick={()=>select(r.id)}><span className={'dot '+r.accent}/>{r.title}</button></td><td>{r.type}</td><td><Status value={r.status}/></td><td>{r.priority}</td></tr>)}</tbody></table></div>}
-      {view==='Slides'&&active&&<section className="presentation" aria-label="Presentation"><div className="slide-stage"><AnimatePresence mode="wait" initial={false}><motion.div className={'slide '+active.accent} key={active.id} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} transition={{duration:.22}}><div className="slide-copy"><div className="eyebrow">PRISM / {active.type.toUpperCase()}</div><h2>{active.title}</h2><p>{excerpt(active.body)}</p><Status value={active.status}/></div><Artwork record={active}/></motion.div></AnimatePresence></div><div className="slide-controls"><button className="icon-button" aria-label="Previous slide" disabled={slide<=0} onClick={()=>setSlide(n=>n-1)}><ChevronLeft/></button><span>{Math.min(slide+1,visible.length)} / {visible.length}</span><button className="icon-button" aria-label="Next slide" disabled={slide>=visible.length-1} onClick={()=>setSlide(n=>n+1)}><ChevronRight/></button><button className="secondary" onClick={()=>select(active.id)}>Edit record</button></div></section>}
+      {view==='Slides'&&active&&<Suspense fallback={<div className="empty" role="status">Loading presentation…</div>}><SlideView active={active} slide={slide} count={visible.length} onPrevious={()=>setSlide(n=>Math.max(0,n-1))} onNext={()=>setSlide(n=>Math.min(n+1,visible.length-1))} onEdit={()=>select(active.id)}/></Suspense>}
       </div><footer className="footer"><span>PRISM / DEVELOPMENT PREVIEW</span><span><Command size={12}/> Records are stored as Markdown</span></footer>
     </main>{record&&<Inspector key={record.id} projectId={projectId} record={record} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>setSelected(null)}/>}
   </div>;

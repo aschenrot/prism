@@ -8,15 +8,10 @@ From the Prism root:
 
 ```sh
 npm install
-PRISM_PROJECTS=examples/bevy.projects.yaml npm run dev
-```
-
-PowerShell:
-
-```powershell
-$env:PRISM_PROJECTS="examples/bevy.projects.yaml"
 npm run dev
 ```
+
+The bundled registry loads automatically unless an explicit environment override or a local registry is present.
 
 Select Emberfall and explore Board, Table, Gallery, Slides, Repository and Audit. The example includes a second standalone project to test switching and isolation.
 

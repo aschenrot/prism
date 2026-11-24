@@ -28,12 +28,23 @@ export class Projects {
   list(){return [...this.projects.values()].map(p=>p.info);}
   get(id:string){const project=this.projects.get(id);if(!project)throw new MissingError('Unknown project');return project;}
 }
-export async function loadProjects(){
-  if(process.env.PRISM_PROJECTS){
-    const path=resolve(process.env.PRISM_PROJECTS);
-    return Projects.open(registrySchema.parse(parse(await readFile(path,'utf8'),{maxAliasCount:0})));
+// Registry paths and relative project roots are resolved against the launch directory.
+// Explicit overrides take precedence. A malformed configured registry is an error,
+// never a reason to silently switch to demo data.
+export async function loadProjects(cwd=process.cwd(),env:NodeJS.ProcessEnv=process.env){
+  const fromRegistry=async(raw:string)=>Projects.open(registrySchema.parse(parse(raw,{maxAliasCount:0})).map(config=>({...config,root:resolve(cwd,config.root)})));
+  if(env.PRISM_PROJECTS){
+    return fromRegistry(await readFile(resolve(cwd,env.PRISM_PROJECTS),'utf8'));
   }
-  const root=resolve(process.env.PRISM_PROJECT||'workspace');
+  if(!env.PRISM_PROJECT){
+    for(const candidate of ['.prism/projects.local.yaml','examples/bevy.projects.yaml']){
+      let raw:string;
+      try{raw=await readFile(resolve(cwd,candidate),'utf8');}
+      catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')continue;throw e;}
+      return fromRegistry(raw);
+    }
+  }
+  const root=resolve(cwd,env.PRISM_PROJECT||'workspace');
   await mkdir(root,{recursive:true});
-  return Projects.open([{id:'local',title:process.env.PRISM_PROJECT?'Local project':'Demo game project',root,storage:'standalone',profiles:['core','game']}]);
+  return Projects.open([{id:'local',title:env.PRISM_PROJECT?'Local project':'Demo game project',root,storage:'standalone',profiles:['core','game']}]);
 }
