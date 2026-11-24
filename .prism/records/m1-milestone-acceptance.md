@@ -51,6 +51,7 @@ relationships:
   - definition-form-recovery
   - m1-filesystem-hardening
   - m1-review-readiness
+  - m1-acceptance-navigation-correction
   - knowledge-workflow-increment
   - management-planning-increment
   - editing-reliability-increment
@@ -76,7 +77,7 @@ Use a clean, exact final M1 main revision after the closure task and current hos
 - [ ] H04 — **Author pull request references explicitly** — Open a disposable repository Increment, add an explicit repository-qualified PR reference, save, and inspect its authored association. Change the saved references externally while the form is open. Expected: no remote lookup on save, preserved canonical metadata, stale form retained, no automatic acceptance.
 
 ## R. Record management and reliability
-- [ ] R01 — **Navigate and sort consistently** — Open record menus from Table, Board and record pages; navigate between collection and record, scroll and use keyboard controls. Sort the table in both directions. Expected: usable focus and pointer targets, menu remains anchored while visible, stable column geometry, predictable dismissal and preserved context.
+- [ ] R01 — **Open work, switch pages and return** — In Work, choose Table. Select Search records, enter a disposable task title, and click that task to open its individual page. Expand Relationships and Implementation evidence, then collapse them. Use the Back button beside the breadcrumb; verify the earlier task search is restored. Switch to Requirements, Overview, then Work using the left sidebar. Try the task menu in Table and Board, scroll, use keyboard controls, and sort Table in both directions. Expected: no unsolicited empty search field when changing categories, exactly one contextual search when deliberately opened, active previous filters restored on Back, secondary sections closed on record entry and keyboard operable, usable focus and pointer targets, stable menu placement and column geometry.
 - [ ] R02 — **Protect authored changes** — Edit disposable records, exercise recovery, conflict review, cancel, duplicate and reversible trash. Expected: no silent overwrite or loss; independent copies and preserved links; clear save/recovery state.
 
 ## K. Knowledge and project management

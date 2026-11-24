@@ -5,7 +5,8 @@ import { api } from './api';
 import AcceptanceWorkspace from './AcceptanceWorkspace';
 import { ArrowRight, ListChecks } from 'lucide-react';
 import type { ProjectRecord } from '../shared/records';
-import type { GitHistory } from '../shared/delivery';
+import { linkedCommits,type GitHistory } from '../shared/delivery';
+import RecordDisclosure from './RecordDisclosure';
 import { entityTypeLabel,entityTypeIssue } from '../shared/customProperties';
 import { relationshipsFor } from '../shared/relationships';
 import { RecordLinks } from './RecordLinks';
@@ -55,7 +56,7 @@ export default function RecordPage({projectId,githubRepository,record,records,in
     {parsed.state==='available'&&!repository&&<p className="overview-note">Revision-bound review runs require an independent Git repository. The test definition remains readable.</p>}
     {nativeReview&&definition?<AcceptanceWorkspace key={record.id} projectId={projectId} record={record} definition={definition} head={reviewHead} onBusyChange={onBusyChange}/>:<section className="record-reading" aria-label={record.type==='Test'?'Test instructions':'Record content'}><h2>{record.type==='Test'?'Test instructions and results':record.type==='Document'?'Document':'Details'}</h2><Suspense fallback={<p role="status" className="markdown-loading">Loading record content…</p>}><MarkdownBody body={record.body}/></Suspense>{record.type==='Test'&&<p className="overview-note">Markdown checkboxes are read-only. Native execution is available for supported acceptance definitions in Git repositories.</p>}</section>}
     <CustomPropertyReadout projectId={projectId} record={record} records={records}/>
-    <section className="record-reading"><h2>Relationships</h2><RecordLinks records={records} id={record.id} onSelect={onOpen} hrefFor={hrefFor}/></section>
-    {repository&&<section className="record-reading"><h2>Implementation evidence</h2><RecordEvidence record={record} history={history} loading={historyLoading} error={historyError} onRefresh={onRefresh}/></section>}
+    <RecordDisclosure title="Relationships" summary={String(links.outgoing.length+links.incoming.length)+" links"}><RecordLinks records={records} id={record.id} onSelect={onOpen} hrefFor={hrefFor}/></RecordDisclosure>
+    {repository&&<RecordDisclosure title="Implementation evidence" summary={!historyError&&history?.state==="available"?String(linkedCommits(record,history).length)+" linked in loaded history":undefined}><RecordEvidence record={record} history={history} loading={historyLoading} error={historyError} onRefresh={onRefresh}/></RecordDisclosure>}
   </article>;
 }

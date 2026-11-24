@@ -23,3 +23,7 @@ Earlier owner-accepted PRs #9–11 remain historical evidence: record-navigation
 
 ## Dogfooding traceability reconciliation
 Explicitly author Implements links for M1 tasks where their recorded implementation supports the linked feature/requirement; use Verifies links for the consolidated test's actual scope. Generic links outside the targeted edits retain their original meaning. No links attest execution; review results remain separate. Project settings and management views move from Concept to In progress because their implementation is integrated, not Ready. Recheck exact final main matrix before handoff.
+
+
+## Owner review outcome (2026-11-24)
+At verified main `3eda97b6b32ac3c98f3c5fb879f1e16e74efe652`, owner reported finalized Changes requested, run `011fd661-10c4-475e-9ddc-ffc30c22b6aa`, definition revision `2a195e11c4f8a468adc30ab05228fde3172107039f87cd0b92ddb9018c9f444f`: H01–H04 passed, R01 failed, 20 pending. Navigation search behavior blocked continuation; owner requested collapsible record sections and clearer instructions. These are historical observations, not current acceptance. See m1-acceptance-navigation-correction. M1 remains open.

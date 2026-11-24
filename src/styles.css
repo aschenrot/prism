@@ -119,3 +119,20 @@ a.nav-item,a.record-card,a.overview-record,a.milestone-step,a.linked-row,a.secon
 .definition-recovery{display:grid;gap:6px;margin:8px 0}.definition-recovery:empty{display:none}.definition-recovery small{color:var(--muted);font-size:11px}.definition-recovery p{margin:0}
 
 .pull-reference-editor{display:grid;gap:8px;padding:8px 0}.pull-reference-editor>button{justify-self:start}.pull-reference-row{display:grid;grid-template-columns:minmax(150px,2fr) minmax(90px,1fr) auto;align-items:end;gap:8px;margin:8px 0}@media(max-width:620px){.pull-reference-row{grid-template-columns:1fr}}
+
+/* Contextual collection search and secondary record information. */
+.collection-search[hidden]{display:none}
+.collection-search-toggle{flex-shrink:0}
+.record-reading.record-disclosure{padding:0}
+.record-disclosure>summary{display:flex;align-items:center;gap:12px;min-height:48px;padding:14px clamp(16px,2.5vw,28px);cursor:pointer;list-style:none;border-radius:9px}
+.record-disclosure>summary::-webkit-details-marker{display:none}
+.record-disclosure>summary:hover{background:var(--raised)}
+.record-disclosure>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.record-disclosure-title{font-size:16px;font-weight:600;min-width:0}
+.record-disclosure-count{color:var(--muted);font-size:12px;margin-left:auto;text-align:right}
+.record-disclosure>summary>svg{margin-left:auto;flex-shrink:0;transition:transform .14s}
+.record-disclosure>summary>.record-disclosure-count+svg{margin-left:0}
+.record-disclosure[open]>summary>svg{transform:rotate(90deg)}
+.record-disclosure[open]>summary{border-bottom:1px solid var(--line);border-radius:9px 9px 0 0}
+.record-disclosure-body{padding:clamp(16px,2.5vw,28px);min-width:0}
+@media(prefers-reduced-motion:reduce){.record-disclosure>summary>svg{transition:none}}
