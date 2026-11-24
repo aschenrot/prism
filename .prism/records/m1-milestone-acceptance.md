@@ -23,6 +23,7 @@ relationships:
   - authored-timelines
   - draft-command-history
   - opt-in-autosave
+  - local-project-backups
   - quality-gates
 ---
 ## Review instructions
@@ -65,3 +66,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K13 — **Undo and redo draft changes** — Edit multiple fields, undo and redo with buttons and keyboard, branch from an undone draft, then keep/reopen and save. Expected: current draft recovery, correct history boundaries, no canonical write before Save, no restoration of obsolete revisions.
 
 - [ ] K14 — **Use opt-in autosave safely** — Enable autosave on a disposable record, type valid and invalid values, simulate an external change during a pending save, then resume the retained draft. Expected: valid acknowledged saves only, no invalid or conflicting overwrite, no automatic retry or auto-enable on reopen, clear pause state.
+
+- [ ] K15 — **Back up and restore disposable project data** — Stop editors, create and verify a backup, restore into a new directory, register/open the restored copy and compare records, schema, templates and trash. Expected: exact data, no overwrite or registry leakage, integrity failures visible, incomplete restores cannot open.
