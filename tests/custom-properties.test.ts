@@ -125,6 +125,9 @@ test('custom entity assignment, retirement and filter identity preserve record d
  try{
   const store=await RecordStore.open(root),before=await store.schema();if(before.state!=='available')throw Error('Schema unavailable');
   const schema=await store.updateSchema(before.revision,projectPropertySchema.parse({version:1,entityTypes:[{id:'bug-report',label:'Bug report',baseType:'Task'}],fields:[{id:'severity',label:'Severity',kind:'number',appliesToEntities:['bug-report']}]}));if(schema.state!=='available')throw Error('Schema unavailable');
+  await assert.rejects(store.create('Wrong role','Document','bug-report',schema.revision),CustomPropertyError);
+  await assert.rejects(store.create('Stale','Task','bug-report',before.revision),CustomPropertyError);
+  const direct=await store.create('Direct custom','Task','bug-report',schema.revision);assert.equal(direct.customTypeId,'bug-report');
   const record=await store.create('Bug','Task'),plain=await store.create('Plain','Task'),doc=await store.create('Document','Document');
   await assert.rejects(store.update(doc.id,doc.revision,{...editableRecord(doc),customTypeId:'bug-report'},schema.revision),CustomPropertyError);
   await assert.rejects(store.update(record.id,record.revision,{...editableRecord(record),customTypeId:'bug-report'}),CustomPropertyError);
@@ -140,6 +143,7 @@ test('custom entity assignment, retirement and filter identity preserve record d
   const retired=await store.updateSchema(schema.revision,{...schema.definition,entityTypes:schema.definition.entityTypes!.map(e=>({...e,retired:true}))});if(retired.state!=='available')throw Error('Schema unavailable');
   await assert.rejects(store.update(plain.id,plain.revision,{...editableRecord(plain),customTypeId:'bug-report'},retired.revision),CustomPropertyError);
   await assert.rejects(store.duplicate(renamed.id,renamed.revision),CustomPropertyError);
+  await assert.rejects(store.create('Retired','Task','bug-report',retired.revision),CustomPropertyError);
   const still=await store.update(renamed.id,renamed.revision,{...editableRecord(renamed),customProperties:{severity:6}},retired.revision);
   const cleared=await store.update(still.id,still.revision,{...editableRecord(still),customTypeId:null},retired.revision);
   assert.equal(cleared.customTypeId,null);assert.equal(cleared.customProperties?.severity,6);

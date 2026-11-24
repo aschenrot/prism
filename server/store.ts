@@ -119,10 +119,11 @@ export class RecordStore {
     } finally { await unlink(tmp).catch(() => undefined); }
     return this.get(String(metadata.id));
   }
-  create(title: string, type: Editable['type']) {
+  create(title: string, type: Editable['type'],customTypeId?:string,expectedSchemaRevision?:string) {
     return this.serialize(async () => {
+      if(customTypeId){const schema=await this.schema();if(schema.state!=='available'||schema.revision!==expectedSchemaRevision)throw new CustomPropertyError('Project schema changed or is unavailable. Review the current entity definition.');const issue=entityTypeIssue(schema.definition,type,customTypeId,true);if(issue)throw new CustomPropertyError(issue);}
       const now=new Date().toISOString();
-      return this.persist({id:randomUUID(),title,type,status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body:'',createdAt:now,updatedAt:now});
+      return this.persist({id:randomUUID(),title,type,status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body:'',...(customTypeId?{customTypeId}:{}),createdAt:now,updatedAt:now});
     });
   }
   // Duplicate only saved, editable content. A copy is new work, never inherited acceptance.

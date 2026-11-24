@@ -400,6 +400,7 @@ test('custom entity definitions retain built-in roles, scoped fields and collect
   await page.getByRole('button',{name:'Filter',exact:true}).click();
   await page.getByLabel('Custom entity',{exact:true}).selectOption('bug-report');
   await expect(page.getByRole('link',{name:bug.title,exact:true})).toBeVisible();await expect(page.getByRole('link',{name:plain.title,exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'New Bug report',exact:true}).click();await page.getByLabel('Record title',{exact:true}).fill('Direct custom creation');await expect(page.getByLabel('Custom entity type',{exact:true})).toHaveValue('bug-report');await page.getByRole('button',{name:'Create',exact:true}).click();await expect(page.getByLabel('Title',{exact:true})).toHaveValue('Direct custom creation');await expect(page.getByLabel('Custom entity type',{exact:true})).toHaveValue('bug-report');await page.getByRole('button',{name:'Return to record',exact:true}).click();
   await page.getByRole('link',{name:'Schemas',exact:true}).click();await entities.getByRole('button',{name:'Edit entity Bug report'}).click();
   const editForm=entities.getByRole('form',{name:'Edit entity definition'});await expect(editForm.getByLabel('Built-in role',{exact:true})).toBeDisabled();await editForm.getByLabel('Retire entity type',{exact:true}).check();await editForm.getByRole('button',{name:'Save entity type'}).click();
   await expect(entities.getByText('Bug report · Retired',{exact:true})).toBeVisible();

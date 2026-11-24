@@ -6,7 +6,7 @@ import AcceptanceWorkspace from './AcceptanceWorkspace';
 import { ArrowRight, ListChecks } from 'lucide-react';
 import type { ProjectRecord } from '../shared/records';
 import type { GitHistory } from '../shared/delivery';
-import { entityTypeLabel } from '../shared/customProperties';
+import { entityTypeLabel,entityTypeIssue } from '../shared/customProperties';
 import { relationshipsFor } from '../shared/relationships';
 import { RecordLinks } from './RecordLinks';
 import { RecordEvidence } from './DeliveryEvidence';
@@ -42,6 +42,7 @@ export default function RecordPage({projectId,githubRepository,record,records,in
   const nativeReview=repository&&!!definition;
   return <article className="record-page">
     <header className="record-page-heading"><div><div className="eyebrow">{entityTypeLabel(schema,record.customTypeId,record.type)} / {record.id}</div><h1>{record.title}</h1><div className="record-page-meta"><Status value={record.status}/><span>{record.priority} priority</span>{record.tags.map((tag,i)=><span className="record-tag" key={tag+':'+i}>{tag}</span>)}</div></div><div className="record-page-actions"><RecordActions record={record} onEdit={onEdit} onTrash={onTrash} disabled={unavailable||busy} editLabel={isAcceptanceTest(record)?'Edit test definition':'Edit'}/></div></header>
+    {record.customTypeId&&(!schema||entityTypeIssue(schema,record.type,record.customTypeId,false))&&<p className="record-recovery-note">Custom entity definition is unavailable or incompatible. Stored identity is preserved.</p>}
     {trashError&&<p role="alert" className="warning">{trashError}</p>}
     {(record.createdAt||record.updatedAt)&&<div className="record-dates">{record.createdAt&&<span>Created <time dateTime={record.createdAt}>{new Date(record.createdAt).toLocaleString()}</time></span>}{record.updatedAt&&<span>Last saved <time dateTime={record.updatedAt}>{new Date(record.updatedAt).toLocaleString()}</time></span>}</div>}
     {unavailable&&<p role="alert" className="warning">The record is unavailable on disk. This is the last loaded version.</p>}
