@@ -1,5 +1,7 @@
 import { editorDraftSchema,type EditorDraft } from '../shared/editor';
-type StorageAccess=Pick<Storage,'getItem'|'setItem'|'removeItem'>;
+import { idSchema } from '../shared/records';
+type StorageAccess=Pick<Storage,'getItem'|'setItem'|'removeItem'>&Partial<Pick<Storage,'length'|'key'>>;
+export type DraftInventory={ids:string[];state:'available'|'incomplete'|'unavailable'};
 export type DraftRead=
   | {state:'empty';token:null}
   | {state:'available';token:string;draft:EditorDraft}
@@ -31,6 +33,15 @@ export function createDraftStorage(storage:()=>StorageAccess){
       return {state:'stored',token:raw};
     }catch{return {state:'unavailable',message:'Browser recovery storage is unavailable or full. Keep this editor open or export a copy.'};}
   }
-  return {read,write};
+  function list(project:string):DraftInventory{
+    try{
+      const store=storage(),prefix=key(project,'');
+      if(typeof store.length!=='number'||typeof store.key!=='function')return {ids:[],state:'unavailable'};
+      const ids=new Set<string>(),count=store.length,limit=Math.min(count,10000);
+      for(let i=0;i<limit;i++){const k=store.key(i);if(k?.startsWith(prefix)){const id=k.slice(prefix.length);if(idSchema.safeParse(id).success)ids.add(id);}}
+      return {ids:[...ids].sort(),state:count>limit||store.length!==count?'incomplete':'available'};
+    }catch{return {ids:[],state:'unavailable'};}
+  }
+  return {read,write,list};
 }
 export const draftStorage=createDraftStorage(()=>window.localStorage);

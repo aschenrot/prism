@@ -72,3 +72,6 @@ PR #28 integrated at 7fef8371dc50f2c22bd63893b57d7ede26365971. Run 45479915600: 
 
 
 PR #29 integrated at 1e23237ada57af271b73720ab96ce651ab92f7a3. Run 45480891681: 94 unit + 30 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout 8e87dc02015f354b96ef416fd4ce2a9a4ef6a2d4, identical tree to proposed head. K16 human review pending. Startup enforcement of disjoint stores is a follow-up.
+
+
+PR #30 integrated at a90cb758cfe3f4dcd2759f653325a2f06b471297. Run 45481688645: 95 unit + 31 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout 0004c0ddd8acc84a323216d94bc8f70b2a82a769, identical tree to proposed head. K17 human review pending.

@@ -603,3 +603,15 @@ test('requirements traceability distinguishes explicit links from authored readi
  const gapRow=panel.getByRole('row').filter({has:page.getByRole('link',{name:gap.title,exact:true})});await expect(gapRow.getByText('No explicit link',{exact:true})).toHaveCount(3);
  await row.getByRole('link',{name:implementation.title,exact:true}).click();await expect(page.getByRole('heading',{name:implementation.title,exact:true})).toBeVisible();await page.goBack();await expect(panel).toBeVisible();await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Trace fixture');
 });
+
+test('orphaned browser recovery is project scoped, exportable and never silently discarded',async({page,request})=>{
+ const record=await create(request,'Recovery inventory fixture');await open(page,record);await edit(page);await title(page).fill('Unsaved orphan draft');await keep(page).click();
+ const path=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'repo','.prism','records',record.id+'.md'),backup=path+'.test-backup';await rename(path,backup);
+ try{
+  await page.goto('/#/projects/'+project+'/recovery');const panel=page.getByRole('region',{name:'Browser recovery drafts'}),entry=panel.getByRole('article',{name:'Recovery for '+record.title,exact:true});
+  await expect(entry.getByText('Canonical record unavailable',{exact:true})).toBeVisible();await expect(entry.getByRole('button',{name:'Review draft',exact:true})).toHaveCount(0);
+  const [download]=await Promise.all([page.waitForEvent('download'),entry.getByRole('button',{name:'Export recovery',exact:true}).click()]);const exported=JSON.parse(await readFile(await download.path(),'utf8'));expect(exported.recordId).toBe(record.id);expect(exported.draft.title).toBe('Unsaved orphan draft');await expect(entry).toBeVisible();
+  await page.goto('/#/projects/'+other+'/recovery');await expect(page.getByText('No recovery drafts for this project.',{exact:true})).toBeVisible();await expect(entry).toHaveCount(0);
+ }finally{await rename(backup,path);}
+ await page.goto('/#/projects/'+project+'/recovery');const entry=page.getByRole('article',{name:'Recovery for '+record.title,exact:true});await expect(entry.getByRole('button',{name:'Review draft',exact:true})).toBeVisible();await entry.getByRole('button',{name:'Review draft',exact:true}).click();await expect(title(page)).toHaveValue('Unsaved orphan draft');await keep(page).click();await page.goto('/#/projects/'+project+'/recovery');acceptDialog(page);await entry.getByRole('button',{name:'Discard recovery',exact:true}).click();await expect(entry).toHaveCount(0);expect((await recordOnDisk(request,record.id)).title).toBe(record.title);
+});

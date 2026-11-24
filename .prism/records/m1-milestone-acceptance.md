@@ -26,6 +26,7 @@ relationships:
   - local-project-backups
   - local-project-registration
   - requirements-traceability
+  - recovery-workspace
   - quality-gates
 ---
 ## Review instructions
@@ -74,3 +75,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K16 — **Register and reopen an independent project** — Stop Prism, register an existing disposable folder using the local command, restart and select it, save a record, change its title/profile settings, restart and switch between projects. Expected: stable identity, isolated data, no machine paths in browser metadata, no overwritten portable registry, explicit overrides still work.
 
 - [ ] K17 — **Review requirements traceability and project status** — Link disposable task, test and document records to a requirement with explicit relationship kinds, leave another requirement unlinked and add a generic link. Open Traceability, inspect gaps and follow a linked record; compare Overview. Expected: explicit links only, visible gaps, accurate authored status, retained context and no inferred test results or completion.
+
+- [ ] K18 — **Recover a draft after its record disappears** — Retain a disposable draft, temporarily move the canonical file outside the records directory, open Recovery, export the draft, switch projects and restore the file. Expected: stored input remains available, no cross-project entries, no implicit canonical write; resume through the normal editor after restoring the file or explicitly discard only the stored copy.
