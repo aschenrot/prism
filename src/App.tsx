@@ -14,6 +14,7 @@ import Status from './Status';
 import { Changes,RecordEvidence } from './DeliveryEvidence';
 import LocalVerification from './LocalVerification';
 import BrowserVerification from './BrowserVerification';
+import HostedVerification from './HostedVerification';
 import { deliveryLabel,type GitHistory } from '../shared/delivery';
 import WorkspaceOverview from './WorkspaceOverview';
 import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,type DestinationMode } from '../shared/navigation';
@@ -331,7 +332,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
       {view==='Trash'&&<TrashView projectId={projectId}/>}
       {view==='Changes'&&<Changes history={history} loading={historyQuery.isFetching} error={historyQuery.isError} onRefresh={refreshHistory} records={records} onSelect={select} hrefFor={hrefFor}/>}
       {view==='Repository'&&<Suspense fallback={<div className="empty" role="status">Loading repository view…</div>}><Repository projectId={projectId}/></Suspense>}
-      {view==='Audit'&&project.storage==='repository'&&<><LocalVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><BrowserVerification projectId={projectId} history={historyQuery.isError?undefined:history}/></>}
+      {view==='Audit'&&project.storage==='repository'&&<><LocalVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><BrowserVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><HostedVerification projectId={projectId} repository={project.githubRepository} history={historyQuery.isError?undefined:history}/></>}
       {view==='Audit'&&<section className="audit-panel"><div className="audit-summary"><div><span className="eyebrow">RECORDS CHECKED</span><strong>{records.length}</strong></div><div><span className="eyebrow">REVIEW FINDINGS</span><strong>{findings.length}</strong></div></div><p className="audit-description">Deterministic checks of descriptions and record links. These findings are not a code quality or release readiness score.</p>{!findings.length&&!query.isPending&&!query.error&&<p>No record-level findings.</p>}{findings.map(f=><button key={f.id} className="audit-finding" onClick={()=>select(f.recordId)}><AlertTriangle size={17}/><span><strong>{f.title}</strong><small>{f.detail}</small></span><ArrowUpRight size={14}/></button>)}</section>}
       {!!visible.length&&view==='Board'&&<div className="board">{statuses.map(s=><section className="column" key={s}><div className="column-heading"><Status value={s}/><span>{visible.filter(r=>r.status===s).length}</span></div>{visible.filter(r=>r.status===s).map(r=><RecordCard key={r.id} record={r} selected={r.id===selected} href={hrefFor(r.id)} onSelect={()=>select(r.id)} onEdit={()=>openEditor(r.id)} onTrash={()=>moveToTrash(r.id)} disabled={controlsDisabled}/>)}</section>)}</div>}
       {!!visible.length&&view==='Gallery'&&<div className="gallery">{visible.map(r=><RecordCard key={r.id} record={r} selected={r.id===selected} href={hrefFor(r.id)} onSelect={()=>select(r.id)} onEdit={()=>openEditor(r.id)} onTrash={()=>moveToTrash(r.id)} disabled={controlsDisabled} gallery/>)}</div>}
