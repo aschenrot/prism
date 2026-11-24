@@ -33,6 +33,7 @@ import CollectionToolbar,{SortHeading} from './CollectionToolbar';
 import TableColumns from './TableColumns';
 import ProjectSearch from './ProjectSearch';
 import TemplateAdministration from './TemplateAdministration';
+import Inbox from './Inbox';
 import type { RecordTemplate } from '../shared/templates';
 import { columnFor,defaultTableColumns,tableMinWidth,propertyColumnValue } from '../shared/tableColumns';
 import RecordActions,{RecordCommandContext} from './RecordActions';
@@ -48,7 +49,7 @@ import { selectRecords,sortBy,sortDirection,modes,type Filters,type SavedView,ty
 
 const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen},{name:'Search',icon:Search}] as const;
 type View = DestinationMode;
-const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,increments:Layers3,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,changes:GitBranch,presentations:Presentation,library:Database,trash:Trash2,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image,schemas:Database,templates:FileText};
+const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,increments:Layers3,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,changes:GitBranch,presentations:Presentation,library:Database,trash:Trash2,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image,schemas:Database,templates:FileText,inbox:FileText};
 const excerpt = (body:string) => body.trim().split('\n').find(line => line.trim() && !line.startsWith('#')) || 'No description yet.';
 function RecordCard({record,typeLabel,selected,onSelect,onEdit,onTrash,href,gallery=false,disabled=false}:{record:ProjectRecord;typeLabel?:string;selected:boolean;onSelect:()=>void;onEdit:()=>void;onTrash:()=>void;href:string;gallery?:boolean;disabled?:boolean}) {
   return <div className="collection-card"><RouteLink className={'record-card '+(selected?'selected ':'')+(gallery?'gallery-card':'')} href={href} onNavigate={onSelect}>
@@ -333,7 +334,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   const trashIncoming=trashTarget?[...new Map(relationshipsFor(records,trashTarget.id).incoming.map(link=>[link.id,link.record])).values()]:[];
   const findings=auditRecords(records);
   const projectSwitchHint=project.storage==='repository'?'Connected repository':'Local workspace';
-  const navigationGuard=workPending?'Record changes are being saved.':bulkTargets?'Close bulk editing before navigating.':trash.isPending?'Moving a record to trash.':trashTarget?'Close the record removal dialog before navigating.':busy?(editing?'Save, keep your draft, or cancel editing before leaving.':view==='Schemas'?'Save or cancel the schema definition before navigating.':view==='Templates'?'Save or cancel the template definition before navigating.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
+  const navigationGuard=workPending?'Record changes are being saved.':bulkTargets?'Close bulk editing before navigating.':trash.isPending?'Moving a record to trash.':trashTarget?'Close the record removal dialog before navigating.':busy?(editing?'Save, keep your draft, or cancel editing before leaving.':view==='Schemas'?'Save or cancel the schema definition before navigating.':view==='Templates'?'Save or cancel the template definition before navigating.':view==='Inbox'?'Finish or clear capture before navigating.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
   // The same guard covers sidebar, related links, breadcrumbs and browser history.
   useLayoutEffect(()=>{router.setGuard(navigationGuard);if(!navigationGuard)router.clearNotice();return()=>router.setGuard('');},[navigationGuard]);
   useEffect(()=>{if(!creating&&!create.isPending&&!trash.isPending&&!workPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[creating,create.isPending,trash.isPending,workPending]);
@@ -384,6 +385,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
       {view==='Overview'&&!query.isPending&&<WorkspaceOverview project={project} records={records} findings={findings.length} incomplete={!!query.error||!!query.data?.errors.length} history={history} historyError={historyQuery.isError} onSelect={select} onNavigate={navigate} hrefFor={hrefFor}/>}
       {(view==='Wiki'||view==='Relationships')&&<Knowledge key={destinationId+':'+(savedView?.id||'default')+':'+view} mode={view} visible={visible} records={records} onEdit={select} onDirectEdit={openEditor} onTrash={moveToTrash} disabled={controlsDisabled} focus={router.entry.context?.focus} hrefFor={hrefFor} onFocus={id=>router.replaceContext({...contextFor(navigation),slide:router.entry.context?.slide,focus:id})}/>}
       {view==='Trash'&&<TrashView projectId={projectId}/>}
+      {view==='Inbox'&&<Inbox projectId={projectId} records={records} incomplete={!!query.error||!!query.data?.errors.length} onOpen={select} hrefFor={hrefFor} onMerge={mergeRecords} onRefresh={()=>{void qc.invalidateQueries({queryKey:['records',projectId]});}} onBusyChange={setBusy}/>}
       {view==='Templates'&&<TemplateAdministration projectId={projectId} records={records} onBusyChange={setBusy}/>}
       {view==='Schemas'&&<SchemaAdministration projectId={projectId} records={records} incomplete={!!query.error||!!query.data?.errors.length} onBusyChange={setBusy}/>}
       {view==='Changes'&&<Changes history={history} loading={historyQuery.isFetching} error={historyQuery.isError} onRefresh={refreshHistory} records={records} onSelect={select} hrefFor={hrefFor}/>}
