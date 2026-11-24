@@ -566,3 +566,16 @@ test('authored timeline maps stable date fields, persists saved mapping and expo
  const latest=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.id===a.id);expect(latest.customProperties['start-date']).toBe('2026-12-01');
  }finally{await unlink(schemaPath).catch(()=>{});}
 });
+
+test('record draft undo and redo preserve recovery and reset at canonical save boundaries',async({page,request})=>{
+ const record=await create(request,'Draft history fixture');await open(page,record);await edit(page);
+ const undo=page.getByRole('button',{name:'Undo draft edit',exact:true}),redo=page.getByRole('button',{name:'Redo draft edit',exact:true});
+ await expect(undo).toBeDisabled();await title(page).fill('Edited draft title');await page.locator('.editor textarea').fill('Draft notes');
+ await undo.click();await expect(page.locator('.editor textarea')).toHaveValue('');await expect(title(page)).toHaveValue('Edited draft title');
+ await title(page).focus();await page.keyboard.press('Control+z');await expect(title(page)).toHaveValue(record.title);await expect(undo).toBeDisabled();await expect(redo).toBeEnabled();
+ await redo.click();await expect(title(page)).toHaveValue('Edited draft title');await redo.click();await expect(page.locator('.editor textarea')).toHaveValue('Draft notes');
+ await undo.click();await page.locator('.editor textarea').fill('Replacement notes');await expect(redo).toBeDisabled();
+ expect((await recordOnDisk(request,record.id)).title).toBe(record.title);
+ await keep(page).click();await page.reload();await page.getByRole('button',{name:'Resume draft'}).click();await expect(title(page)).toHaveValue('Edited draft title');await expect(page.locator('.editor textarea')).toHaveValue('Replacement notes');await expect(undo).toBeDisabled();
+ await title(page).fill('Final title');await save(page).click();await expect(page.getByText('Saved to disk',{exact:true})).toBeVisible();await expect(undo).toBeDisabled();await expect(redo).toBeDisabled();expect((await recordOnDisk(request,record.id)).title).toBe('Final title');
+});
