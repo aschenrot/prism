@@ -66,3 +66,7 @@
 
 ## Shared record commands
 Use the same ellipsis menu for collection and record commands; never make a destructive row click or bypass the existing recovery-aware trash confirmation. Preserve filtered collection context after removal and expose restoration. Provide menu keyboard navigation, focus restoration and outside dismissal; test scroll clipping. Search relationship targets within valid typed endpoints and existing link constraints; do not silently truncate without a count/refine hint.
+
+## Coherent delivery increments
+- Group related implementation into an explicit Increment scoped by Contains relationships, linked from a Milestone. Use small focused commits within a coherent PR; do not require separate owner acceptance for every small slice. Tasks and acceptance tests are canonical records, not duplicated checklists. Keep authored status, linked changes, exact-revision automated evidence and latest acceptance decision separate. No inferred completion or automatic integration. Record missing scope/evidence explicitly.
+- Inline/bulk property edits whitelist fields and enforce expected revision; skip unresolved recovery, bound selection to visible records and report independent acknowledgements, including partial or uncertain outcomes. Do not claim multi-file atomicity. Duplicates have new IDs, timestamps and Concept status; never copy scope, delivery evidence or acceptance state. Clipboard success requires acknowledgement.

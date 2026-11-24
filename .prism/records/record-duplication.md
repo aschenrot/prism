@@ -7,6 +7,7 @@ priority: High
 accent: teal
 tags: [current, management, usability]
 relationships:
+  - record-management-increment
   - record-actions-acceptance
   - data-integrity
 ---

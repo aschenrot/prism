@@ -222,3 +222,13 @@ test('duplicate starts independent work and copy link is a stable project record
  await action(page,'Duplicate');await expect(title(page)).toHaveValue(saved.title+' (copy)');const copyId=page.url().split('/').pop();expect(copyId).not.toBe(saved.id);
  const copy=await recordOnDisk(request,copyId);expect(copy.body).toBe('Copied notes');expect(copy.status).toBe('Concept');expect(copy.priority).toBe('High');expect(copy.relationships).toEqual([]);expect(copy.tags).toEqual(['custom']);expect((await recordOnDisk(request,saved.id)).revision).toBe(saved.revision);
 });
+
+test('delivery increments show explicit task scope and independent local evidence',async({page,request})=>{
+ const task=await create(request,'Increment scoped task'),outside=await create(request,'Increment outside task'),testRecord=await create(request,'Increment scope review','Test');
+ const increment=await create(request,'Delivery fixture','Increment'),milestone=await create(request,'Delivery fixture milestone','Milestone');
+ const scoped=await update(request,increment,{status:'In progress',relationships:[{kind:'contains',target:task.id},{kind:'contains',target:testRecord.id},outside.id]});
+ const parent=await update(request,milestone,{relationships:[{kind:'contains',target:scoped.id}]});
+ await page.goto('/#/projects/'+project+'/increments');await page.getByRole('textbox',{name:'Search records'}).fill(scoped.title);await page.getByRole('link',{name:scoped.title,exact:true}).click();
+ const panel=page.getByRole('region',{name:'Delivery increment scope'});await expect(panel.getByRole('link',{name:new RegExp(task.title)})).toBeVisible();await expect(panel.getByRole('link',{name:new RegExp(outside.title)})).toHaveCount(0);await expect(panel.getByText('No executable acceptance definition',{exact:true})).toBeVisible();await expect(panel.getByText('Local npm verification',{exact:true})).toBeVisible();await expect(panel.getByText('Browser regression',{exact:true})).toBeVisible();
+ await panel.getByRole('link',{name:parent.title,exact:true}).click();await expect(page.getByRole('heading',{name:'Delivery increments',exact:true})).toBeVisible();await expect(page.locator('.increment-panel').getByRole('link',{name:new RegExp(scoped.title)})).toBeVisible();
+});

@@ -1,11 +1,11 @@
 import { z } from 'zod';
-export const types = ['Idea', 'Mechanic', 'Asset', 'Character', 'Location', 'System', 'Task', 'Decision', 'Objective', 'Feature', 'Requirement', 'Milestone', 'Risk', 'Research', 'Document', 'Test'] as const;
+export const types = ['Idea', 'Mechanic', 'Asset', 'Character', 'Location', 'System', 'Task', 'Decision', 'Objective', 'Feature', 'Requirement', 'Milestone', 'Increment', 'Risk', 'Research', 'Document', 'Test'] as const;
 export const statuses = ['Concept', 'In progress', 'Ready'] as const;
 export const priorities = ['Low', 'Normal', 'High'] as const;
 export const accents = ['amber', 'violet', 'teal', 'blue', 'rose'] as const;
 export const idSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,95}$/);
 // Legacy string references remain valid and mean only "related to".
-export const relationshipKinds=['related-to','implements','verifies','depends-on','blocks','documents'] as const;
+export const relationshipKinds=['related-to','implements','verifies','depends-on','blocks','documents','contains'] as const;
 export const relationshipKindSchema=z.enum(relationshipKinds);
 export const relationshipSchema=z.union([idSchema,z.strictObject({kind:relationshipKindSchema,target:idSchema})]);
 export type Relationship=z.infer<typeof relationshipSchema>;

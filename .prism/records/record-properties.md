@@ -9,6 +9,7 @@ tags: [current, management, usability]
 relationships:
   - kind: implements
     target: data-integrity
+  - record-management-increment
   - record-actions-acceptance
   - management-views
 ---
