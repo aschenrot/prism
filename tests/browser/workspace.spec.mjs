@@ -513,3 +513,20 @@ test('inbox capture is project-local and triage preserves canonical record ident
  await open(page,saved,other);await expect(page.getByRole('heading',{name:captured.title,exact:true})).toBeVisible();
  await expect(page.getByText('Needs triage',{exact:true})).toHaveCount(0);
 });
+
+test('board status moves use canonical revisions, keyboard control and recovery guards',async({page,request})=>{
+ const a=await create(request,'Board move Alpha'),b=await create(request,'Board move Protected'),c=await create(request,'Board move Conflict');
+ await open(page,b);await edit(page);await title(page).fill('Recover board draft');await keep(page).click();
+ await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Board',exact:true}).click();
+ await page.getByRole('textbox',{name:'Search records'}).fill('Board move');
+ const board=page.getByRole('region',{name:'Status board'}),concept=board.getByRole('region',{name:'Concept column'}),progress=board.getByRole('region',{name:'In progress column'}),ready=board.getByRole('region',{name:'Ready column'});
+ const move=name=>board.getByRole('combobox',{name:'Move '+name+' to status',exact:true});
+ await expect(concept.getByRole('heading',{name:a.title,exact:true})).toBeVisible();
+ await concept.locator('.board-card-shell').filter({has:concept.getByRole('heading',{name:a.title,exact:true})}).locator('.board-grip').dragTo(progress.locator('.column-heading'));
+ await expect(progress.getByRole('heading',{name:a.title,exact:true})).toBeVisible();expect((await recordOnDisk(request,a.id)).status).toBe('In progress');
+ await move(a.title).focus();await move(a.title).selectOption('Ready');await expect(ready.getByRole('heading',{name:a.title,exact:true})).toBeVisible();await expect(move(a.title)).toBeFocused();
+ await move(b.title).selectOption('Ready');await expect(page.getByText('Recovery draft or unavailable recovery storage; resolve it before editing.',{exact:true})).toBeVisible();expect((await recordOnDisk(request,b.id)).status).toBe('Concept');
+ await page.route('**/api/projects/'+project+'/records/'+c.id+'/properties',async route=>{await update(request,c,{body:'External change'});await route.continue();},{times:1});
+ await move(c.title).selectOption('Ready');await expect(page.getByText('Record changed on disk. Refresh before editing its properties.',{exact:true})).toBeVisible();const latest=await recordOnDisk(request,c.id);expect(latest.status).toBe('Concept');expect(latest.body).toBe('External change');
+ await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Board move');
+});
