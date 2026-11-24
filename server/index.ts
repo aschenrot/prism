@@ -5,6 +5,8 @@ import { resolve } from 'node:path';
 import { ZodError } from 'zod';
 import { createSchema, idSchema, updateSchema, propertyUpdateSchema } from '../shared/records';
 import { ConflictError, MissingError, CustomPropertyError } from './store';
+import { schemaUpdateSchema } from '../shared/customProperties';
+import { SchemaWriteConflict,SchemaWriteRejected } from './projectSchema';
 import { loadProjects } from './projects';
 import { indexRepository, readRepositoryFile } from './repository';
 import { gitHistory } from './git';
@@ -28,6 +30,8 @@ app.addHook('onRequest', async (request, reply) => {
 });
 app.setErrorHandler((err, request, reply) => {
   if (err instanceof ZodError) return reply.code(400).send({error:err.issues.map(i => i.message).join('; ')});
+  if(err instanceof SchemaWriteConflict)return reply.code(409).send({error:err.message});
+  if(err instanceof SchemaWriteRejected)return reply.code(422).send({error:err.message});
   if (err instanceof CustomPropertyError) return reply.code(422).send({error:err.message});
   if (err instanceof ConflictError) return reply.code(409).send({error:err.message});
   if (err instanceof MissingError) return reply.code(404).send({error:err.message});
@@ -42,6 +46,7 @@ app.setErrorHandler((err, request, reply) => {
 const projectFor = (request:{params:unknown}) => projects.get(idSchema.parse((request.params as {projectId:string}).projectId));
 app.get('/api/projects', async () => projects.list());
 app.get('/api/projects/:projectId/schema',async request=>projectFor(request).store.schema());
+app.put('/api/projects/:projectId/schema',async request=>{const input=schemaUpdateSchema.parse(request.body);return projectFor(request).store.updateSchema(input.expectedRevision,input.definition);});
 app.get('/api/projects/:projectId/records', async request => projectFor(request).store.list());
 app.get('/api/projects/:projectId/repository', async request => {const p=projectFor(request);return p.info.storage==='repository'?indexRepository(p.root):{files:[],truncated:false};});
 app.get('/api/projects/:projectId/verification',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readVerification(p.root);});

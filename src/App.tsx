@@ -21,6 +21,7 @@ import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNa
 import { Knowledge } from './Knowledge';
 import { viewPreferences } from './viewPreferences';
 import { draftStorage } from './draftStorage';
+import SchemaAdministration from './SchemaAdministration';
 import { useProjectSchema,CustomPropertyFields } from './CustomProperties';
 import { changedCustomKeys,customPropertyIssue,type CustomValue } from '../shared/customProperties';
 import { freshDraft,isDirty,changedSinceCheckpoint,type EditorDraft } from '../shared/editor';
@@ -42,7 +43,7 @@ import { selectRecords,sortBy,sortDirection,modes,type Filters,type SavedView,ty
 
 const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen}] as const;
 type View = DestinationMode;
-const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,increments:Layers3,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,changes:GitBranch,presentations:Presentation,library:Database,trash:Trash2,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image};
+const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,increments:Layers3,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,changes:GitBranch,presentations:Presentation,library:Database,trash:Trash2,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image,schemas:Database};
 const excerpt = (body:string) => body.trim().split('\n').find(line => line.trim() && !line.startsWith('#')) || 'No description yet.';
 function RecordCard({record,selected,onSelect,onEdit,onTrash,href,gallery=false,disabled=false}:{record:ProjectRecord;selected:boolean;onSelect:()=>void;onEdit:()=>void;onTrash:()=>void;href:string;gallery?:boolean;disabled?:boolean}) {
   return <div className="collection-card"><RouteLink className={'record-card '+(selected?'selected ':'')+(gallery?'gallery-card':'')} href={href} onNavigate={onSelect}>
@@ -352,10 +353,11 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
       {query.isPending&&<div className="empty">Opening your workspace…</div>}
       {query.error&&<div className="warning" role="alert"><AlertTriangle size={16}/> {query.error.message}</div>}
       {!!query.data?.errors.length&&<div className="warning" role="alert">{query.data.errors.map(e=><div key={e.file}>{e.file}: {e.message}</div>)}</div>}
-      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Changes','Wiki','Relationships','Trash'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
+      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Changes','Wiki','Relationships','Trash','Schemas'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
       {view==='Overview'&&!query.isPending&&<WorkspaceOverview project={project} records={records} findings={findings.length} incomplete={!!query.error||!!query.data?.errors.length} history={history} historyError={historyQuery.isError} onSelect={select} onNavigate={navigate} hrefFor={hrefFor}/>}
       {(view==='Wiki'||view==='Relationships')&&<Knowledge key={destinationId+':'+(savedView?.id||'default')+':'+view} mode={view} visible={visible} records={records} onEdit={select} onDirectEdit={openEditor} onTrash={moveToTrash} disabled={controlsDisabled} focus={router.entry.context?.focus} hrefFor={hrefFor} onFocus={id=>router.replaceContext({...contextFor(navigation),slide:router.entry.context?.slide,focus:id})}/>}
       {view==='Trash'&&<TrashView projectId={projectId}/>}
+      {view==='Schemas'&&<SchemaAdministration projectId={projectId} records={records} incomplete={!!query.error||!!query.data?.errors.length} onBusyChange={setBusy}/>}
       {view==='Changes'&&<Changes history={history} loading={historyQuery.isFetching} error={historyQuery.isError} onRefresh={refreshHistory} records={records} onSelect={select} hrefFor={hrefFor}/>}
       {view==='Repository'&&<Suspense fallback={<div className="empty" role="status">Loading repository view…</div>}><Repository projectId={projectId}/></Suspense>}
       {view==='Audit'&&project.storage==='repository'&&<><LocalVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><BrowserVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><HostedVerification projectId={projectId} repository={project.githubRepository} history={historyQuery.isError?undefined:history}/></>}
