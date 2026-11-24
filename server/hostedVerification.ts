@@ -26,9 +26,9 @@ export async function readHostedRuns(repository:string,request:typeof fetch=fetc
    return {state:'error',message:'GitHub returned an unsuccessful response.'};
   }
   const parsed=githubRunsSchema.safeParse(await boundedJson(response));
-  if(!parsed.success)return {state:'error',message:'GitHub workflow metadata did not match the supported format.'};
+  if(!parsed.success||parsed.data.workflow_runs.some(run=>run.repository.full_name.toLowerCase()!==repository.toLowerCase()))return {state:'error',message:'GitHub workflow metadata did not match the configured repository or supported format.'};
   return {state:'available',repository:parsedRepo.data,observedAt:new Date().toISOString(),total:parsed.data.total_count,runs:parsed.data.workflow_runs.map(run=>({
-    id:run.id,name:run.name??'Workflow',branch:run.head_branch,head:run.head_sha,event:run.event,status:run.status,conclusion:run.conclusion,attempt:run.run_attempt,updatedAt:run.updated_at,pullRequests:[...new Set(run.pull_requests.map(p=>p.number))]
+    id:run.id,name:run.name??'Workflow',branch:run.head_branch,head:run.head_sha,event:run.event,status:run.status,conclusion:run.conclusion,attempt:run.run_attempt,updatedAt:run.updated_at,pullRequests:[...new Set(run.pull_requests.filter(p=>p.base?.repo.id===run.repository.id).map(p=>p.number))]
   }))};
  }catch{return {state:'error',message:'Could not read public GitHub workflow metadata.'};}
 }

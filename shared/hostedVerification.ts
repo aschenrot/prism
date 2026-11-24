@@ -14,7 +14,8 @@ const providerRun=z.object({
  conclusion:label.nullable(),
  run_attempt:z.number().int().positive(),
  updated_at:z.iso.datetime({offset:true}),
- pull_requests:z.array(z.object({number:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)})).max(100)
+ repository:z.object({id:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),full_name:githubRepositorySchema}),
+ pull_requests:z.array(z.object({number:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),base:z.object({repo:z.object({id:z.number().int().positive().max(Number.MAX_SAFE_INTEGER)})}).nullable().optional()})).max(100)
 });
 export const githubRunsSchema=z.object({total_count:z.number().int().nonnegative(),workflow_runs:z.array(providerRun).max(10)});
 export type HostedRun={id:number;name:string;branch:string|null;head:string;event:string;status:string;conclusion:string|null;attempt:number;updatedAt:string;pullRequests:number[]};

@@ -1,5 +1,5 @@
 import { test,expect } from '@playwright/test';
-import { rename } from 'node:fs/promises';
+import { rename,readFile,writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 const project='browser-review',other='browser-other';
 const prefix='/api/projects/'+project;
@@ -274,4 +274,27 @@ test('hosted verification is opt-in, revision-aware and does not retain a stale 
  await expect(page.getByRole('heading',{name:'Quality',exact:true})).toBeVisible();
  if(await otherPanel.count())await expect(otherPanel.getByText(/No public GitHub repository configured/)).toBeVisible();
  expect(requests).toBe(2);
+});
+
+test('increment shows only explicitly associated PR runs and exact attempt job metadata',async({page,request})=>{
+ const increment=await create(request,'Scoped hosted fixture','Increment');
+ const file=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'repo','.prism','records',increment.id+'.md');
+ await writeFile(file,(await readFile(file,'utf8')).replace(/^---\r?\n/,'---\ngithubPullRequests: [{repository: owner/project, number: 13}, {repository: other/project, number: 99}]\n'));
+ const invalid=await request.post(prefix+'/hosted-jobs',{data:{runId:42,attempt:0}});expect(invalid.status()).toBe(400);
+ await page.route('**/api/projects',async route=>{const response=await route.fetch();const items=await response.json();await route.fulfill({response,json:items.map(item=>item.id===project?{...item,githubRepository:'owner/project'}:item)});});
+ let calls=0;
+ const revision='a'.repeat(40),stamp='2026-11-24T10:00:00Z';
+ await page.route('**/api/projects/'+project+'/records/'+increment.id+'/hosted-pull',async route=>{calls++;expect(route.request().postDataJSON()).toEqual({number:13});await route.fulfill({json:{state:'available',repository:'owner/project',observedAt:stamp,pull:{number:13,title:'Scoped PR',state:'open',draft:false,merged:false,head:revision,base:'b'.repeat(40),reportedMerge:null,updatedAt:stamp}}});});
+ const run={id:42,name:'Scoped Verify',branch:'feature',head:revision,event:'pull_request',status:'completed',conclusion:'success',attempt:2,updatedAt:stamp,pullRequests:[13]};
+ await page.route('**/api/projects/'+project+'/hosted-verification',async route=>{calls++;await route.fulfill({json:{state:'available',repository:'owner/project',observedAt:stamp,total:3,runs:[run,{...run,id:43,name:'Unrelated Verify',pullRequests:[99]},{...run,id:44,name:'Push Verify',event:'push'}]}});});
+ await page.route('**/api/projects/'+project+'/hosted-jobs',async route=>{calls++;expect(route.request().postDataJSON()).toEqual({runId:42,attempt:2});await route.fulfill({json:{state:'available',repository:'owner/project',observedAt:stamp,runId:42,attempt:2,total:55,jobs:[{id:23,name:'verify matrix job',status:'completed',conclusion:'success',reportedHead:revision,startedAt:stamp,completedAt:stamp}]}});});
+ await open(page,increment);const panel=page.getByRole('region',{name:'Hosted delivery evidence'});
+ await expect(panel.getByRole('link',{name:'owner/project #13'})).toHaveAttribute('href','https://github.com/owner/project/pull/13');
+ await expect(panel.getByText(/Reference does not match/)).toBeVisible();expect(calls).toBe(0);
+ await panel.getByRole('button',{name:'Load PR',exact:true}).click();await expect(panel.getByText('Scoped PR',{exact:true})).toBeVisible();
+ await panel.getByRole('button',{name:'Load associated runs'}).click();await expect(panel.getByRole('link',{name:'Scoped Verify · #42'})).toBeVisible();
+ await expect(panel.getByText(/Unrelated Verify|Push Verify/)).toHaveCount(0);
+ await panel.getByRole('button',{name:'Load jobs'}).click();await expect(panel.getByRole('link',{name:'verify matrix job'})).toBeVisible();
+ await expect(panel.getByText(/Partial job list/)).toBeVisible();await expect(panel.getByText(/not actual checkout/)).toBeVisible();expect(calls).toBe(3);
+ expect((await recordOnDisk(request,increment.id)).status).toBe('Concept');
 });
