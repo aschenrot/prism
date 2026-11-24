@@ -24,6 +24,6 @@ test('capture and triage preserve canonical data and reject stale revisions',asy
  const restored=await store.restoreTrash(requeued.id,requeued.revision);assert.equal(restored.inbox,true);assert.equal(restored.id,item.id);
  assert.equal(captureSchema.safeParse({title:'Valid',body:'',status:'Ready'}).success,false);
  assert.equal(inboxUpdateSchema.safeParse({expectedRevision:item.revision,inbox:false,body:'overwrite'}).success,false);
- assert.equal(editableSchema.safeParse({...editableSchema.pick({title:true}).parse({title:'Valid'}),inbox:true}).success,false);
+ const ordinary={title:'Valid',type:'Idea',status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body:''};assert.equal(editableSchema.safeParse(ordinary).success,true);assert.equal(editableSchema.safeParse({...ordinary,inbox:true}).success,false);
  }finally{await rm(root,{recursive:true,force:true});}
 });
