@@ -21,3 +21,6 @@ Schemas workspace for each project: create stable-ID typed fields, edit labels, 
 
 ## First hosted attempt
 Run 45454524759: unit/build/audit gates passed; new browser scenario observed successful schema creation and record property save, but could not navigate back because sidebar hard-coded group list omitted Configuration. Define canonical typed navigationGroups in shared navigation and render it in App. Preserve browser navigation assertion. Main run 45454428447 passed all four jobs after PR #16. Fresh matrix required.
+
+## Technical integration
+PR #17 merged at 007d4ede8d6f38185e8e07a0fa5074e33caa21f7, identical verified tree. Run 45455067554 at topic 2df809e71b2b8b2effc554b05933876cd2199d5f and synthetic checkout 3731e6585caad579b697969a93a3aec2e0f77279: all four jobs passed 69 unit tests and 20 browser scenarios, zero failed/flaky/skipped, both audits zero vulnerabilities and clean eligible reports. Direct logs inspected. Human milestone review deferred. Custom entity identities tracked separately in custom-entity-types.
