@@ -21,7 +21,7 @@ Prism's authored records and view definitions live in .prism/records and .prism/
 6. Commit only intended changes; leave personal configurations and local project data out. Review git status and diffs before pulling or pushing. Resolve conflicting Markdown changes deliberately.
 7. Review the current milestone and blockers using the saved views. Let actual friction drive the next feature.
 
-Until typed relationships exist, relationships are generic directional links, not proof of implementation, dependency or verification. Saved views use the existing single type/status/priority/text filter; tag-like searches are plain text matching rather than exact tag predicates.
+Generic legacy links remain directional references. Explicit typed edges state a relation; neither generic links nor a verifies edge establish that a test actually ran or passed. Saved views use the existing single type/status/priority/text filter; tag-like searches are plain text matching rather than exact tag predicates.
 
 ## Verification checklist for self-management
 - Default launch lists Prism Development first, then Emberfall and Starter workspace.
@@ -34,4 +34,4 @@ Until typed relationships exist, relationships are generic directional links, no
 - Do not test destructive operations against live project data; use disposable records or isolated fixtures.
 
 ## Current limitations
-No custom schemas, typed relationships, date-based roadmaps, automated Git/CI ingestion, generated technical wiki, autosave or undo yet. Do not maintain parallel workarounds as another source of truth. Track the missing capability in Prism.
+No custom schemas, custom relationship vocabularies, dependency-cycle analysis, date-based roadmaps, automated Git/CI ingestion, generated technical wiki, autosave or undo yet. Do not maintain parallel workarounds as another source of truth. Track the missing capability in Prism.

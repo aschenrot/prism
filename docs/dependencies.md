@@ -39,3 +39,6 @@ Node 26.13.1: typecheck and production build succeeded; 10 tests passed, one fil
 Reported newer major versions: concurrently 10.0.7, lucide-react 1.78.0, motion 14.14.0, TypeScript 7.0.2 and Node types 26.6.6. These are not security blockers in the supplied audit. Node types remain on the lowest supported Node major unless support policy changes. Review major migration guides, icon exports, motion APIs, compiler/Node engine and runner compatibility in separate changes; no blanket upgrades.
 
 The reported initial JS chunk was 660.96 kB minified (201.60 kB gzip). Presentation, knowledge and repository views now load on demand; measure the next production build rather than raising the warning threshold. No new dependencies added by this optimization.
+
+## Lockfile baseline
+At bb3d0f0, the owner-provided npm lockfile was present and matched the manifest's root declarations. All resolved URLs inspected were from the public npm registry, with no embedded credentials. CI now uses npm ci unconditionally. Clean Windows/Linux verification remains outstanding; earlier CI run 45325390198 failed with inaccessible logs. See the lockfile and CI task records.

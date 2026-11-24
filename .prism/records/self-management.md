@@ -6,7 +6,7 @@ status: "In progress"
 priority: "High"
 accent: "teal"
 tags: ["roadmap","current","brief"]
-relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license"]
+relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license","typed-link-slice"]
 ---
 Current milestone. Use Prism's own repository as the primary development workspace.
 

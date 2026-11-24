@@ -4,7 +4,7 @@ title: "09 · Release blockers"
 mode: Table
 filters:
   type: "Task"
-  status: "Concept"
+  status: "Any status"
   priority: "High"
   search: "blocker"
   sort: "Priority"

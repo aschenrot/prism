@@ -26,10 +26,5 @@ export function selectRecords(records:ProjectRecord[],filters:Filters){
     (!query||[r.id,r.title,r.type,r.body,...r.tags].join(' ').toLowerCase().includes(query))
   ).sort((a,b)=>(filters.sort==='Priority'?rank[a.priority]-rank[b.priority]:filters.sort==='Status'?statuses.indexOf(a.status)-statuses.indexOf(b.status):0)||a.title.localeCompare(b.title)||a.id.localeCompare(b.id));
 }
-export function relationshipsFor(records:ProjectRecord[],id:string){
-  const byId=new Map(records.map(r=>[r.id,r]));
-  const record=byId.get(id);
-  const outgoing=[...new Set(record?.relationships||[])].map(target=>({id:target,record:byId.get(target)}));
-  const incoming=records.filter(r=>r.relationships.includes(id)&&r.id!==id);
-  return {outgoing,incoming};
-}
+// Keep the existing projection import path available.
+export { relationshipsFor } from './relationships';

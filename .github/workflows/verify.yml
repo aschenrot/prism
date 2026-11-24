@@ -20,14 +20,8 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: node --version
       - run: npm --version
-      - name: Install resolved dependencies
-        shell: bash
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
-          fi
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm test
       - run: npm run build

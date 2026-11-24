@@ -25,7 +25,7 @@ npm run build
 
 Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. CI covers Linux and Windows on Node 22 and 26.
 
-Dependency policy: latest compatible stable releases, verified migrations and reproducible installs. See [dependency maintenance](docs/dependencies.md). For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. A committed lockfile is needed for reproducible npm CI; it is not yet present.
+Dependency policy: latest compatible stable releases, verified migrations and reproducible installs. See [dependency maintenance](docs/dependencies.md). For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. The committed npm lockfile is required by CI; use npm ci for clean reproducible installs.
 
 ## Develop Prism with Prism
 
@@ -51,7 +51,7 @@ Repository view previews original documentation, source and manifest files in co
 
 ## Saved views and knowledge
 
-Filter by type, status, priority and text; choose title, priority or status sorting. Save the configuration to a project-scoped YAML view, reopen it, update it or delete it without deleting any records. Emberfall includes four ready-made views. Wiki renders record Markdown; Relationships exposes direct links and backlinks. Repository Markdown can be toggled between rendered and source modes. No AI or compiler is used to generate these pages.
+Filter by type, status, priority and text; choose title, priority or status sorting. Save the configuration to a project-scoped YAML view, reopen it, update it or delete it without deleting any records. Emberfall includes four ready-made views. Wiki renders record Markdown; Relationships exposes direct links and labeled backlinks. Explicit implements, verifies, depends-on, blocks, documents and related-to edges coexist with legacy generic IDs. Repository Markdown can be toggled between rendered and source modes. No AI or compiler is used to generate these pages.
 
 ### Implemented in this first slice
 

@@ -8,6 +8,7 @@ import { auditRecords } from '../shared/audit';
 const Repository=lazy(()=>import('./Repository'));
 import SavedViews from './SavedViews';
 import { RecordLinks } from './RecordLinks';
+import RelationshipEditor from './RelationshipEditor';
 import Artwork from './Artwork';
 import Status from './Status';
 const Knowledge=lazy(()=>import('./Knowledge').then(module=>({default:module.Knowledge})));
@@ -33,7 +34,7 @@ function Inspector({projectId,record,records,onSelect,onClose,onBusyChange}:{pro
   const update=<K extends keyof Editable>(key:K,value:Editable[K])=>setDraft(d=>({...d,[key]:value}));
   const reset=()=>{setDraft(recordToEdit(record));setRevision(record.revision);setSaved(JSON.stringify(recordToEdit(record)));};
   useEffect(()=>{if(stale&&!dirty){reset();}},[record.revision,dirty,revision]);
-  const mutation=useMutation({mutationFn:()=>api.update(projectId,record.id,revision,{...draft,tags:draft.tags.map(t=>t.trim()).filter(Boolean),relationships:draft.relationships.map(t=>t.trim()).filter(Boolean)}),onSuccess:next=>{
+  const mutation=useMutation({mutationFn:()=>api.update(projectId,record.id,revision,{...draft,tags:draft.tags.map(t=>t.trim()).filter(Boolean)}),onSuccess:next=>{
     const value=recordToEdit(next);setDraft(value);setRevision(next.revision);setSaved(JSON.stringify(value));
     qc.setQueryData(['records',projectId],(old:Awaited<ReturnType<typeof api.list>>|undefined)=>old?{...old,records:old.records.map(r=>r.id===next.id?next:r)}:old);
     void qc.invalidateQueries({queryKey:['records',projectId]});
@@ -51,9 +52,7 @@ function Inspector({projectId,record,records,onSelect,onClose,onBusyChange}:{pro
       <label>Accent<select value={draft.accent} onChange={e=>update('accent',e.target.value as Editable['accent'])}>{accents.map(v=><option key={v}>{v}</option>)}</select></label></div>
       <label>Tags <small>Comma separated</small><input value={draft.tags.join(',')} onChange={e=>update('tags',e.target.value.split(','))}/></label>
       <label>Notes <small>Markdown source</small><textarea rows={11} value={draft.body} onChange={e=>update('body',e.target.value)}/></label>
-      <label>Add a relationship<select value="" onChange={e=>{if(e.target.value)update('relationships',[...draft.relationships,e.target.value]);}}><option value="">Choose a record…</option>{records.filter(r=>r.id!==record.id&&!draft.relationships.includes(r.id)).map(r=><option key={r.id} value={r.id}>{r.title} ({r.type})</option>)}</select></label>
-      <div className="draft-links">{draft.relationships.filter(Boolean).map((id,i)=><div className="draft-link" key={id+'-'+i}><span>{records.find(r=>r.id===id)?.title||id}</span><button type="button" className="icon-button" aria-label={'Remove '+id} onClick={()=>update('relationships',draft.relationships.filter((_,j)=>j!==i))}><X size={13}/></button></div>)}</div>
-      <label>Linked IDs <small>Advanced / comma separated</small><input value={draft.relationships.join(',')} onChange={e=>update('relationships',e.target.value.split(','))}/></label>
+      <RelationshipEditor sourceId={record.id} sourceType={draft.type} links={draft.relationships} records={records} onChange={links=>update('relationships',links)}/>
       </fieldset>
       {stale&&dirty&&<div className="warning" role="alert">Changed on disk. Copy any unsaved text before reloading.<button type="button" className="secondary" onClick={reset}>Reload record</button></div>}
       {mutation.error&&<p className="warning" role="alert">{mutation.error.message}</p>}
