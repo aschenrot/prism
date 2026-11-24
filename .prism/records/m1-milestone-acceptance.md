@@ -27,6 +27,7 @@ relationships:
   - local-project-registration
   - requirements-traceability
   - recovery-workspace
+  - definition-form-recovery
   - quality-gates
 ---
 ## Review instructions
@@ -77,3 +78,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K17 — **Review requirements traceability and project status** — Link disposable task, test and document records to a requirement with explicit relationship kinds, leave another requirement unlinked and add a generic link. Open Traceability, inspect gaps and follow a linked record; compare Overview. Expected: explicit links only, visible gaps, accurate authored status, retained context and no inferred test results or completion.
 
 - [ ] K18 — **Recover a draft after its record disappears** — Retain a disposable draft, temporarily move the canonical file outside the records directory, open Recovery, export the draft, switch projects and restore the file. Expected: stored input remains available, no cross-project entries, no implicit canonical write; resume through the normal editor after restoring the file or explicitly discard only the stored copy.
+
+- [ ] K19 — **Retain unfinished definition input** — Start a property, entity and template definition with incomplete values, keep and close each, reload and resume. Expected: the unsaved input remains separate from canonical definitions, current revision still gates saving, clear export/discard options and no cross-project recovery.
