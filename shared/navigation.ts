@@ -5,7 +5,7 @@ import { defaultFilters,selectRecords,type Filters,type ViewInput,type SavedView
 export type RecordMode=ViewInput['mode'];
 export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes'|'Trash'|'Schemas'|'Search'|'Templates'|'Inbox';
 // Global visual order is independent of each destination's recommended mode.
-export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Plan','Timeline','Slides','Audit','Repository','Changes','Overview','Trash','Schemas','Search','Templates','Inbox'] as const satisfies readonly DestinationMode[];
+export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Traceability','Plan','Timeline','Slides','Audit','Repository','Changes','Overview','Trash','Schemas','Search','Templates','Inbox'] as const satisfies readonly DestinationMode[];
 export const navigationGroups=['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio','Configuration'] as const;
 export type NavigationGroup=typeof navigationGroups[number];
 export type Destination={id:string;label:string;description:string;group:NavigationGroup;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
@@ -21,7 +21,7 @@ const common=[
   dest('decisions','Decisions','Review why choices were made.','Knowledge','Wiki','Decision',['Wiki','Table']),
   dest('architecture','Architecture','Explore systems and their connections.','Knowledge','Relationships','System',['Relationships','Wiki','Table']),
   dest('presentations','Presentations','Present live project information.','Studio','Slides','All records',['Slides']),
-  dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Plan','Timeline','Slides','Search']),
+  dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Traceability','Plan','Timeline','Slides','Search']),
   dest('trash','Trash','Restore records that were moved out of active collections.','Workspace','Trash'),
   dest('schemas','Schemas','Configure project properties without rewriting record values.','Configuration','Schemas'),
   dest('templates','Templates','Manage reusable initial record content.','Configuration','Templates')
@@ -31,8 +31,8 @@ export function destinationsFor(project:ProjectInfo):Destination[]{
   if(project.profiles.includes('product')){
     result.splice(1,0,
       dest('strategy','Strategy','Product objectives and direction.','Product','Wiki','Objective',['Wiki','Table']),
-      dest('features','Features','Prioritize and review product capabilities.','Product','Table','Feature',['Table','Board','Wiki']),
-      dest('requirements','Requirements','Inspect requirements and trace their connections.','Product','Relationships','Requirement',['Relationships','Wiki','Table']));
+      dest('features','Features','Prioritize and review product capabilities.','Product','Table','Feature',['Table','Board','Wiki','Traceability']),
+      dest('requirements','Requirements','Inspect requirements and trace their connections.','Product','Relationships','Requirement',['Relationships','Wiki','Table','Traceability']));
   }
   if(project.profiles.includes('game')){
     const pos=result.findIndex(d=>d.id==='work');

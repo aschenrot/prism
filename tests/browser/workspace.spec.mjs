@@ -592,3 +592,14 @@ test('opt-in autosave commits valid drafts and pauses on external conflict witho
  await expect(title(page)).toHaveValue('Unsaved local after conflict');const latest=await recordOnDisk(request,r.id);expect(latest.title).toBe(first.title);expect(latest.body).toBe('External autosave conflict');
  await keep(page).click();await page.reload();await page.getByRole('button',{name:'Resume draft'}).click();await expect(toggle).not.toBeChecked();await expect(title(page)).toHaveValue('Unsaved local after conflict');
 });
+
+test('requirements traceability distinguishes explicit links from authored readiness and preserves context',async({page,request})=>{
+ const req=await create(request,'Trace fixture requirement','Requirement'),gap=await create(request,'Trace fixture gap','Requirement'),implementation=await create(request,'Trace fixture task','Task'),testRecord=await create(request,'Trace fixture test','Test'),generic=await create(request,'Trace fixture generic','Task');
+ await update(request,implementation,{relationships:[{kind:'implements',target:req.id}]});await update(request,testRecord,{status:'Ready',relationships:[{kind:'verifies',target:req.id}]});await update(request,generic,{relationships:[req.id]});
+ await page.goto('/#/projects/'+project+'/requirements');await page.getByRole('button',{name:'Traceability',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Trace fixture');
+ const panel=page.getByRole('region',{name:'Requirements traceability'}),row=panel.getByRole('row').filter({has:page.getByRole('link',{name:req.title,exact:true})});
+ await expect(row.getByRole('link',{name:implementation.title,exact:true})).toBeVisible();await expect(row.getByRole('link',{name:testRecord.title,exact:true})).toBeVisible();await expect(row.getByRole('link',{name:generic.title,exact:true})).toHaveCount(0);
+ await expect(panel.getByRole('columnheader',{name:'Test links (not results)',exact:true})).toBeVisible();
+ const gapRow=panel.getByRole('row').filter({has:page.getByRole('link',{name:gap.title,exact:true})});await expect(gapRow.getByText('No explicit link',{exact:true})).toHaveCount(3);
+ await row.getByRole('link',{name:implementation.title,exact:true}).click();await expect(page.getByRole('heading',{name:implementation.title,exact:true})).toBeVisible();await page.goBack();await expect(panel).toBeVisible();await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Trace fixture');
+});

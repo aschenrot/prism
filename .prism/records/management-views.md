@@ -18,3 +18,6 @@ Dependency planning: see dependency-planning. A derived projection of explicit l
 
 
 Authored timelines: see authored-timelines. Explicit date property mapping, reusable saved views and no inferred schedule; automatic dependency scheduling remains outside this slice.
+
+
+Traceability matrix: see requirements-traceability. Explicit implementation, test and documentation link coverage, with gaps and invalid endpoint diagnostics. Project Overview reports authored work and link coverage; these counts are not delivery or acceptance evidence.

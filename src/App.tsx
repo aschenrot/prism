@@ -39,6 +39,7 @@ import Inbox from './Inbox';
 import StatusBoard from './StatusBoard';
 import DependencyPlan from './DependencyPlan';
 import Timeline from './Timeline';
+import Traceability from './Traceability';
 import type { RecordTemplate } from '../shared/templates';
 import { columnFor,defaultTableColumns,tableMinWidth,propertyColumnValue } from '../shared/tableColumns';
 import RecordActions,{RecordCommandContext} from './RecordActions';
@@ -52,7 +53,7 @@ import { useWorkspaceHistory,type WorkspaceHistory } from './workspaceHistory';
 const SlideView=lazy(()=>import('./SlideView'));
 import { selectRecords,sortBy,sortDirection,modes,type Filters,type SavedView,type ViewInput } from '../shared/views';
 
-const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Plan',icon:GitBranch},{name:'Timeline',icon:Flag},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen},{name:'Search',icon:Search}] as const;
+const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Traceability',icon:ListChecks},{name:'Plan',icon:GitBranch},{name:'Timeline',icon:Flag},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen},{name:'Search',icon:Search}] as const;
 type View = DestinationMode;
 const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,increments:Layers3,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,changes:GitBranch,presentations:Presentation,library:Database,trash:Trash2,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image,schemas:Database,templates:FileText,inbox:FileText};
 const excerpt = (body:string) => body.trim().split('\n').find(line => line.trim() && !line.startsWith('#')) || 'No description yet.';
@@ -414,7 +415,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
       {query.isPending&&<div className="empty">Opening your workspace…</div>}
       {query.error&&<div className="warning" role="alert"><AlertTriangle size={16}/> {query.error.message}</div>}
       {!!query.data?.errors.length&&<div className="warning" role="alert">{query.data.errors.map(e=><div key={e.file}>{e.file}: {e.message}</div>)}</div>}
-      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Changes','Wiki','Relationships','Trash','Schemas','Templates','Inbox','Search','Board','Plan','Timeline'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
+      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Changes','Wiki','Relationships','Trash','Schemas','Templates','Inbox','Search','Board','Plan','Timeline','Traceability'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
       {view==='Overview'&&!query.isPending&&<WorkspaceOverview project={project} records={records} findings={findings.length} incomplete={!!query.error||!!query.data?.errors.length} history={history} historyError={historyQuery.isError} onSelect={select} onNavigate={navigate} hrefFor={hrefFor}/>}
       {(view==='Wiki'||view==='Relationships')&&<Knowledge key={destinationId+':'+(savedView?.id||'default')+':'+view} mode={view} visible={visible} records={records} onEdit={select} onDirectEdit={openEditor} onTrash={moveToTrash} disabled={controlsDisabled} focus={router.entry.context?.focus} hrefFor={hrefFor} onFocus={id=>router.replaceContext({...contextFor(navigation),slide:router.entry.context?.slide,focus:id})}/>}
       {view==='Trash'&&<TrashView projectId={projectId}/>}
@@ -426,6 +427,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
       {view==='Repository'&&<Suspense fallback={<div className="empty" role="status">Loading repository view…</div>}><Repository projectId={projectId}/></Suspense>}
       {view==='Audit'&&project.storage==='repository'&&<><LocalVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><BrowserVerification projectId={projectId} history={historyQuery.isError?undefined:history}/><HostedVerification projectId={projectId} repository={project.githubRepository} history={historyQuery.isError?undefined:history}/></>}
       {view==='Audit'&&<section className="audit-panel"><div className="audit-summary"><div><span className="eyebrow">RECORDS CHECKED</span><strong>{records.length}</strong></div><div><span className="eyebrow">REVIEW FINDINGS</span><strong>{findings.length}</strong></div></div><p className="audit-description">Deterministic checks of descriptions and record links. These findings are not a code quality or release readiness score.</p>{!findings.length&&!query.isPending&&!query.error&&<p>No record-level findings.</p>}{findings.map(f=><button key={f.id} className="audit-finding" onClick={()=>select(f.recordId)}><AlertTriangle size={17}/><span><strong>{f.title}</strong><small>{f.detail}</small></span><ArrowUpRight size={14}/></button>)}</section>}
+      {!query.isPending&&view==='Traceability'&&<Traceability records={records} visible={visible} incomplete={!!query.error||!!query.data?.errors.length} onOpen={select} hrefFor={hrefFor}/>}
       {!query.isPending&&view==='Timeline'&&<Timeline records={visible} schema={projectSchema} config={navigation.timeline} disabled={controlsDisabled} incomplete={!!query.error||!!query.data?.errors.length} onChange={timeline=>router.replaceContext({...contextFor(navigation),timeline})} onOpen={select} hrefFor={hrefFor}/>}
       {!query.isPending&&view==='Plan'&&<DependencyPlan records={records} visible={visible} incomplete={!!query.error||!!query.data?.errors.length} onOpen={select} hrefFor={hrefFor}/>}
       {!query.isPending&&view==='Board'&&<StatusBoard key={selectionScope} records={visible} disabled={controlsDisabled} pending={propertyUpdate.isPending} onMove={(record,status)=>changeProperty(record,{status})} renderCard={r=><RecordCard record={r} typeLabel={entityTypeLabel(projectSchema,r.customTypeId,r.type)} selected={r.id===selected} href={hrefFor(r.id)} onSelect={()=>select(r.id)} onEdit={()=>openEditor(r.id)} onTrash={()=>moveToTrash(r.id)} disabled={controlsDisabled}/>}/>} 
