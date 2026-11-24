@@ -24,3 +24,6 @@ M1 increment: expose real GitHub evidence without duplicating authored planning 
 
 ## Scoped hosted evidence
 Explicit repository-qualified GitHub PR references are now canonical metadata, preserved by regular record mutations and excluded from duplication. Reference #14 is authored deliberately. Remote lookup resolves only the configured repository and reference; run association requires a matching provider base-repository ID and PR number, not branch/title guesses. Recent results can be incomplete. Job detail reads are attempt-specific and bounded to 50 jobs; no job metadata attests actual checkout, artifact coverage or human acceptance. PR/job view prepared; full current CI pending. Authored reference editing is through reviewed Markdown frontmatter initially; schema-driven authoring belongs to the next M1 engine increment.
+
+## M1 closure scope
+The earlier frontmatter-only authoring and pending-integration descriptions are historical. PRs #14–15 integrated under required hosted checks; see ci-verification and hosted-pr-association for exact evidence. PR #35 adds dedicated in-app association authoring; its integration and H04 review remain separate gates. Live provider access is an explicit H01–H03 review outcome, not established by mocked browser regressions. Durable artifact attestation remains outside this baseline.

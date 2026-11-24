@@ -6,7 +6,7 @@ status: In progress
 priority: High
 accent: teal
 tags: [quality, management, milestone]
-relationships: [knowledge-engine, m1-milestone-acceptance, quality-gates, development-workflow-decision]
+relationships: [knowledge-engine, m1-milestone-acceptance, quality-gates, development-workflow-decision, record-navigation, editor-acceptance, collection-interaction, collection-acceptance, public-preview-readiness, ci-verification]
 ---
 ## Closure criteria
 - Explicit Milestone → Increment → Task/Test scope, with repository-qualified PR references and one consolidated review definition. Review all seven increments; no omitted implementation tasks in recent work.
@@ -17,3 +17,6 @@ relationships: [knowledge-engine, m1-milestone-acceptance, quality-gates, develo
 
 ## Boundaries for this milestone
 The M1 baseline includes constrained version-1 schemas and stable custom entity identities; non-destructive retirement instead of arbitrary conversion; reusable table presentation, typed values edited in the existing record editor; explicit built-in relationships; bounded search, templates and inbox; status movement, direct dependency planning, authored date timelines and requirements matrix; protected editor drafts and opt-in autosave; local backup/restore and registration; scoped hosted metadata and authored PR links. No executable formulas, custom relationship vocabularies, arbitrary destructive migrations, automatic scheduling, persisted manual card ordering, filesystem or cross-device draft synchronization, persistent search index, unrestricted browser folder access, private GitHub authentication or durable hosted artifact attestation. These boundaries preserve existing architectural decisions and do not imply broad feature/release acceptance. Further work requires evidence of need or separate product decisions. Remaining actual defect fixes are in scope.
+
+## Historical scope and current evidence
+Earlier owner-accepted PRs #9–11 remain historical evidence: record-navigation, editor-acceptance, collection-interaction, collection-acceptance and record-actions-acceptance. Publication and required cross-platform verification are supporting infrastructure (PRs #12–13; public-preview-readiness and ci-verification), not new human acceptance of the product. The seven increments capture the coherent delivery scope from PR #11 and PRs #14–35; this closure task covers PR #36. Technical integration evidence remains revision-specific. Review the latest section of knowledge-engine and ci-verification rather than historical pending statements. Do not start the owner run until the entire candidate is on main and the final main matrix has passed.

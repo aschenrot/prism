@@ -38,6 +38,8 @@ relationships:
   - kind: contains
     target: project-configuration-increment
   - m1-review-readiness
+  - public-preview-readiness
+  - ci-verification
   - m1-milestone-acceptance
 ---
 Dogfood requirements before extending the generic engine. Support custom entity schemas, typed relationships, schema-driven editors, templates, inbox, richer search, persistent edits and project management views. Acceptance: a requirement linked to an objective and task is edited once and updates relevant views; old records remain valid or migrate explicitly.
@@ -71,3 +73,5 @@ PRs #16–22 integrated after exact hosted verification. Custom schemas, entity 
 
 ## Consolidated M1 candidate scope
 Use the seven explicit delivery increments, m1-review-readiness and the single m1-milestone-acceptance definition. PRs #23–35 cover management views, reliability, project settings, explicit hosted reference authoring and closure fixes. Technical status is established by exact current matrix evidence, not an authored Ready flag. The remaining integration and human review gates must pass before M1 acceptance. No M2 implementation authority implied.
+
+Earlier paragraphs retain historical decisions and evidence for their original revisions. PRs #9–11 are accepted historical slices; PRs #12–13 establish public preview and required hosted verification. The ruleset conflict was resolved; all four checks are required on main. The final M1 readiness task, not older Current increment headings, controls the remaining closure work. In-app PR authoring is scoped to the PR #35 candidate; do not count it as integrated before its current checks and merge. Persistent indexing and durable hosted artifact attestation are deferred boundaries, not claimed implementations. Final owner acceptance remains open.
