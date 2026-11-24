@@ -1,5 +1,6 @@
 import type { Editable, ProjectRecord, RecordList, TrashList, PropertyChanges } from '../shared/records';
 import type { ProjectInfo, RepositoryIndex } from '../shared/projects';
+import type { ProjectSchemaResult } from '../shared/customProperties';
 import type { GitHistory } from '../shared/delivery';
 import type { VerificationResult } from '../shared/verification';
 import type { BrowserVerificationResult } from '../shared/browserVerification';
@@ -33,11 +34,12 @@ export const api = {
   trash:(project:string)=>request<TrashList>(base(project)+'/trash'),
   moveToTrash:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/trash',json('POST',{expectedRevision})),
   restoreTrash:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/trash/'+encodeURIComponent(id)+'/restore',json('POST',{expectedRevision})),
+  schema:(project:string)=>request<ProjectSchemaResult>(base(project)+'/schema'),
   list:(project:string)=>request<RecordList>(base(project)+'/records'),
   create:(project:string,title:string,type:Editable['type'])=>request<ProjectRecord>(base(project)+'/records',json('POST',{title,type})),
   duplicate:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/duplicate',json('POST',{expectedRevision})),
   updateProperties:(project:string,id:string,expectedRevision:string,changes:PropertyChanges)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/properties',json('PUT',{expectedRevision,changes})),
-  update:(project:string,id:string,expectedRevision:string,changes:Editable)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id),json('PUT',{expectedRevision,changes})),
+  update:(project:string,id:string,expectedRevision:string,changes:Editable,expectedSchemaRevision?:string)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id),json('PUT',{expectedRevision,changes,expectedSchemaRevision})),
   hostedPull:(project:string,id:string,number:number)=>request<HostedPullResult>(base(project)+'/records/'+encodeURIComponent(id)+'/hosted-pull',json('POST',{number})),
   hostedJobs:(project:string,runId:number,attempt:number)=>request<HostedJobsResult>(base(project)+'/hosted-jobs',json('POST',{runId,attempt})),
   hostedVerification:(project:string)=>request<HostedVerificationResult>(base(project)+'/hosted-verification',json('POST',{})),

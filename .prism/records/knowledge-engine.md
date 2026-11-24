@@ -26,6 +26,8 @@ relationships:
     target: record-management-increment
   - kind: contains
     target: hosted-delivery-increment
+  - kind: contains
+    target: project-property-increment
   - m1-milestone-acceptance
 ---
 Dogfood requirements before extending the generic engine. Support custom entity schemas, typed relationships, schema-driven editors, templates, inbox, richer search, persistent edits and project management views. Acceptance: a requirement linked to an objective and task is edited once and updates relevant views; old records remain valid or migrate explicitly.
@@ -49,3 +51,6 @@ Explicit delivery scope now uses Contains edges, distinct from generic milestone
 
 ## Current M1 delivery policy
 Owner delegated verified in-scope technical integrations and deferred product acceptance to milestone completion on 2026-11-24. See development-workflow-decision and m1-milestone-acceptance. PR #11 was integrated and accepted as recorded in record-actions-acceptance. PR #13 achieved full hosted verification; integration remains blocked by conflicting linear-history protection. Continue the next increment on a dependent topic branch without bypassing protection. Current implementation scope: hosted-delivery-increment. Historical approval statements above are superseded by the recorded decisions at their respective revisions.
+
+## Current development increment
+PRs #13–15 integrated through mandatory hosted checks, main run 45391844584 passed. Hosted metadata and scoped PR/job evidence are integrated; live lookup, durable artifact proof and reference authoring remain tracked limitations. M1 now advances project-property-increment (versioned custom property definitions and schema-driven editor); do not claim the full custom entity engine complete or human acceptance passed.

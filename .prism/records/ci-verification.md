@@ -35,3 +35,6 @@ At PR #13 head 3f8f043ba14b417a1fbe53a11552a6b856f3637a (browser checked-out mer
 
 ## Required checks adopted
 Owner corrected Protect Main on 2026-11-24. Direct ruleset read confirms all four named Actions checks required, strict base policy, no bypass actors, deletion/non-fast-forward and PR rules retained, required-linear-history removed. PR #13 integrated at 1678976837e836bfc0096f1cd8cae35c692c82e6; main run 45390756019 passed all four jobs. PR #14 then synchronized and passed required run 45390802441 (59/59 unit, 17/17 browser each; exact synthetic SHA 38ca4ce09feaa57eb6de2560b7ddb16ad1cf430a). Merged 146b5da82dc8213ad2ab821b41d446dcd2135111, identical tree. Main post-merge CI tracked separately. Delegated in-scope technical integration now operational. Human milestone acceptance still pending.
+
+## Subsequent integrated baseline
+PR #15 merged preserving the verified tree at 34b8c2cc8c865ece6279ada09e8bd247ffbc1a36. Required matrix run 45391421549, synthetic checkout 3a915503b73e1353aebbb9ec97f93941b808ff07, inspected all four logs: 63 unit tests and 18 browser scenarios each, all passed; clean eligible evidence, zero skips/flakes/failures, both audits zero vulnerabilities. Main run 45391844584 completed successfully across all four jobs. Current M1 schema increment starts from this main revision.

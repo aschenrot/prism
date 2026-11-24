@@ -11,6 +11,8 @@ relationships:
   - hosted-delivery-increment
   - hosted-workflow-metadata
   - hosted-pr-association
+  - project-property-increment
+  - property-schema-foundation
   - quality-gates
 ---
 ## Review instructions
@@ -29,3 +31,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 ## K. Knowledge and project management
 - [ ] K01 — **Edit a linked requirement once** — In a disposable project, connect an objective, requirement and task and edit the requirement through the supported editor. Expected: one canonical record updates the relevant views; existing records remain valid or migrate explicitly.
 - [ ] K02 — **Find and manage work** — Review the final M1 schema, search, template, inbox and management-view capabilities using the delivered product workflows. Expected: cohesive workflows with clear scope, accessible interaction and no duplicate source of truth. Refine concrete cases as the corresponding increments are implemented.
+
+- [ ] K03 — **Edit configured properties safely** — In a disposable project with a version-1 schema, edit text, number, date, enum, boolean and record-reference properties. Keep a draft, reopen, and save after reviewing an externally changed schema. Expected: recoverable values, clear validation, stable property identity, stale-schema rejection, no data loss or leakage to another project.

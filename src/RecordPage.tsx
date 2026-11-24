@@ -15,6 +15,7 @@ import RouteLink from './RouteLink';
 import RecordActions from './RecordActions';
 import IncrementPanel,{MilestoneScope} from './IncrementPanel';
 import ScopedHostedEvidence from './ScopedHostedEvidence';
+import { CustomPropertyReadout } from './CustomProperties';
 const MarkdownBody=lazy(()=>import('./Markdown'));
 function ReviewLink({projectId,test,head,href,onOpen}:{projectId:string;test:ProjectRecord;head:string|undefined;href:string;onOpen:()=>void}){
   const parsed=acceptanceDefinition(test);
@@ -49,6 +50,7 @@ export default function RecordPage({projectId,githubRepository,record,records,in
     {parsed.state==='invalid'&&<p className="warning" role="alert">{parsed.message} Use Edit test definition to repair the case format.</p>}
     {parsed.state==='available'&&!repository&&<p className="overview-note">Revision-bound review runs require an independent Git repository. The test definition remains readable.</p>}
     {nativeReview&&definition?<AcceptanceWorkspace key={record.id} projectId={projectId} record={record} definition={definition} head={reviewHead} onBusyChange={onBusyChange}/>:<section className="record-reading" aria-label={record.type==='Test'?'Test instructions':'Record content'}><h2>{record.type==='Test'?'Test instructions and results':record.type==='Document'?'Document':'Details'}</h2><Suspense fallback={<p role="status" className="markdown-loading">Loading record content…</p>}><MarkdownBody body={record.body}/></Suspense>{record.type==='Test'&&<p className="overview-note">Markdown checkboxes are read-only. Native execution is available for supported acceptance definitions in Git repositories.</p>}</section>}
+    <CustomPropertyReadout projectId={projectId} record={record} records={records}/>
     <section className="record-reading"><h2>Relationships</h2><RecordLinks records={records} id={record.id} onSelect={onOpen} hrefFor={hrefFor}/></section>
     {repository&&<section className="record-reading"><h2>Implementation evidence</h2><RecordEvidence record={record} history={history} loading={historyLoading} error={historyError} onRefresh={onRefresh}/></section>}
   </article>;

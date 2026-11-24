@@ -1,0 +1,21 @@
+version: 1
+fields:
+  - id: estimated-hours
+    label: Estimated hours
+    kind: number
+    appliesTo: [Task]
+  - id: target-date
+    label: Target date
+    kind: date
+    appliesTo: [Task, Milestone, Increment]
+  - id: confidence
+    label: Confidence
+    kind: enum
+    appliesTo: [Requirement, Research, Risk]
+    options:
+      - id: low
+        label: Low
+      - id: medium
+        label: Medium
+      - id: high
+        label: High
