@@ -8,10 +8,10 @@ export default function SavedViews({projectId,current,active,onApply,onClear}:{p
   const query=useQuery({queryKey:['views',projectId],queryFn:()=>api.views(projectId),refetchInterval:5000});
   const [title,setTitle]=useState(''),[open,setOpen]=useState(false);
   const refresh=()=>{void qc.invalidateQueries({queryKey:['views',projectId]});};
-  const mutation=useMutation({mutationFn:(action:'create'|'update'|'delete')=>{
-    if(action==='delete'&&active)return api.removeView(projectId,active.id,active.revision);
+  const mutation=useMutation({mutationFn:async (action:'create'|'update'|'delete'):Promise<SavedView|{ok:boolean}>=>{
+    if(action==='delete'){if(!active)throw new Error('No saved view selected');return api.removeView(projectId,active.id,active.revision);}
     if(!current)throw new Error('Choose a record view');
-    if(action==='update'&&active)return api.updateView(projectId,active.id,active.revision,{...current,title:title.trim()||active.title});
+    if(action==='update'){if(!active)throw new Error('No saved view selected');return api.updateView(projectId,active.id,active.revision,{...current,title:active.title});}
     return api.createView(projectId,{...current,title:title.trim()});
   },onSuccess:result=>{refresh();setOpen(false);setTitle('');if('id'in result)onApply(result);else onClear();}});
   const list=query.data?.views||[];
