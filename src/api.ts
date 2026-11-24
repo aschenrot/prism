@@ -1,5 +1,6 @@
 import type { Editable, ProjectRecord, RecordList, TrashList, PropertyChanges } from '../shared/records';
 import type { ProjectInfo, RepositoryIndex } from '../shared/projects';
+import type { ProjectSearchResult } from '../shared/search';
 import type { ProjectSchemaResult,ProjectPropertySchema } from '../shared/customProperties';
 import type { GitHistory } from '../shared/delivery';
 import type { VerificationResult } from '../shared/verification';
@@ -36,6 +37,7 @@ export const api = {
   restoreTrash:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/trash/'+encodeURIComponent(id)+'/restore',json('POST',{expectedRevision})),
   schema:(project:string)=>request<ProjectSchemaResult>(base(project)+'/schema'),
   updateSchema:(project:string,expectedRevision:string,definition:ProjectPropertySchema)=>request<ProjectSchemaResult>(base(project)+'/schema',json('PUT',{expectedRevision,definition})),
+  search:(project:string,query:string)=>request<ProjectSearchResult>(base(project)+'/search',json('POST',{query})),
   list:(project:string)=>request<RecordList>(base(project)+'/records'),
   create:(project:string,title:string,type:Editable['type'],customTypeId?:string,expectedSchemaRevision?:string)=>request<ProjectRecord>(base(project)+'/records',json('POST',{title,type,customTypeId,expectedSchemaRevision})),
   duplicate:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/duplicate',json('POST',{expectedRevision})),

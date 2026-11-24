@@ -15,6 +15,7 @@ relationships:
   - property-schema-foundation
   - custom-entity-types
   - configurable-table-columns
+  - project-search
   - quality-gates
 ---
 ## Review instructions
@@ -41,3 +42,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K05 — **Create and use custom entity identities** — Define a custom Task-role entity in Schemas, add an entity-scoped property, assign it to a disposable Task and save its value. Filter Work by that identity, rename/retire the type, and reopen the existing record. Expected: stable custom identity, preserved built-in behavior, correct scoped properties and filters, no new retired assignment or implicit data conversion.
 
 - [ ] K06 — **Configure a reusable table** — Add a typed property column to Work, hide and reorder built-in columns, save the view, reopen and navigate back. Rename or retire the property. Expected: same order, preserved data, clear retired/unavailable labels, stable widths, and accessible controls; no automatic rewrite of saved definitions.
+
+- [ ] K07 — **Find authored knowledge across a project** — Search saved records by text and configured properties, follow a matching record and navigate back. Search repository documentation/source content and preview a file. Switch projects. Expected: relevant results with provenance, clear incomplete/unavailable states, preserved return query, no cross-project results, no indexing of unsaved or trashed data.

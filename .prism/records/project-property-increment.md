@@ -26,3 +26,5 @@ Custom entity slice: stable project-defined entity IDs map to immutable built-in
 
 
 Technical integration: PR #18 merged at 0bde5bbe1d183e6e8a902a917ef1fcdf60b14fe6; run 45456348459 passed all four hosted configurations, 72 unit and 21 browser scenarios per job at checkout df2540420c14fff4902519d061416829e77b085f, identical tree to proposed head 99a4fe4d672af4c0a84e5d3b2b8da5c15721da53. No failed, flaky or skipped tests; clean start/end, eligible evidence, zero reported audit vulnerabilities. Initial run 45455789198 failed an ambiguous navigation locator; fixed by selecting the intended sidebar. Human K05 acceptance remains pending.
+
+Technical integration: PR #19 merged at 2bd43b77021ad0be9cb424e1b79501caea7acbd1; final run 45457077297 passed all four hosted configurations, 75 unit and 22 browser scenarios per job at checkout 06f48aaab15aa39642f8bd43dd4c8172a3ca521d, identical tree to head d5dae9638d01a6905c009c7ce859282b842c1ac2. Clean eligible evidence, no failed/flaky/skipped tests and zero reported audit vulnerabilities. Human K06 acceptance pending.
