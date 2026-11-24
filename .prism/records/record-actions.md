@@ -2,10 +2,10 @@
 id: record-actions
 type: Task
 title: Unify record actions and searchable relationship selection
-status: In progress
+status: Ready
 priority: High
 accent: teal
-tags: [current, design, usability, implementation]
+tags: [design, usability, implementation]
 relationships:
   - collection-interaction
   - management-views
@@ -23,3 +23,7 @@ Relationship editor adds multi-term filtering by title, ID, type and tags. Only 
 
 ## Intermediate verification
 Owner confirmed the npm and browser gates passed at intermediate PR #11 head 3775a7ae79a111f0ec6be30e9abb44e90eff557e (reported in development chat, no detailed new report counts supplied). This is historical evidence for the menu/relationship slice only. The expanded PR requires fresh exact-revision verification and one combined UX acceptance. No merge approval has been given for PR #11.
+
+
+## Integration outcome
+Owner confirmed both automated gates and all manual acceptance checks passed for PR #11 and explicitly approved merging on 2026-11-24. Tested topic head: b625b1986a69159d8d0f6a0fc2c00d237899188c. Regular merge: c96c5c728acfbcc64953d8e1e94579bd44dfcc30. See [PR #11](https://github.com/aschenrot/prism/pull/11). Owner-reported acceptance; individual case observations and local run JSON were not supplied. This is historical evidence, not verification of the public-preview integration candidate.

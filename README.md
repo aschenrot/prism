@@ -6,10 +6,12 @@ Prism is a local-first repository-native creative, product and project managemen
 
 ## Development preview
 
+Prism is under active development, not a production release. The project's own source is licensed under [AGPL-3.0-only](LICENSE). Third-party components retain their respective licenses; users' independently authored project data is not licensed merely by using Prism. See [publication and verification policy](docs/publication.md).
+
 Requires Node.js 22.12+ and npm.
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
@@ -23,7 +25,7 @@ npm run typecheck
 npm run build
 ```
 
-Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. Hosted CI is optional. Local verification and manual acceptance are required for merges; platform support claims need evidence from those platforms.
+Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. Automatic hosted verification is configured for public PRs and main; private automatic runs remain disabled to avoid spending the private allowance. Until hosted checks are demonstrated and required, local verification remains the automated merge gate. Manual acceptance remains required independently; platform support claims require actual platform evidence.
 
 Dependency policy: latest compatible stable releases, verified migrations and reproducible installs. See [dependency maintenance](docs/dependencies.md). For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. The committed npm lockfile is required by the local verifier; use npm ci for clean reproducible installs.
 
@@ -66,7 +68,7 @@ Filter by type, status, priority and text; choose title, priority or status sort
 
 This is a development preview, not production-ready. There is no live multi-user collaboration, undo history, asset upload, drag-and-drop, custom schema editor, native desktop packaging or advanced motion timeline yet. Gallery artwork is generated from record metadata, not an asset browser. Git synchronization and backups are managed outside the app. Do not expose the local server to a network.
 
-Read [architecture](docs/architecture.md), [roadmap](docs/roadmap.md) and [AGENTS.md](AGENTS.md). A project license is pending owner selection.
+Read [architecture](docs/architecture.md), [roadmap](docs/roadmap.md) and [AGENTS.md](AGENTS.md). Prism's own source is licensed under AGPL-3.0-only; third-party terms remain applicable.
 
 ## Workspace navigation
 
@@ -78,7 +80,7 @@ Repository-mode projects with independent Git metadata expose Engineering / Chan
 
 ## Local verification and review
 
-Stop the development server, commit intended changes, and run `npm run verify` from the Prism repository. This performs npm ci (replaces node_modules), typecheck, tests, build and both dependency audits; the audits and installation need npm registry access or suitable cached packages. A nonzero exit is not a passing gate. The ignored report `.prism/cache/verification/latest.json` is displayed in Quality / Audit. It identifies the tested revision and recorded clean-tree checks, not current dirty state or manual acceptance. Hosted Actions runs only when manually dispatched. Use [development workflow](docs/development-workflow.md) for PR review and history-preserving merges.
+Stop the development server, commit intended changes, and run `npm run verify` from the Prism repository. This performs npm ci (replaces node_modules), typecheck, tests, build and both dependency audits; the audits and installation need npm registry access or suitable cached packages. A nonzero exit is not a passing gate. The ignored report `.prism/cache/verification/latest.json` is displayed in Quality / Audit. It identifies the tested revision and recorded clean-tree checks, not current dirty state or manual acceptance. Hosted Actions run automatically for public pull requests and main; private automatic jobs are skipped, with manual dispatch available. Use [development workflow](docs/development-workflow.md) for PR review and history-preserving merges.
 
 View tabs retain a consistent relative order across categories. Prism uses the recommended mode on first visit and remembers explicit mode choices per configured project and category in the current browser profile. Saved views still open with their authored mode. Preferences stay local and are not committed to Git.
 
@@ -91,12 +93,12 @@ Open records from Overview, collections or related links to read their content i
 ## Acceptance review
 For acceptance-tagged Test records with grouped case definitions, a connected Git repository supports native review runs. Start/resume from Overview or linked tasks, record case outcomes and notes, and explicitly finalize the review. Saved runs live in the ignored local `acceptance.local` directory and retain the exact Git and definition revisions; export JSON for sharing or backups. A passed review is manual evidence, not automatic merge approval. Unstructured tests remain readable. Short navigation and case transitions respect reduced motion.
 
-The editor supports Cancel (restore pre-session draft), Keep draft & close and explicit Discard draft. Blocked navigation appears as a toast. Acceptance has Save & next and Copy review summary for deliberate PR/chat handoff. The local Playwright browser suite is locked and its first diagnostic execution passed all seven scenarios; clean-revision verification remains pending. See docs/development-workflow.md for exact tooling installation and isolated browser verification. Owner acceptance is five UX cases; technical regression coverage remains separate.
+The editor supports Cancel (restore pre-session draft), Keep draft & close and explicit Discard draft. Blocked navigation appears as a toast. Acceptance has Save & next and Copy review summary for deliberate PR/chat handoff. The local Playwright browser suite is locked and runs against isolated fixtures via `npm run test:browser`. Revision-specific verification and manual acceptance are tracked in Prism's records and the corresponding pull requests. See docs/development-workflow.md for exact tooling installation and isolated browser verification. Owner acceptance is five UX cases; technical regression coverage remains separate.
 
 ## Collection management
-Use the left collection search, Filter, sort field and ascending/descending direction; Table headers toggle ordering. New is contextual and opens the editor; direct Edit actions are available across record views. Record pages offer Move to trash, with impact confirmation; Trash restores original records without overwriting an existing ID. Trash is tracked project data, not a permanent-delete operation. Current collection acceptance is pending automated and owner review.
+Use the left collection search, Filter, sort field and ascending/descending direction; Table headers toggle ordering. New is contextual and opens the editor; direct Edit actions are available across record views. Record pages offer Move to trash, with impact confirmation; Trash restores original records without overwriting an existing ID. Trash is tracked project data, not a permanent-delete operation. See the linked delivery and acceptance records for current review status.
 
-Record commands use an ellipsis menu with Edit and Move to trash across record views. Collection removal stays in the current collection and offers View Trash after success. Relationship targets can be searched by title, ID, type or tags within compatible records. Current increment verification pending.
+Record commands use an ellipsis menu with Edit and Move to trash across record views. Collection removal stays in the current collection and offers View Trash after success. Relationship targets can be searched by title, ID, type or tags within compatible records. PR #11 was accepted and integrated.
 
 ## Record management and increments
-Table supports inline status/priority and bounded visible-record multi-selection with a bulk preview and per-record outcomes. Record actions include Duplicate and Copy record link. Increments define explicit task/test scope through Contains relationships and show authored status, linked Git evidence, local npm/browser gates and revision-specific acceptance. The first dogfooding increment is Record management and interaction (PR #11). New revision verification pending.
+Table supports inline status/priority and bounded visible-record multi-selection with a bulk preview and per-record outcomes. Record actions include Duplicate and Copy record link. Increments define explicit task/test scope through Contains relationships and show authored status, linked Git evidence, local npm/browser gates and revision-specific acceptance. The first dogfooding increment is Record management and interaction (PR #11). PR #11 passed owner-reported automated and manual acceptance and was merged.

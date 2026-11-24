@@ -34,3 +34,5 @@ Copy the entire emberfall directory into a new folder, including its hidden .pri
 The example source is provided as a prototype; the Rust build and runtime have not been verified yet.
 
 The automated regression suite now uses a separate frozen fixture under tests/fixtures/emberfall. You may freely add or change example records and saved views without changing test expectations.
+
+When redistributing a copy of project-owned example source, retain the root AGPL-3.0-only LICENSE and any applicable third-party notices. Your own independently authored project data is not relicensed by Prism.
