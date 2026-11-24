@@ -7,6 +7,26 @@ priority: High
 accent: teal
 tags: [acceptance, quality, milestone]
 relationships:
+  - kind: verifies
+    target: ci-import
+  - kind: verifies
+    target: delivery-evidence
+  - kind: verifies
+    target: custom-schemas
+  - kind: verifies
+    target: typed-relationships
+  - kind: verifies
+    target: editing-reliability
+  - kind: verifies
+    target: project-settings
+  - kind: verifies
+    target: management-views
+  - kind: verifies
+    target: search-index
+  - kind: verifies
+    target: data-integrity
+  - kind: verifies
+    target: visual-quality
   - knowledge-engine
   - hosted-delivery-increment
   - hosted-workflow-metadata
@@ -38,6 +58,8 @@ relationships:
   - quality-gates
 ---
 ## Review instructions
+The explicit Verifies edges identify the scoped features and requirements exercised by these cases, not a passed test or complete release-level coverage. All outcomes remain unobserved until executed.
+
 Owner-approved consolidated M1 product review. Do not execute as final until the complete milestone scope is delivered and verified on the exact candidate. Review definition evolves as increments add concrete capabilities; do not mark cases passed before observations. Existing accepted historical reviews remain historical. Automated CI evidence and human product acceptance are distinct. Use disposable isolated projects/records, never destructive operations on live project data. Record environment, exact revision, observations and explicit final decision. Escalate consequential issues before the final review if necessary.
 
 Use the final verified clean main revision, not a stacked draft branch. Open Roadmap / M1 to inspect all seven delivery increments and their explicit scopes. Start the native review from Overview / Awaiting acceptance in the Prism Development repository. Use a disposable registered project for editing, schema, backup and restore checks. Test definitions and authored planning records are not disposable. Keep actual observations in the separate local acceptance run. Do not mark any case as passed based solely on CI. If blocked or failed, record observations and request changes; only explicit owner acceptance completes the milestone.

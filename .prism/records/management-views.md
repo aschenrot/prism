@@ -2,7 +2,7 @@
 id: "management-views"
 type: "Feature"
 title: "Roadmaps, dependency planning and traceability"
-status: "Concept"
+status: "In progress"
 priority: "High"
 accent: "amber"
 tags: ["product","management"]
@@ -21,3 +21,5 @@ Authored timelines: see authored-timelines. Explicit date property mapping, reus
 
 
 Traceability matrix: see requirements-traceability. Explicit implementation, test and documentation link coverage, with gaps and invalid endpoint diagnostics. Project Overview reports authored work and link coverage; these counts are not delivery or acceptance evidence.
+
+Technical implementation is integrated in the M1 candidate; consolidated owner acceptance remains pending. This status does not assert Ready or release acceptance.

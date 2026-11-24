@@ -2,7 +2,7 @@
 id: "project-settings"
 type: "Feature"
 title: "Project registration and settings"
-status: "Concept"
+status: "In progress"
 priority: "High"
 accent: "amber"
 tags: ["product","foundation"]
@@ -12,3 +12,5 @@ Provide explicit local folder registration, project settings and an understandab
 
 
 Implementation slice: local-project-registration. Local shell grants existing folders; settings preserve stable IDs and roots. No arbitrary browser path endpoint; restart applies registry changes. Human K16 pending.
+
+Technical implementation is integrated in the M1 candidate; consolidated owner acceptance remains pending. This status does not assert Ready or release acceptance.

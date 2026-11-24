@@ -7,7 +7,10 @@ priority: High
 accent: amber
 tags: [management, planning]
 relationships:
-  - management-views
+  - kind: implements
+    target: typed-relationships
+  - kind: implements
+    target: management-views
   - knowledge-engine
   - m1-milestone-acceptance
 ---

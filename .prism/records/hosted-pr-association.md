@@ -25,3 +25,5 @@ PR #15 merged at 34b8c2cc8c865ece6279ada09e8bd247ffbc1a36; required run 45391421
 
 
 Follow-up: hosted-reference-authoring provides explicit in-app association editing through a dedicated revision-checked command with recoverable form input; no network lookup during authoring. Durable artifact/checkout verification remains distinct.
+
+Integration evidence: PR #35 merged at `420a125a9e4e4a8e20b1bdc9770559e0f74440ea`. [Verify 45485957591](https://github.com/aschenrot/prism/actions/runs/45485957591): all four configurations passed 100 unit and 35 browser scenarios each, zero failures/skips/flakes, both audits zero vulnerabilities, clean eligible evidence at checkout `0d23b411567d4e32cb5e10990331f70b6c0c3665`, tree `47565952206db8a8385d3a2b1eea4843c86df653` matches merged main. H04 human review pending. Direct GitHub API response shapes sampled through the connector (not the application); live application lookup remains unverified.
