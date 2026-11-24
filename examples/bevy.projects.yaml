@@ -1,0 +1,11 @@
+# Run from the Prism repository root. Relative paths resolve against that root.
+- id: emberfall
+  title: Emberfall
+  root: examples/emberfall
+  storage: repository
+  profiles: [core, game, rust, product, project]
+- id: demo
+  title: Starter workspace
+  root: workspace
+  storage: standalone
+  profiles: [core, game]

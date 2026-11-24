@@ -22,6 +22,10 @@ npm test
 npm run typecheck
 ```
 
+## Try the Emberfall reference project
+
+A small Bevy game with connected game-design, product, engineering and project records is included under [examples/emberfall](examples/emberfall). Start with `PRISM_PROJECTS=examples/bevy.projects.yaml npm run dev` from the repository root. See [the reference project guide](examples/README.md) for PowerShell, evaluation steps and separate-repository setup.
+
 ## Connect multiple projects
 
 Clone your game separately; no Prism source code is needed in the game repo. Copy [examples/projects.yaml](examples/projects.yaml) to `.prism/projects.local.yaml`, set absolute paths to existing folders, then start:

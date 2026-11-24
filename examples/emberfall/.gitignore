@@ -1,0 +1,4 @@
+/target/
+.prism/cache/
+.prism/projects.local.yaml
+.prism/*.local.json
