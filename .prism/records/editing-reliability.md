@@ -14,3 +14,6 @@ First slice: browser-local recovery and explicit field-level conflict resolution
 
 
 Draft command history: see draft-command-history. Bounded session-local undo/redo, persisted current recovery draft, no undo across canonical saves or external conflict review. Canonical autosave and backups remain separate.
+
+
+Opt-in canonical autosave: see opt-in-autosave. Off per editor session, validated idle commit using the existing revision and recovery boundary; no blind conflict retry. Backups remain separate.

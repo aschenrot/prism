@@ -579,3 +579,16 @@ test('record draft undo and redo preserve recovery and reset at canonical save b
  await keep(page).click();await page.reload();await page.getByRole('button',{name:'Resume draft'}).click();await expect(title(page)).toHaveValue('Edited draft title');await expect(page.locator('.editor textarea')).toHaveValue('Replacement notes');await expect(undo).toBeDisabled();
  await title(page).fill('Final title');await save(page).click();await expect(page.getByText('Saved to disk',{exact:true})).toBeVisible();await expect(undo).toBeDisabled();await expect(redo).toBeDisabled();expect((await recordOnDisk(request,record.id)).title).toBe('Final title');
 });
+
+test('opt-in autosave commits valid drafts and pauses on external conflict without retrying',async({page,request})=>{
+ const r=await create(request,'Autosave fixture');await open(page,r);await edit(page);
+ const toggle=page.getByRole('checkbox',{name:'Autosave valid changes',exact:true});
+ await expect(toggle).not.toBeChecked();await title(page).fill('Autosave first draft');expect((await recordOnDisk(request,r.id)).title).toBe(r.title);
+ await toggle.check();await expect(page.getByText('Autosaved to disk.',{exact:true})).toBeVisible();const first=await recordOnDisk(request,r.id);expect(first.title).toBe('Autosave first draft');
+ await title(page).fill('');await expect(page.getByRole('alert').filter({hasText:/too small|at least|expected string/i})).toBeVisible();expect((await recordOnDisk(request,r.id)).title).toBe(first.title);
+ await page.route('**/api/projects/'+project+'/records/'+r.id,async route=>{if(route.request().method()!=='PUT'){await route.continue();return;}await update(request,first,{body:'External autosave conflict'});await route.continue();},{times:1});
+ await title(page).fill('Unsaved local after conflict');await expect(toggle).not.toBeChecked();
+ await expect(page.getByText('Autosave paused: Save was not confirmed. Review the error before retrying.',{exact:true})).toBeVisible();
+ await expect(title(page)).toHaveValue('Unsaved local after conflict');const latest=await recordOnDisk(request,r.id);expect(latest.title).toBe(first.title);expect(latest.body).toBe('External autosave conflict');
+ await keep(page).click();await page.reload();await page.getByRole('button',{name:'Resume draft'}).click();await expect(toggle).not.toBeChecked();await expect(title(page)).toHaveValue('Unsaved local after conflict');
+});
