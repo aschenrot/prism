@@ -2,13 +2,13 @@
 id: "self-management"
 type: "Milestone"
 title: "M0 — Prism self-management"
-status: "In progress"
+status: Ready
 priority: "High"
 accent: "teal"
-tags: ["roadmap","current","brief"]
+tags: ["roadmap","brief"]
 relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license","typed-link-slice","ux-navigation","interaction-hit-areas","delivery-evidence","git-evidence-slice","local-verification","development-workflow-decision","navigation-stability","view-preferences"]
 ---
-Current milestone. Use Prism's own repository as the primary development workspace.
+Accepted foundation milestone. Use Prism's own repository as the primary development workspace.
 
 ## Exit criteria
 - Prism Development opens by default alongside Emberfall.
@@ -26,3 +26,6 @@ Lockfile source-control task is complete; CI validation remains open. The owner 
 Hosted CI is deferred by owner decision. Local verification and focused PR review replace that gate. Complete foundation acceptance before merging PR #1 and moving to short-lived branches.
 
 Automated gate passed at 6064d82 on the owner's Windows environment; manual navigation issue remains open, and the fix must be reverified before foundation integration.
+
+## Foundation acceptance
+Owner explicitly accepted foundation PR #1. Local verification passed at 859efb773d22544fed85567e01f4623d35f788d0 on Windows, Node 26.13.1: locked install, typecheck, 27 tests passed / one expected file-symlink permission skip, production build and both audits (zero vulnerabilities). Regular merge commit 156700abada6ec691e5fb0e7e4225cc2fffe9af0 has the same tree as the tested head. This is evidence of the accepted baseline, not verification of later editor changes.

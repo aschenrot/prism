@@ -3,11 +3,14 @@ import type { ProjectInfo, RepositoryIndex } from '../shared/projects';
 import type { GitHistory } from '../shared/delivery';
 import type { VerificationResult } from '../shared/verification';
 import type { SavedView, ViewInput, ViewList } from '../shared/views';
+export class ApiError extends Error {
+  constructor(message:string,readonly status:number){super(message);this.name='ApiError';}
+}
 async function request<T>(path:string, init?:RequestInit):Promise<T> {
   const response = await fetch(path,init);
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || 'Request failed (' + response.status + ')');
+    throw new ApiError(data.error || 'Request failed (' + response.status + ')',response.status);
   }
   return response.json();
 }

@@ -1,8 +1,8 @@
-import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layers3, LayoutGrid, Columns3, Table2, Presentation, Search, Plus, ChevronRight, ArrowUpRight, X, FolderOpen, Command, AlertTriangle, BookOpen, ShieldCheck, Network, FileText, Home, Target, Flag, ListChecks, Database, GitBranch, Gamepad2, MapPin, Users, Image, Maximize2, Minimize2 } from 'lucide-react';
 import { accents, editableSchema, priorities, statuses, types, type Editable, type ProjectRecord } from '../shared/records';
-import { api } from './api';
+import { api,ApiError } from './api';
 import type { ProjectInfo } from '../shared/projects';
 import { auditRecords } from '../shared/audit';
 const Repository=lazy(()=>import('./Repository'));
@@ -18,6 +18,9 @@ import WorkspaceOverview from './WorkspaceOverview';
 import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,type DestinationMode } from '../shared/navigation';
 import { Knowledge } from './Knowledge';
 import { viewPreferences } from './viewPreferences';
+import { draftStorage } from './draftStorage';
+import { freshDraft,isDirty,type EditorDraft } from '../shared/editor';
+import DraftConflict from './DraftConflict';
 const SlideView=lazy(()=>import('./SlideView'));
 import { selectRecords,modes,type Filters,type SavedView,type ViewInput } from '../shared/views';
 
@@ -31,43 +34,93 @@ function RecordCard({record,selected,onSelect,gallery=false}:{record:ProjectReco
     <h3>{record.title}</h3><p>{excerpt(record.body)}</p><div className="card-footer"><span>{record.tags[0] || record.priority+' priority'}</span>{gallery ? <Status value={record.status}/> : <span>{record.priority}</span>}</div></div>
   </button>;
 }
-function Inspector({projectId,record,records,onSelect,onClose,onBusyChange,expanded,onExpand,history,historySupported,historyLoading,historyError,onRefreshHistory}:{projectId:string;record:ProjectRecord;records:ProjectRecord[];onSelect:(id:string)=>void;onClose:()=>void;onBusyChange:(value:boolean)=>void;expanded:boolean;onExpand:()=>void;history:GitHistory|undefined;historySupported:boolean;historyLoading:boolean;historyError:boolean;onRefreshHistory:()=>void}) {
+function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,onBusyChange,expanded,onExpand,history,historySupported,historyLoading,historyError,onRefreshHistory}:{projectId:string;record:ProjectRecord;recordUnavailable:boolean;records:ProjectRecord[];onSelect:(id:string)=>void;onClose:()=>void;onBusyChange:(value:boolean)=>void;expanded:boolean;onExpand:()=>void;history:GitHistory|undefined;historySupported:boolean;historyLoading:boolean;historyError:boolean;onRefreshHistory:()=>void}) {
   const qc=useQueryClient();
-  const [draft,setDraft]=useState<Editable>(()=>editableSchema.parse(recordToEdit(record)));
-  const [revision,setRevision]=useState(record.revision);
-  const [saved,setSaved]=useState(()=>JSON.stringify(recordToEdit(record)));
-  const dirty=JSON.stringify(draft)!==saved;
-  const stale=record.revision!==revision;
-  const update=<K extends keyof Editable>(key:K,value:Editable[K])=>setDraft(d=>({...d,[key]:value}));
-  const reset=()=>{setDraft(recordToEdit(record));setRevision(record.revision);setSaved(JSON.stringify(recordToEdit(record)));};
-  useEffect(()=>{if(stale&&!dirty){reset();}},[record.revision,dirty,revision]);
-  const mutation=useMutation({mutationFn:()=>api.update(projectId,record.id,revision,{...draft,tags:draft.tags.map(t=>t.trim()).filter(Boolean)}),onSuccess:next=>{
-    const value=recordToEdit(next);setDraft(value);setRevision(next.revision);setSaved(JSON.stringify(value));
+  const [initial]=useState(()=>draftStorage.read(projectId,record.id));
+  const [session,setSession]=useState<EditorDraft>(()=>initial.state==='available'?initial.draft:freshDraft(record));
+  const token=useRef(initial.token);
+  const [recovery,setRecovery]=useState<'stored'|'none'|'unavailable'|'conflict'|'invalid'>(initial.state==='available'?'stored':initial.state==='empty'?'none':initial.state);
+  const [recoveryMessage,setRecoveryMessage]=useState(initial.state==='invalid'?'Existing recovery data is unreadable. It will not be overwritten automatically.':initial.state==='unavailable'?'Browser recovery storage is unavailable.':'');
+  const [recovered,setRecovered]=useState(initial.state==='available');
+  const [conflictResponse,setConflictResponse]=useState(false);
+  const [validation,setValidation]=useState('');
+  const draft=session.draft;
+  const dirty=isDirty(session);
+  const stale=record.revision!==session.baseRevision;
+  const persist=(next:EditorDraft|null,allowInvalid=false)=>{
+    if(recovery==='invalid'&&!allowInvalid)return false;
+    const result=draftStorage.write(projectId,record.id,token.current,next);
+    if(result.state==='stored'){
+      token.current=result.token;setRecovery(next?'stored':'none');setRecoveryMessage('');return true;
+    }
+    setRecovery(result.state);setRecoveryMessage(result.message);return false;
+  };
+  const changeSession=(next:EditorDraft)=>{
+    setSession(next);setValidation('');
+    persist(isDirty(next)?next:null);
+  };
+  const update=<K extends keyof Editable>(key:K,value:Editable[K])=>changeSession({...session,draft:{...draft,[key]:value},updatedAt:new Date().toISOString()});
+  const discard=()=>{
+    if(!window.confirm(recordUnavailable?'Discard this draft? The canonical record is unavailable.':'Discard this draft and use the current disk record?'))return;
+    if(!persist(null,true)&&!window.confirm('Recovery storage could not be cleared. Discard the in-memory edits anyway? Other stored recovery data will remain.'))return;
+    setSession(freshDraft(record));setRecovered(false);setConflictResponse(false);setValidation('');
+  };
+  const exportDraft=()=>{
+    const blob=new Blob([JSON.stringify({projectId,recordId:record.id,...session},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download='prism-draft-'+record.id+'.json';document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
+  const mutation=useMutation({mutationFn:(changes:Editable)=>api.update(projectId,record.id,session.baseRevision,changes),onSuccess:async next=>{
+    await qc.cancelQueries({queryKey:['records',projectId]});
+    // Never delete a newer draft written in another window.
+    persist(null);setSession(freshDraft(next));setRecovered(false);setConflictResponse(false);setValidation('');
     qc.setQueryData(['records',projectId],(old:Awaited<ReturnType<typeof api.list>>|undefined)=>old?{...old,records:old.records.map(r=>r.id===next.id?next:r)}:old);
     void qc.invalidateQueries({queryKey:['records',projectId]});
+  },onError:error=>{
+    if(error instanceof ApiError&&error.status===409){setConflictResponse(true);void qc.invalidateQueries({queryKey:['records',projectId]});}
   }});
-  useEffect(()=>{onBusyChange(dirty||mutation.isPending);return()=>onBusyChange(false);},[dirty,mutation.isPending,onBusyChange]);
+  useEffect(()=>{if(!recordUnavailable&&stale&&!dirty&&!mutation.isPending){setSession(freshDraft(record));setConflictResponse(false);}},[record.revision,dirty,session.baseRevision,mutation.isPending,recordUnavailable]);
+  useEffect(()=>{onBusyChange(dirty||mutation.isPending);},[dirty,mutation.isPending,onBusyChange]);
+  useEffect(()=>()=>onBusyChange(false),[onBusyChange]);
   useEffect(()=>{if(!dirty&&!mutation.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[dirty,mutation.isPending]);
-  const close=()=>{if(!mutation.isPending&&(!dirty||window.confirm('Discard unsaved edits?')))onClose();};
-  return <aside className={"inspector"+(expanded?" expanded-inspector":"")} aria-label="Record editor"><div className="inspector-top"><span>{record.type.toUpperCase()} / RECORD DETAILS</span><div className="inspector-tools"><button type="button" className="icon-button" aria-label={expanded?"Collapse record editor":"Expand record editor"} onClick={onExpand}>{expanded?<Minimize2 size={17}/>:<Maximize2 size={17}/>}</button><button className="icon-button" title="Close inspector" disabled={mutation.isPending} aria-label="Close record editor" onClick={close}><X size={17}/></button></div></div>
-    <form onSubmit={e=>{e.preventDefault();mutation.mutate();}} className="editor">
-      <fieldset disabled={mutation.isPending}>
+  const close=()=>{
+    if(mutation.isPending)return;
+    if(!dirty){onClose();return;}
+    if(persist(session)){onClose();return;}
+    // Don't close or silently discard work if persistence failed.
+    setValidation('Recovery is not confirmed. Export a copy or resolve the storage problem before closing.');
+  };
+  const save=(e:FormEvent)=>{
+    e.preventDefault();if(recordUnavailable||!dirty||stale||conflictResponse||mutation.isPending)return;
+    const parsed=editableSchema.safeParse({...draft,tags:draft.tags.map(t=>t.trim()).filter(Boolean)});
+    if(!parsed.success){setValidation(parsed.error.issues.map(i=>i.message).join('; '));return;}
+    mutation.mutate(parsed.data);
+  };
+  return <aside className={"inspector"+(expanded?" expanded-inspector":"")} aria-label="Record editor"><div className="inspector-top"><span>{record.type.toUpperCase()} / RECORD DETAILS</span><div className="inspector-tools"><button type="button" className="icon-button" aria-label={expanded?"Collapse record editor":"Expand record editor"} onClick={onExpand}>{expanded?<Minimize2 size={17}/>:<Maximize2 size={17}/>}</button><button className="icon-button" title={dirty?"Keep recovery draft and close":"Close inspector"} disabled={mutation.isPending} aria-label="Close record editor" onClick={close}><X size={17}/></button></div></div>
+    <form onSubmit={save} className="editor">
+      {recordUnavailable&&<div className="warning" role="alert">The record file is missing or invalid. Your editor stays open. Export or keep the draft, or restore the file to resume saving.</div>}
+      <div className="draft-state" role="status">{recovered&&dirty?'Recovered unsaved draft · ':''}{dirty?(recovery==='stored'?'Recovery copy stored locally':'Recovery not confirmed'):'No unsaved changes'}</div>
+      {recoveryMessage&&<div className="warning" role="alert">{recoveryMessage}{recovery==='invalid'&&<button type="button" className="secondary" disabled={mutation.isPending} onClick={discard}>Discard unreadable recovery</button>}{recovery!=='invalid'&&dirty&&<button type="button" className="secondary" disabled={mutation.isPending} onClick={()=>persist(session)}>Retry recovery storage</button>}</div>}
+      <fieldset disabled={mutation.isPending||(stale&&dirty)||conflictResponse}>
       <label>Title<input value={draft.title} maxLength={160} required onChange={e=>update('title',e.target.value)}/></label>
       <div className="field-pair"><label>Type<select value={draft.type} onChange={e=>update('type',e.target.value as Editable['type'])}>{types.map(v=><option key={v}>{v}</option>)}</select></label>
       <label>Status<select value={draft.status} onChange={e=>update('status',e.target.value as Editable['status'])}>{statuses.map(v=><option key={v}>{v}</option>)}</select></label></div>
       <div className="field-pair"><label>Priority<select value={draft.priority} onChange={e=>update('priority',e.target.value as Editable['priority'])}>{priorities.map(v=><option key={v}>{v}</option>)}</select></label>
       <label>Accent<select value={draft.accent} onChange={e=>update('accent',e.target.value as Editable['accent'])}>{accents.map(v=><option key={v}>{v}</option>)}</select></label></div>
-      <label>Tags <small>Comma separated</small><input value={draft.tags.join(',')} onChange={e=>update('tags',e.target.value.split(','))}/></label>
-      <label>Notes <small>Markdown source</small><textarea rows={11} value={draft.body} onChange={e=>update('body',e.target.value)}/></label>
+      <label>Tags <small>Comma separated</small><input maxLength={4000} value={draft.tags.join(',')} onChange={e=>update('tags',e.target.value.split(','))}/></label>
+      <label>Notes <small>Markdown source</small><textarea rows={11} maxLength={500000} value={draft.body} onChange={e=>update('body',e.target.value)}/></label>
       <RelationshipEditor sourceId={record.id} sourceType={draft.type} links={draft.relationships} records={records} onChange={links=>update('relationships',links)}/>
       </fieldset>
-      {stale&&dirty&&<div className="warning" role="alert">Changed on disk. Copy any unsaved text before reloading.<button type="button" className="secondary" onClick={reset}>Reload record</button></div>}
+      {!recordUnavailable&&stale&&dirty&&<DraftConflict key={record.revision} session={session} record={record} disabled={mutation.isPending} onResolve={next=>{mutation.reset();setConflictResponse(false);changeSession(next);}}/>}
+      {!recordUnavailable&&conflictResponse&&!stale&&<div className="warning" role="alert">Save rejected because the disk revision changed. Your draft remains intact.<button type="button" className="secondary" onClick={()=>{void qc.invalidateQueries({queryKey:['records',projectId]});}}>Refresh record</button></div>}
+      {validation&&<p className="warning" role="alert">{validation}</p>}
+      {dirty&&<div className="draft-actions"><button type="button" className="secondary" disabled={mutation.isPending} onClick={close}>Keep draft &amp; close</button><button type="button" className="secondary" disabled={mutation.isPending} onClick={exportDraft}>Export draft</button><button type="button" className="secondary" disabled={mutation.isPending} onClick={()=>{discard();mutation.reset();}}>Discard draft</button></div>}
       {mutation.error&&<p className="warning" role="alert">{mutation.error.message}</p>}
-      <div className="save-row"><span>{dirty?'Unsaved changes':'Saved to disk'}</span><button className="primary" type="submit" disabled={!dirty||stale||mutation.isPending}>{mutation.isPending?'Saving…':'Save'}</button></div>
+      <div className="save-row"><span>{dirty?'Unsaved changes':recordUnavailable?'Record unavailable':'Saved to disk'}</span><button className="primary" type="submit" disabled={recordUnavailable||!dirty||stale||conflictResponse||mutation.isPending}>{mutation.isPending?'Saving…':'Save'}</button></div>
     </form>{historySupported&&<RecordEvidence record={record} history={history} loading={historyLoading} error={historyError} onRefresh={onRefreshHistory}/>}<RecordLinks records={records} id={record.id} onSelect={onSelect}/><div className="record-id">ID / {record.id}</div>
   </aside>;
 }
-function recordToEdit(r:ProjectRecord):Editable {return {title:r.title,type:r.type,status:r.status,priority:r.priority,accent:r.accent,tags:r.tags,relationships:r.relationships,body:r.body};}
 export default function App(){
   const query=useQuery({queryKey:['projects'],queryFn:api.projects});
   const [selected,setSelected]=useState<string|null>(null);
@@ -101,16 +154,19 @@ function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;proje
   const applySaved=(v:SavedView)=>{setExpanded(false);setNavigation(navigationForSaved(v));setShowSaved(true);setSlide(0);};
   const clearSaved=()=>{setNavigation(n=>resetNavigationFilters(n,destination));setSlide(0);};
   const navigate=(id:string)=>{const next=destinations.find(d=>d.id===id);if(!next)return;setExpanded(false);setNavigation(navigationFor(next,viewPreferences.preferred(projectId,next)));setSlide(0);setShowSaved(false);if(next.type!=='All records')setNewType(next.type);};
-  const record=records.find(r=>r.id===selected);
+  const [recordSnapshot,setRecordSnapshot]=useState<ProjectRecord|null>(null);
+  const liveRecord=records.find(r=>r.id===selected);
+  const record=liveRecord||(recordSnapshot?.id===selected?recordSnapshot:undefined);
+  useEffect(()=>{if(liveRecord)setRecordSnapshot(previous=>previous?.id===liveRecord.id&&previous.revision===liveRecord.revision?previous:liveRecord);},[liveRecord]);
   const active=visible[Math.min(slide,Math.max(0,visible.length-1))];
   useEffect(()=>{setSlide(n=>Math.min(n,Math.max(0,visible.length-1)));},[visible.length]);
-  const create=useMutation({mutationFn:()=>api.create(projectId,newTitle,newType),onSuccess:r=>{void qc.invalidateQueries({queryKey:['records',projectId]});setSelected(r.id);setCreating(false);setNewTitle('');}});
-  const select=(id:string)=>{if(selected===id)return;if(busy){window.alert('Save or close the current record before switching.');return;}setSelected(id);};
+  const create=useMutation({mutationFn:()=>api.create(projectId,newTitle,newType),onSuccess:async r=>{await qc.cancelQueries({queryKey:['records',projectId]});qc.setQueryData(['records',projectId],(old:Awaited<ReturnType<typeof api.list>>|undefined)=>old?{...old,records:[...old.records.filter(item=>item.id!==r.id),r]}:old);setRecordSnapshot(r);setSelected(r.id);void qc.invalidateQueries({queryKey:['records',projectId]});setCreating(false);setNewTitle('');}});
+  const select=(id:string)=>{if(selected===id)return;if(busy){window.alert('Save or close the current record to retain its recovery draft before switching.');return;}const next=records.find(r=>r.id===id);if(!next)return;setRecordSnapshot(next);setSelected(id);};
   const changeView=(v:View)=>{viewPreferences.remember(projectId,navigation,destination,v);setNavigation(n=>navigationMode(n,destination,v));setSlide(0);};
   const submit=(e:FormEvent)=>{e.preventDefault();if(!busy)create.mutate();};
   const findings=auditRecords(records);
   const projectSwitchBlocked=busy||create.isPending||creating;
-  const projectSwitchHint=busy?'Save or close the current record to switch':create.isPending?'Creating a record…':creating?'Finish or cancel record creation':project.storage==='repository'?'Connected repository':'Local workspace';
+  const projectSwitchHint=busy?'Save or keep the recovery draft and close to switch':create.isPending?'Creating a record…':creating?'Finish or cancel record creation':project.storage==='repository'?'Connected repository':'Local workspace';
   const switchProject=(id:string)=>{if(!projectSwitchBlocked)onProjectChange(id);};
   useEffect(()=>{const handler=(e:KeyboardEvent)=>{if(view!=='Slides'||['INPUT','TEXTAREA','SELECT'].includes((e.target as HTMLElement)?.tagName))return;if(e.key==='ArrowRight')setSlide(n=>Math.min(n+1,Math.max(0,visible.length-1)));if(e.key==='ArrowLeft')setSlide(n=>Math.max(0,n-1));};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);},[view,visible.length]);
   return <div className={'shell workspace-shell'+(expanded&&record?' record-expanded':'')}>
@@ -142,6 +198,6 @@ function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;proje
       {!!visible.length&&view==='Table'&&<div className="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Priority</th>{destinationId==='work'&&project.storage==='repository'&&<th>Delivery</th>}</tr></thead><tbody>{visible.map(r=><tr key={r.id} className={'record-table-row'+(selected===r.id?' selected':'')} onClick={()=>select(r.id)}><td><button type="button" aria-pressed={selected===r.id} onClick={e=>{e.stopPropagation();select(r.id);}}><span className={'dot '+r.accent}/>{r.title}</button></td><td>{r.type}</td><td><Status value={r.status}/></td><td>{r.priority}</td>{destinationId==='work'&&project.storage==='repository'&&<td className="delivery-cell">{historyQuery.isError?'History unavailable':deliveryLabel(r,history)?.label||(history?.state==='available'?'No link found':historyQuery.isPending?'Loading…':'History unavailable')}</td>}</tr>)}</tbody></table></div>}
       {view==='Slides'&&active&&<Suspense fallback={<div className="empty" role="status">Loading presentation…</div>}><SlideView active={active} slide={slide} count={visible.length} onPrevious={()=>setSlide(n=>Math.max(0,n-1))} onNext={()=>setSlide(n=>Math.min(n+1,visible.length-1))} onEdit={()=>select(active.id)}/></Suspense>}
       </div><footer className="footer"><span>PRISM / DEVELOPMENT PREVIEW</span><span><Command size={12}/> Records are stored as Markdown</span></footer>
-    </main>{record&&<Inspector key={record.id} projectId={projectId} record={record} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>{setSelected(null);setExpanded(false);}} expanded={expanded} onExpand={()=>setExpanded(v=>!v)} history={history} historySupported={project.storage==='repository'} historyLoading={historyQuery.isFetching} historyError={historyQuery.isError} onRefreshHistory={refreshHistory}/>}
+    </main>{record&&<Inspector key={record.id} projectId={projectId} record={record} recordUnavailable={!liveRecord} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>{setSelected(null);setRecordSnapshot(null);setExpanded(false);}} expanded={expanded} onExpand={()=>setExpanded(v=>!v)} history={history} historySupported={project.storage==='repository'} historyLoading={historyQuery.isFetching} historyError={historyQuery.isError} onRefreshHistory={refreshHistory}/>}
   </div>;
 }

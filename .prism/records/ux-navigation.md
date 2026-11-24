@@ -2,7 +2,7 @@
 id: ux-navigation
 type: Feature
 title: Purpose-driven workspace navigation and overview
-status: In progress
+status: Ready
 priority: High
 accent: teal
 tags: [current, design, usability]
@@ -30,3 +30,6 @@ Implementation committed: b0bcb3fd03dc5817b002eecdffe2a95f49114932. Owner feedba
 Owner reports brief flashes of another view during category changes after successful automated verification at 6064d82. Track the fix in navigation-stability; browser reproduction and acceptance remain required.
 
 Owner requested consistent visualization tab ordering. Implement canonical relative order and local per-project/category mode preferences; see view-preferences. Saved views remain authoritative for their configured mode. No acceptance inferred from implementation.
+
+## Foundation acceptance
+Owner explicitly accepted foundation PR #1. Local verification passed at 859efb773d22544fed85567e01f4623d35f788d0 on Windows, Node 26.13.1: locked install, typecheck, 27 tests passed / one expected file-symlink permission skip, production build and both audits (zero vulnerabilities). Regular merge commit 156700abada6ec691e5fb0e7e4225cc2fffe9af0 has the same tree as the tested head. This is evidence of the accepted baseline, not verification of later editor changes.

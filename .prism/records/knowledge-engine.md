@@ -2,10 +2,12 @@
 id: "knowledge-engine"
 type: "Milestone"
 title: "M1 — Configurable knowledge and management"
-status: "Concept"
+status: "In progress"
 priority: "High"
 accent: "teal"
-tags: ["roadmap","brief"]
-relationships: ["self-management","custom-schemas","typed-relationships","editing-reliability","project-settings","management-views","search-index"]
+tags: ["roadmap","current","brief"]
+relationships: ["self-management","custom-schemas","typed-relationships","editing-reliability","project-settings","management-views","search-index","draft-recovery"]
 ---
 Dogfood requirements before extending the generic engine. Support custom entity schemas, typed relationships, schema-driven editors, templates, inbox, richer search, persistent edits and project management views. Acceptance: a requirement linked to an objective and task is edited once and updates relevant views; old records remain valid or migrate explicitly.
+
+Active milestone after foundation acceptance. First priority: safe draft recovery and explicit conflict resolution.
