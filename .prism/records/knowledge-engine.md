@@ -14,6 +14,7 @@ relationships:
   - project-settings
   - management-views
   - search-index
+  - project-search
   - draft-recovery
   - editor-acceptance
   - record-navigation

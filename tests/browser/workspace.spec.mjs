@@ -1,5 +1,5 @@
 import { test,expect } from '@playwright/test';
-import { rename,readFile,writeFile,unlink } from 'node:fs/promises';
+import { rename,readFile,writeFile,unlink,mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 const project='browser-review',other='browser-other';
 const prefix='/api/projects/'+project;
@@ -439,4 +439,26 @@ test('configurable table columns preserve order and values across saved views an
   await expect(table.getByRole('columnheader',{name:'Status',exact:true})).toBeVisible();
   await expect(page.getByText('Saved view modified — update to persist changes.')).toBeVisible();
  }finally{await unlink(schemaPath).catch(()=>{});}
+});
+
+test('project search finds saved records and local file content with provenance and preserves return context',async({page,request})=>{
+ const fixture=process.env.PRISM_BROWSER_FIXTURE_ROOT,docs=join(fixture,'repo','docs');await mkdir(docs,{recursive:true});
+ const file=join(docs,'search-fixture.md');await writeFile(file,'A documentation result for uniquefindmarker.');
+ try{
+  const target=await create(request,'Search target');await update(request,target,{body:'A saved record for uniquefindmarker.'});
+  const otherTarget=await create(request,'Other project secret','Task',other);await update(request,otherTarget,{body:'uniquefindmarker'},other);
+  await page.goto('/#/projects/'+project+'/library');await page.getByRole('button',{name:'Search',exact:true}).click();
+  const panel=page.getByRole('region',{name:'Project search'});
+  await panel.getByLabel('Search this project',{exact:true}).fill('uniquefindmarker');await panel.getByRole('button',{name:'Search project',exact:true}).click();
+  await expect(panel.getByRole('link',{name:'Search target',exact:true})).toBeVisible();
+  await expect(panel.getByText(/Body:.*uniquefindmarker/)).toBeVisible();
+  await expect(panel.getByRole('link',{name:'Other project secret',exact:true})).toHaveCount(0);
+  await panel.getByRole('button',{name:'docs/search-fixture.md',exact:true}).click();
+  await expect(panel.getByRole('region',{name:'Search file preview'}).getByText('A documentation result for uniquefindmarker.',{exact:true})).toBeVisible();
+  await panel.getByRole('link',{name:'Search target',exact:true}).click();await expect(page.getByRole('heading',{name:'Search target',exact:true})).toBeVisible();
+  await page.goBack();await expect(panel.getByLabel('Search this project',{exact:true})).toHaveValue('uniquefindmarker');await expect(panel.getByRole('link',{name:'Search target',exact:true})).toBeVisible();
+  const bad=await request.post(prefix+'/search',{data:{query:'x',root:fixture}});expect(bad.status()).toBe(400);
+  await page.goto('/#/projects/'+other+'/library');await page.getByRole('button',{name:'Search',exact:true}).click();await panel.getByLabel('Search this project',{exact:true}).fill('uniquefindmarker');await panel.getByRole('button',{name:'Search project',exact:true}).click();
+  await expect(panel.getByRole('link',{name:'Other project secret',exact:true})).toBeVisible();await expect(panel.getByRole('link',{name:'Search target',exact:true})).toHaveCount(0);await expect(panel.getByRole('heading',{name:/Repository files/})).toHaveCount(0);
+ }finally{await unlink(file).catch(()=>{});}
 });
