@@ -3,3 +3,5 @@
 .prism/projects.local.yaml
 .prism/*.local.json
 .prism/acceptance.local/
+
+.prism/projects.local.yaml.lock

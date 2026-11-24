@@ -66,3 +66,6 @@ PR #26 integrated at fd60ee5bf3b0f54a9985d5ffdb367ce7b708ccff. Run 45478227153: 
 
 
 PR #27 integrated at 66f975d9fd3e703bb7bceff16a011d47f739144b. Run 45479027177: 86 unit + 30 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout 33f16cb774c9d85943443e74766574f1a132178a, identical tree to proposed head. K14 human review pending.
+
+
+PR #28 integrated at 7fef8371dc50f2c22bd63893b57d7ede26365971. Run 45479915600: 91 unit + 30 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout c5a1771e6c942c7b4c84b5271a704ee8a10700ef, identical tree to proposed head. Backup safety regressions observed. K15 human review pending.

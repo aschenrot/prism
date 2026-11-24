@@ -15,3 +15,5 @@ coverage/
 # Generated npm audit reports
 audit-report.json
 .prism/acceptance.local/
+
+.prism/projects.local.yaml.lock

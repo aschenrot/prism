@@ -102,3 +102,8 @@ Record commands use an ellipsis menu with Edit and Move to trash across record v
 
 ## Record management and increments
 Table supports inline status/priority and bounded visible-record multi-selection with a bulk preview and per-record outcomes. Record actions include Duplicate and Copy record link. Increments define explicit task/test scope through Contains relationships and show authored status, linked Git evidence, local npm/browser gates and revision-specific acceptance. The first dogfooding increment is Record management and interaction (PR #11). PR #11 passed owner-reported automated and manual acceptance and was merged.
+
+
+## Register local projects
+
+Use `npm run project -- list` and `npm run project -- add <id> <title> <existing-folder> <standalone|repository> <profiles>` with Prism stopped, then restart and select the registered project. See [local registration and settings](docs/project-registration.md) and [backup and restore](docs/backup.md).
