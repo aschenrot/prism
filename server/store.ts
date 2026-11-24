@@ -167,6 +167,7 @@ export class RecordStore {
         for(const key of keys){
           const field=schema.definition.fields.find(f=>f.id===key),value=next.customProperties?.[key];
           if(!field)throw new CustomPropertyError('Unconfigured property cannot be changed: '+key);
+          if(field.appliesToEntities&&entityTypeIssue(schema.definition,next.type,finalEntity,false))throw new CustomPropertyError('Review the custom entity type before editing scoped properties.');
           const target=field.kind==='reference'&&typeof value==='string'?await this.get(value).catch(()=>undefined):undefined;
           const issue=customPropertyIssue(field,next.type,value,id,target,finalEntity);
           if(issue)throw new CustomPropertyError(field.label+': '+issue);

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { ArrowDown,ArrowUp,Plus,Search,SlidersHorizontal } from 'lucide-react';
+import type { EntityDefinition } from '../shared/customProperties';
 import { priorities,statuses,types } from '../shared/records';
 import { defaultSortDirection,sortDirection,sortDirections,sortFields,type Filters } from '../shared/views';
-type Props={filters:Filters;allowType:boolean;disabled:boolean;creating:boolean;newLabel:string;onChange:(filters:Filters)=>void;onReset:()=>void;onCreate:()=>void};
-export default function CollectionToolbar({filters,allowType,disabled,creating,newLabel,onChange,onReset,onCreate}:Props){
+type Props={filters:Filters;entityTypes?:EntityDefinition[];allowType:boolean;disabled:boolean;creating:boolean;newLabel:string;onChange:(filters:Filters)=>void;onReset:()=>void;onCreate:()=>void};
+export default function CollectionToolbar({filters,entityTypes,allowType,disabled,creating,newLabel,onChange,onReset,onCreate}:Props){
   const [showFilters,setShowFilters]=useState(false);
-  const count=Number(filters.status!=='Any status')+Number(filters.priority!=='Any priority')+Number(allowType&&filters.type!=='All records');
+  const count=Number(filters.status!=='Any status')+Number(filters.priority!=='Any priority')+Number(allowType&&filters.type!=='All records')+Number(!!filters.entityType);
+  const entities=(entityTypes??[]).filter(e=>filters.type==='All records'||e.baseType===filters.type);
   return <section className="collection-controls" aria-label="Collection controls">
     <div className="collection-toolbar">
       <div className="collection-search"><Search size={16}/><input aria-label="Search records" placeholder="Search records…" maxLength={300} disabled={disabled} value={filters.search} onChange={e=>onChange({...filters,search:e.target.value})}/>{filters.search&&<button type="button" className="icon-button" aria-label="Clear search" disabled={disabled} onClick={()=>onChange({...filters,search:''})}>×</button>}</div>
@@ -15,7 +17,7 @@ export default function CollectionToolbar({filters,allowType,disabled,creating,n
       <button type="button" className="primary collection-new" disabled={disabled||creating} onClick={onCreate}><Plus size={16}/>{newLabel}</button>
     </div>
     {(filters.sort==='Created'||filters.sort==='Last edited')&&<p className="collection-sort-note">{filters.sort==='Created'?'Uses recorded creation dates.':'Uses recorded last-save dates; external edits do not automatically update them.'} Undated records appear last.</p>}
-    {(showFilters||count>0)&&<div className="collection-filter-row">{allowType&&<label>Collection<select aria-label="Collection" value={filters.type} disabled={disabled} onChange={e=>onChange({...filters,type:e.target.value as Filters['type']})}>{['All records',...types].map(t=><option key={t}>{t}</option>)}</select></label>}<label>Status<select aria-label="Status" value={filters.status} disabled={disabled} onChange={e=>onChange({...filters,status:e.target.value as Filters['status']})}>{['Any status',...statuses].map(s=><option key={s}>{s}</option>)}</select></label><label>Priority<select aria-label="Priority" value={filters.priority} disabled={disabled} onChange={e=>onChange({...filters,priority:e.target.value as Filters['priority']})}>{['Any priority',...priorities].map(s=><option key={s}>{s}</option>)}</select></label></div>}
+    {(showFilters||count>0)&&<div className="collection-filter-row">{allowType&&<label>Collection<select aria-label="Collection" value={filters.type} disabled={disabled} onChange={e=>onChange({...filters,type:e.target.value as Filters['type'],entityType:undefined})}>{['All records',...types].map(t=><option key={t}>{t}</option>)}</select></label>}{(entities.length>0||filters.entityType)&&<label>Custom entity<select aria-label="Custom entity" value={filters.entityType??''} disabled={disabled} onChange={e=>onChange({...filters,entityType:e.target.value||undefined})}><option value="">Any entity type</option>{filters.entityType&&!entities.some(e=>e.id===filters.entityType)&&<option value={filters.entityType}>Unavailable: {filters.entityType}</option>}{entities.map(e=><option key={e.id} value={e.id}>{e.label}{e.retired?' (retired)':''}</option>)}</select></label>}<label>Status<select aria-label="Status" value={filters.status} disabled={disabled} onChange={e=>onChange({...filters,status:e.target.value as Filters['status']})}>{['Any status',...statuses].map(s=><option key={s}>{s}</option>)}</select></label><label>Priority<select aria-label="Priority" value={filters.priority} disabled={disabled} onChange={e=>onChange({...filters,priority:e.target.value as Filters['priority']})}>{['Any priority',...priorities].map(s=><option key={s}>{s}</option>)}</select></label></div>}
   </section>;
 }
 export function SortHeading({field,filters,disabled,onSort}:{field:Filters['sort'];filters:Filters;disabled:boolean;onSort:(field:Filters['sort'])=>void}){

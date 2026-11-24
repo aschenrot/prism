@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ProjectRecord,Editable } from '../shared/records';
-import { appliesTo,changedCustomKeys,customPropertyIssue,type CustomValues,type CustomValue,type PropertyDefinition } from '../shared/customProperties';
+import { appliesTo,changedCustomKeys,customPropertyIssue,entityTypeIssue,type CustomValues,type CustomValue,type PropertyDefinition } from '../shared/customProperties';
 import { api } from './api';
 export function useProjectSchema(projectId:string){
  return useQuery({queryKey:['project-schema',projectId],queryFn:()=>api.schema(projectId),refetchInterval:5000,retry:false});
@@ -26,9 +26,10 @@ function PropertyInput({field,value,records,sourceId,onChange,disabled}:{field:P
  }}/></label>;
 }
 type Query=ReturnType<typeof useProjectSchema>;
-export function CustomPropertyFields({query,type,sourceId,values,base,records,schemaStale,onChange,onReview,onRestore}:{query:Query;type:Editable['type'];sourceId:string;values:CustomValues|undefined;base:CustomValues|undefined;records:ProjectRecord[];schemaStale:boolean;onChange:(id:string,value:CustomValue|undefined)=>void;onReview:()=>void;onRestore:(id:string)=>void}){
+export function CustomPropertyFields({query,type,entityId,sourceId,values,base,records,schemaStale,onChange,onReview,onRestore}:{query:Query;type:Editable['type'];entityId?:string|null;sourceId:string;values:CustomValues|undefined;base:CustomValues|undefined;records:ProjectRecord[];schemaStale:boolean;onChange:(id:string,value:CustomValue|undefined)=>void;onReview:()=>void;onRestore:(id:string)=>void}){
  const data=!query.isError&&query.data?.state==='available'?query.data:undefined;
- const fields=data?.definition.fields.filter(f=>appliesTo(f,type))??[];
+ const effectiveEntity=data&&!entityTypeIssue(data.definition,type,entityId,false)?entityId:undefined;
+ const fields=data?.definition.fields.filter(f=>appliesTo(f,type,effectiveEntity))??[];
  const changed=changedCustomKeys(base,values);
  const inactive=[...new Set([...Object.keys(values??{}),...changed])].filter(id=>!fields.some(f=>f.id===id));
  if(!query.isError&&query.data?.state==='available'&&!fields.length&&!inactive.length&&!schemaStale)return null;
@@ -36,7 +37,7 @@ export function CustomPropertyFields({query,type,sourceId,values,base,records,sc
  {query.isError||query.data?.state==='error'?<p className="warning" role="alert">{query.data?.state==='error'?query.data.message:'Could not read project schema.'} Existing values are preserved.</p>:query.isPending?<p role="status">Reading project schema…</p>:null}
  {schemaStale&&<div className="warning" role="alert">Project schema changed or is unavailable. Your property draft is retained. {data&&<button type="button" className="secondary" onClick={onReview}>Review current schema</button>}</div>}
  {fields.map(field=>{
-  const value=values?.[field.id],issue=value===undefined?undefined:customPropertyIssue(field,type,value,sourceId,records.find(r=>r.id===value));
+  const value=values?.[field.id],issue=value===undefined?undefined:customPropertyIssue(field,type,value,sourceId,records.find(r=>r.id===value),effectiveEntity);
   return <div key={field.id}><div className="property-input-row"><PropertyInput field={field} value={value} records={records} sourceId={sourceId} disabled={schemaStale} onChange={next=>onChange(field.id,next)}/>{value!==undefined&&<button type="button" className="secondary" aria-label={'Clear '+field.label} disabled={schemaStale} onClick={()=>onChange(field.id,undefined)}>Clear</button>}</div>{issue&&<p className="property-value-note warning">{issue}</p>}</div>;
  })}
  {inactive.map(id=><div key={id}><p className="property-value-note">{id}: {display(values?.[id])} · Not configured for this type or schema unavailable. Preserved without conversion.</p>{changed.includes(id)&&<button type="button" className="secondary" onClick={()=>onRestore(id)}>Restore saved {id}</button>}</div>)}
@@ -45,12 +46,25 @@ export function CustomPropertyFields({query,type,sourceId,values,base,records,sc
 export function CustomPropertyReadout({projectId,record,records}:{projectId:string;record:ProjectRecord;records:ProjectRecord[]}){
  const query=useProjectSchema(projectId);
  const data=!query.isError&&query.data?.state==='available'?query.data:undefined;
- const fields=data?.definition.fields.filter(f=>appliesTo(f,record.type))??[],values=record.customProperties??{};
+ const effectiveEntity=data&&!entityTypeIssue(data.definition,record.type,record.customTypeId,false)?record.customTypeId:undefined;
+ const fields=data?.definition.fields.filter(f=>appliesTo(f,record.type,effectiveEntity))??[],values=record.customProperties??{};
  const inactive=Object.keys(values).filter(id=>!fields.some(f=>f.id===id));
  if(!fields.length&&!inactive.length&&!query.isError&&query.data?.state!=='error')return null;
  return <section className="record-reading custom-property-readout" aria-label="Custom properties"><h2>Custom properties</h2>
  {query.isError||query.data?.state==='error'?<p className="warning" role="alert">{query.data?.state==='error'?query.data.message:'Could not read project schema.'}</p>:null}
- <dl>{fields.map(field=>{const value=values[field.id],issue=value===undefined?undefined:customPropertyIssue(field,record.type,value,record.id,records.find(r=>r.id===value));const label=field.kind==='enum'?field.options.find(o=>o.id===value)?.label:field.kind==='reference'?records.find(r=>r.id===value)?.title:undefined;return <div key={field.id}><dt>{field.label}</dt><dd>{label??display(value)}{issue&&<p className="property-value-note warning">{issue}</p>}</dd></div>;})}
+ <dl>{fields.map(field=>{const value=values[field.id],issue=value===undefined?undefined:customPropertyIssue(field,record.type,value,record.id,records.find(r=>r.id===value),effectiveEntity);const label=field.kind==='enum'?field.options.find(o=>o.id===value)?.label:field.kind==='reference'?records.find(r=>r.id===value)?.title:undefined;return <div key={field.id}><dt>{field.label}</dt><dd>{label??display(value)}{issue&&<p className="property-value-note warning">{issue}</p>}</dd></div>;})}
  {inactive.map(id=><div key={id}><dt>{id}</dt><dd>{display(values[id])} <small>· Preserved inactive value</small></dd></div>)}</dl>
  </section>;
+}
+
+export function EntityTypeField({query,role,value,disabled,onChange}:{query:Query;role:Editable['type'];value?:string|null;disabled:boolean;onChange:(value:string|null)=>void}){
+ const schema=!query.isError&&query.data?.state==='available'?query.data.definition:undefined;
+ const entities=schema?.entityTypes?.filter(e=>e.baseType===role&&(!e.retired||e.id===value))??[];
+ if(!entities.length&&!value)return null;
+ const unavailable=!!value&&!entities.some(e=>e.id===value);
+ const issue=schema&&entityTypeIssue(schema,role,value,false);
+ return <div><label>Custom entity type<select aria-label="Custom entity type" disabled={disabled||!schema} value={value??''} onChange={e=>onChange(e.target.value||null)}><option value="">Built-in {role}</option>{unavailable&&<option value={value!} disabled>Unavailable: {value}</option>}{entities.map(e=><option key={e.id} value={e.id} disabled={e.retired}>{e.label}{e.retired?' (retired)':''}</option>)}</select></label>
+ {issue&&<p className="property-value-note warning">{issue}</p>}
+ {!schema&&value&&<p className="property-value-note">Entity identity preserved; schema unavailable.</p>}
+ <p className="overview-note">The built-in role continues to govern relationships and workspace behavior.</p></div>;
 }
