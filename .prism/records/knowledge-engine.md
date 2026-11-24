@@ -55,3 +55,6 @@ Owner delegated verified in-scope technical integrations and deferred product ac
 
 ## Current development increment
 PRs #13–15 integrated through mandatory hosted checks, main run 45391844584 passed. Hosted metadata and scoped PR/job evidence are integrated; live lookup, durable artifact proof and reference authoring remain tracked limitations. M1 now advances project-property-increment (versioned custom property definitions and schema-driven editor); do not claim the full custom entity engine complete or human acceptance passed.
+
+
+PRs #16–22 integrated after exact hosted verification. Custom schemas, entity identity, tables, search, templates and inbox are technically integrated; K03–K09 human review remains pending. Next management work: board-status-movement, dependency planning and timelines. Reliability and registration still open.
