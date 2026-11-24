@@ -6,6 +6,7 @@ import type { GitHistory } from '../shared/delivery';
 import type { VerificationResult } from '../shared/verification';
 import type { BrowserVerificationResult } from '../shared/browserVerification';
 import type { HostedVerificationResult,HostedPullResult,HostedJobsResult } from '../shared/hostedVerification';
+import type { TemplateInput,RecordTemplate,TemplateList } from '../shared/templates';
 import type { SavedView, ViewInput, ViewList } from '../shared/views';
 import type { AcceptanceList,AcceptanceRun,StartAcceptance,UpdateAcceptance } from '../shared/acceptance';
 export class ApiError extends Error {
@@ -27,6 +28,10 @@ export const api = {
   acceptanceRun:(project:string,test:string,id:string)=>request<AcceptanceRun>(acceptance(project,test)+'/'+encodeURIComponent(id)),
   startAcceptance:(project:string,test:string,input:StartAcceptance)=>request<AcceptanceRun>(acceptance(project,test),json('POST',input)),
   updateAcceptance:(project:string,test:string,id:string,input:UpdateAcceptance)=>request<AcceptanceRun>(acceptance(project,test)+'/'+encodeURIComponent(id),json('PUT',input)),
+  templates:(project:string)=>request<TemplateList>(base(project)+'/templates'),
+  createTemplate:(project:string,template:TemplateInput)=>request<RecordTemplate>(base(project)+'/templates',json('POST',template)),
+  updateTemplate:(project:string,id:string,expectedRevision:string,template:TemplateInput)=>request<RecordTemplate>(base(project)+'/templates/'+encodeURIComponent(id),json('PUT',{expectedRevision,template})),
+  instantiateTemplate:(project:string,id:string,expectedRevision:string,title:string,expectedSchemaRevision?:string)=>request<ProjectRecord>(base(project)+'/templates/'+encodeURIComponent(id)+'/instantiate',json('POST',{expectedRevision,title,expectedSchemaRevision})),
   views:(project:string)=>request<ViewList>(base(project)+'/views'),
   createView:(project:string,view:ViewInput)=>request<SavedView>(base(project)+'/views',json('POST',view)),
   updateView:(project:string,id:string,expectedRevision:string,view:ViewInput)=>request<SavedView>(base(project)+'/views/'+encodeURIComponent(id),json('PUT',{expectedRevision,view})),

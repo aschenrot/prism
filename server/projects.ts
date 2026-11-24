@@ -4,10 +4,11 @@ import { parse } from 'yaml';
 import { registrySchema, type ProjectConfig, type ProjectInfo } from '../shared/projects';
 import { ConflictError,MissingError, RecordStore } from './store';
 import { ViewStore } from './views';
+import { TemplateStore } from './templates';
 import { AcceptanceStore } from './acceptance';
 import { gitHistory } from './git';
 import { readVerification } from './verification';
-export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; views:ViewStore; acceptance:AcceptanceStore };
+export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; views:ViewStore; templates:TemplateStore; acceptance:AcceptanceStore };
 export class Projects {
   private constructor(private projects:Map<string,OpenProject>) {}
   static async open(configs:ProjectConfig[]) {
@@ -32,7 +33,7 @@ export class Projects {
         const verification=await readVerification(root);
         return {record,head:history.head,verification:verification.state==='available'?verification.report:null};
       });
-      result.set(info.id,{info,root,store,views:await ViewStore.open(data),acceptance});
+      result.set(info.id,{info,root,store,views:await ViewStore.open(data),templates:await TemplateStore.open(data),acceptance});
     }
     return new Projects(result);
   }

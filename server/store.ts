@@ -3,6 +3,7 @@ import { mkdir, readdir, readFile, lstat, realpath, rename, unlink, writeFile, l
 import { join, resolve, dirname } from 'node:path';
 import { parse, stringify } from 'yaml';
 import { readProjectSchema,writeProjectSchema } from './projectSchema';
+import type { TemplateStore } from './templates';
 import { changedCustomKeys,customPropertyIssue,entityTypeIssue,type ProjectPropertySchema } from '../shared/customProperties';
 import { idSchema, metadataSchema, recordSchema, editableSchema, propertyChangesSchema, type PropertyChanges, type Editable, type ProjectRecord, type RecordList, type TrashList } from '../shared/records';
 
@@ -124,6 +125,26 @@ export class RecordStore {
       if(customTypeId){const schema=await this.schema();if(schema.state!=='available'||schema.revision!==expectedSchemaRevision)throw new CustomPropertyError('Project schema changed or is unavailable. Review the current entity definition.');const issue=entityTypeIssue(schema.definition,type,customTypeId,true);if(issue)throw new CustomPropertyError(issue);}
       const now=new Date().toISOString();
       return this.persist({id:randomUUID(),title,type,status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body:'',...(customTypeId?{customTypeId}:{}),createdAt:now,updatedAt:now});
+    });
+  }
+  instantiateTemplate(templates:TemplateStore,templateId:string,expected:string,title:string,expectedSchemaRevision?:string){
+    return this.serialize(async()=>{
+      const template=await templates.get(templateId);
+      if(template.revision!==expected||template.retired)throw new ConflictError('Template changed or is retired. Review the current definition before creating.');
+      const id=randomUUID(),custom=template.customProperties??{};
+      if(template.customTypeId||Object.keys(custom).length){
+        const schema=await this.schema();if(schema.state!=='available'||schema.revision!==expectedSchemaRevision)throw new CustomPropertyError('Project schema changed or is unavailable. Review before creating from the template.');
+        if(template.customTypeId){const issue=entityTypeIssue(schema.definition,template.type,template.customTypeId,true);if(issue)throw new CustomPropertyError(issue);}
+        for(const [key,value] of Object.entries(custom)){
+          const field=schema.definition.fields.find(f=>f.id===key);if(!field)throw new CustomPropertyError('Template property is unavailable: '+key);
+          const target=field.kind==='reference'&&typeof value==='string'?await this.get(value).catch(()=>undefined):undefined;
+          const issue=customPropertyIssue(field,template.type,value,id,target,template.customTypeId);if(issue)throw new CustomPropertyError(field.label+': '+issue);
+        }
+        const latest=await this.schema();if(latest.state!=='available'||latest.revision!==schema.revision)throw new CustomPropertyError('Project schema changed during validation. Review before creating.');
+      }
+      if((await templates.get(templateId)).revision!==expected)throw new ConflictError('Template changed during validation. Review before creating.');
+      const now=new Date().toISOString();
+      return this.persist({id,title,type:template.type,status:'Concept',priority:template.priority,accent:template.accent,tags:template.tags,relationships:[],body:template.body,...(template.customTypeId?{customTypeId:template.customTypeId}:{}),...(Object.keys(custom).length?{customProperties:custom}:{}),createdAt:now,updatedAt:now});
     });
   }
   // Duplicate only saved, editable content. A copy is new work, never inherited acceptance.
