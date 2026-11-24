@@ -25,7 +25,7 @@ npm run build
 
 Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. CI covers Linux and Windows on Node 22 and 26.
 
-For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. A committed lockfile is needed for reproducible npm CI; it is not yet present.
+Dependency policy: latest compatible stable releases, verified migrations and reproducible installs. See [dependency maintenance](docs/dependencies.md). For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. A committed lockfile is needed for reproducible npm CI; it is not yet present.
 
 ## Try the Emberfall reference project
 

@@ -11,3 +11,11 @@
 - Run typecheck, tests and production build before claiming a change is verified.
 - Review dependency licenses before introducing dependencies. Do not assume commercial extensions are free.
 - Keep application changes separate from user project data and never automatically push user data.
+
+## Dependency policy
+- Before adding or updating dependencies, query the official registry's latest stable dist-tag, release notes, security advisories, Node engine and peer requirements. Never assume a previously known version is current.
+- Prefer the latest compatible stable release; no beta, RC, nightly or floating latest in committed manifests. Document any exception, especially for major upgrades and platform-specific packages. Keep React/React DOM, Vite/plugin and related type packages compatible.
+- Separate security fixes from unrelated major upgrades where possible. Review migrations, license, native/install scripts and transitive dependencies. Never use forced audit fixes or broad script approval as a substitute for review.
+- Use a checked-in package-lock.json and npm ci once the lockfile is generated in a registry-enabled environment. Do not fabricate a lockfile. Run npm outdated and npm audit after resolution; treat high/critical findings as release blockers unless an explicit documented exception exists.
+- Run typecheck, unit/integration tests, build and runtime smoke tests on Windows and Linux, using the latest supported Node LTS and supported older lines. Do not claim a version combination is verified until checks actually pass.
+- Keep dependency install-script approvals narrowly scoped to reviewed versions; review new scripts after every upgrade.

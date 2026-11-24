@@ -20,7 +20,15 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: node --version
       - run: npm --version
-      - run: npm install --no-audit --no-fund
+      - name: Install resolved dependencies
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm audit --audit-level=high
