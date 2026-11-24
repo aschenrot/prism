@@ -18,3 +18,8 @@ Reusable record templates: see record-templates. Separate versioned project-owne
 
 
 Technical integration: PR #20 merged at d2dfe3c3ed126e413a3132678bea2d9a6f977fba; final run 45457808408 passed all four hosted configurations, 77 unit and 23 browser scenarios per job at checkout 6f512390ad05cbc5dbf069f8d0de13e1b531da8a, identical tree to head bdfbef19dd2dea711fc89eb3f3f716ef41a6ec09. Clean eligible evidence, no failed/flaky/skipped tests and zero reported audit vulnerabilities. Human K07 acceptance pending.
+
+Project inbox: see inbox-capture. Capture and triage operate on the canonical record, not on a separate store.
+
+
+Technical integration: PR #21 merged at 0aaa7827c55a5392cf8116aa4967acf48c04ec8f; final run 45458675908 passed all four hosted configurations, 78 unit and 24 browser scenarios per job at checkout 0492ee84d259f6f474e02ef86addda081b9daeff, identical tree to head a306083cb467a053506dd4f5a5fdca13795e3e19. Clean eligible evidence, no failed/flaky/skipped tests and zero reported audit vulnerabilities. Human K08 acceptance pending.

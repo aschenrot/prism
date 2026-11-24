@@ -17,6 +17,7 @@ import { hostedRuns,hostedPull,hostedJobs } from './hostedVerification';
 import { githubIdSchema } from '../shared/hostedVerification';
 import { z } from 'zod';
 import { viewInputSchema } from '../shared/views';
+import { captureSchema,inboxUpdateSchema } from '../shared/inbox';
 import { templateInputSchema,templateUpdateSchema,instantiateTemplateSchema } from '../shared/templates';
 import { startAcceptanceSchema,updateAcceptanceSchema } from '../shared/acceptance';
 
@@ -91,6 +92,8 @@ app.post('/api/projects/:projectId/hosted-jobs',async(request,reply)=>{
 });
 app.get('/api/projects/:projectId/changes',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return gitHistory(p.root);});
 app.get('/api/projects/:projectId/file', async request => {const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readRepositoryFile(p.root,z.object({path:z.string().min(1).max(500)}).parse(request.query).path);});
+app.post('/api/projects/:projectId/inbox',async(request,reply)=>{const input=captureSchema.parse(request.body);return reply.code(201).send(await projectFor(request).store.capture(input.title,input.body));});
+app.put('/api/projects/:projectId/records/:id/inbox',async request=>{const input=inboxUpdateSchema.parse(request.body),id=idSchema.parse((request.params as {id:string}).id);return projectFor(request).store.setInbox(id,input.expectedRevision,input.inbox);});
 app.post('/api/projects/:projectId/records', async (request, reply) => {
   const input = createSchema.parse(request.body);
   return reply.code(201).send(await projectFor(request).store.create(input.title,input.type,input.customTypeId,input.expectedSchemaRevision));

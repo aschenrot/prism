@@ -24,6 +24,7 @@ const metadataShape = {
   accent: z.enum(accents),
   tags: z.array(z.string().trim().min(1).max(60)).max(30),
   relationships: z.array(relationshipSchema).max(200),
+  inbox:z.boolean().optional(),
   createdAt:recordTimestamp.optional(),
   updatedAt:recordTimestamp.optional(),
   // Explicit, reviewed historical attribution; not editable via ordinary record mutations.

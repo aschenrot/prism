@@ -147,6 +147,8 @@ export class RecordStore {
       return this.persist({id,title,type:template.type,status:'Concept',priority:template.priority,accent:template.accent,tags:template.tags,relationships:[],body:template.body,...(template.customTypeId?{customTypeId:template.customTypeId}:{}),...(Object.keys(custom).length?{customProperties:custom}:{}),createdAt:now,updatedAt:now});
     });
   }
+  capture(title:string,body:string){return this.serialize(()=>{const now=new Date().toISOString();return this.persist({id:randomUUID(),title,type:'Idea',status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body,inbox:true,createdAt:now,updatedAt:now});});}
+  setInbox(id:string,revision:string,inbox:boolean){return this.serialize(async()=>{const current=await this.get(id);if(current.revision!==revision)throw new ConflictError('Record changed on disk. Refresh before triage.');if(!!current.inbox===inbox)return current;const {revision:_,...previous}=current;return this.persist({...previous,inbox,updatedAt:new Date().toISOString()});});}
   // Duplicate only saved, editable content. A copy is new work, never inherited acceptance.
   duplicate(id:string,revision:string){
     return this.serialize(async()=>{

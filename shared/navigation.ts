@@ -2,15 +2,16 @@ import type { ProjectInfo } from './projects';
 import type { ProjectRecord } from './records';
 import { defaultFilters,selectRecords,type Filters,type ViewInput,type SavedView } from './views';
 export type RecordMode=ViewInput['mode'];
-export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes'|'Trash'|'Schemas'|'Search'|'Templates';
+export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes'|'Trash'|'Schemas'|'Search'|'Templates'|'Inbox';
 // Global visual order is independent of each destination's recommended mode.
-export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Slides','Audit','Repository','Changes','Overview','Trash','Schemas','Search','Templates'] as const satisfies readonly DestinationMode[];
+export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Slides','Audit','Repository','Changes','Overview','Trash','Schemas','Search','Templates','Inbox'] as const satisfies readonly DestinationMode[];
 export const navigationGroups=['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio','Configuration'] as const;
 export type NavigationGroup=typeof navigationGroups[number];
 export type Destination={id:string;label:string;description:string;group:NavigationGroup;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
 const dest=(id:string,label:string,description:string,group:NavigationGroup,mode:DestinationMode,type:Filters['type']='All records',modes:DestinationMode[]=[mode]):Destination=>({id,label,description,group,mode,type,modes});
 const common=[
   dest('overview','Overview','Current milestones, active work and what needs attention.','Workspace','Overview'),
+  dest('inbox','Inbox','Capture ideas and triage records without changing their identity.','Workspace','Inbox'),
   dest('work','Work','Plan tasks and review their status.','Management','Table','Task',['Table','Board']),
   dest('increments','Increments','Manage explicit delivery scope, implementation and review evidence.','Management','Table','Increment',['Table','Board','Wiki']),
   dest('roadmap','Roadmap','Review development milestones in order.','Management','Table','Milestone',['Table','Board','Wiki']),
