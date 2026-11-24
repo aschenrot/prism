@@ -3,9 +3,10 @@ import { join, relative, resolve, sep, isAbsolute } from 'node:path';
 import type { RepositoryFile, RepositoryIndex } from '../shared/projects';
 import { MissingError } from './store';
 const MAX_FILES=1500, MAX_BYTES=512_000, MAX_DEPTH=12;
+const sourceRoots=new Set(['src','server','shared','docs','crates','examples','tests','benches']);
 const ignored=new Set(['.git','.prism','node_modules','target','dist','build','vendor']);
 function classify(path:string):RepositoryFile['kind']|undefined {
-  if(/(?:^|\/)(?:Cargo\.toml|Cargo\.lock|package\.json|pyproject\.toml)$/i.test(path))return 'manifest';
+  if(/(?:^|\/)(?:Cargo\.toml|Cargo\.lock|package\.json|tsconfig\.json|pyproject\.toml)$/i.test(path))return 'manifest';
   if(/\.(md|mdx|rst|adoc|txt)$/i.test(path))return 'documentation';
   if(/\.(rs|ts|tsx|js|jsx|py|wgsl|glsl|ron)$/i.test(path))return 'source';
 }
@@ -31,7 +32,7 @@ export async function indexRepository(root:string):Promise<RepositoryIndex>{
   for(const entry of entries.sort((a,b)=>a.name.localeCompare(b.name))){
     if(entry.name.startsWith('.')||entry.isSymbolicLink())continue;
     const full=join(root,entry.name);
-    if(entry.isDirectory()&&['src','docs','crates','examples','tests','benches'].includes(entry.name))await walk(full,1);
+    if(entry.isDirectory()&&sourceRoots.has(entry.name))await walk(full,1);
     else if(entry.isFile()){
       const kind=classify(entry.name);if(kind){const stat=await lstat(full);if(stat.isFile())files.push({path:entry.name,kind,size:stat.size});}
     }
@@ -43,7 +44,7 @@ export async function readRepositoryFile(root:string,path:string){
   // Match the same allowlist as indexing. Never execute repository content.
   const parts=path.split('/');
   if(parts.some(p=>!p||p.startsWith('.')||ignored.has(p)||p.includes('\\')||p.includes(':'))||parts.length>MAX_DEPTH+2||
-    (parts.length>1&&!['src','docs','crates','examples','tests','benches'].includes(parts[0]))||!classify(path))throw new MissingError('File not available');
+    (parts.length>1&&!sourceRoots.has(parts[0]))||!classify(path))throw new MissingError('File not available');
   const full=resolve(root,...parts);
   if(!within(root,full))throw new MissingError('File not available');
   try{

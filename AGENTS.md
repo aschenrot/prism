@@ -19,3 +19,9 @@
 - Use a checked-in package-lock.json and npm ci once the lockfile is generated in a registry-enabled environment. Do not fabricate a lockfile. Run npm outdated and npm audit after resolution; treat high/critical findings as release blockers unless an explicit documented exception exists.
 - Run typecheck, unit/integration tests, build and runtime smoke tests on Windows and Linux, using the latest supported Node LTS and supported older lines. Do not claim a version combination is verified until checks actually pass.
 - Keep dependency install-script approvals narrowly scoped to reviewed versions; review new scripts after every upgrade.
+
+## Dogfooding
+- Prism Development is the primary product and project workspace. Read .prism/records and .prism/views before choosing work. Keep planning status in records; docs/roadmap.md is an index only.
+- Link each substantial change to a feature/task and milestone, write acceptance criteria and record revision-specific verification evidence. Use the workflow in docs/development-workflow.md.
+- Treat the owner's edited records as real data. Inspect existing files before updating; do not reseed or overwrite the workspace. Never write automated tests against live workspace counts.
+- Emberfall and Starter workspace remain reference projects; automated tests use controlled fixtures and temporary directories. Do not commit personal paths, credentials, private game assets or unrelated local project edits.

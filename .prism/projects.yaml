@@ -1,0 +1,17 @@
+# Tracked, portable default registry. Paths resolve from Prism's launch directory.
+# Use projects.local.yaml for machine-specific paths.
+- id: prism
+  title: Prism Development
+  root: .
+  storage: repository
+  profiles: [core, product, project]
+- id: emberfall
+  title: Emberfall
+  root: examples/emberfall
+  storage: repository
+  profiles: [core, game, rust, product, project]
+- id: demo
+  title: Starter workspace
+  root: workspace
+  storage: standalone
+  profiles: [core, game]

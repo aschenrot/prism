@@ -37,7 +37,7 @@ export async function loadProjects(cwd=process.cwd(),env:NodeJS.ProcessEnv=proce
     return fromRegistry(await readFile(resolve(cwd,env.PRISM_PROJECTS),'utf8'));
   }
   if(!env.PRISM_PROJECT){
-    for(const candidate of ['.prism/projects.local.yaml','examples/bevy.projects.yaml']){
+    for(const candidate of ['.prism/projects.local.yaml','.prism/projects.yaml','examples/bevy.projects.yaml']){
       let raw:string;
       try{raw=await readFile(resolve(cwd,candidate),'utf8');}
       catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')continue;throw e;}

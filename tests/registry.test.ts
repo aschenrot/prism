@@ -13,6 +13,12 @@ test('project registry discovery respects explicit overrides and local configura
     const config=(id:string,folder:string)=>({id,title:id,root:folder,storage:'standalone',profiles:['core']});
     await writeFile(join(root,'examples','bevy.projects.yaml'),stringify([config('emberfall','game'),config('demo','workspace')]));
     assert.deepEqual((await loadProjects(root,{})).list().map(p=>p.id),['emberfall','demo']);
+    await writeFile(join(root,'.prism','projects.yaml'),stringify([{id:'prism',title:'Prism Development',root:'.',storage:'repository',profiles:['core','product','project']},config('emberfall','game'),config('demo','workspace')]));
+    const self=await loadProjects(root,{});
+    assert.deepEqual(self.list().map(p=>p.id),['prism','emberfall','demo']);
+    const ownRecord=await self.get('prism').store.create('Prism-only task','Task');
+    assert.equal((await self.get('emberfall').store.list()).records.length,0);
+    assert.equal((await self.get('prism').store.list()).records[0].id,ownRecord.id);
     await writeFile(join(root,'.prism','projects.local.yaml'),stringify([config('custom','custom')]));
     assert.deepEqual((await loadProjects(root,{})).list().map(p=>p.id),['custom']);
     assert.deepEqual((await loadProjects(root,{PRISM_PROJECT:'game'})).list().map(p=>p.id),['local']);

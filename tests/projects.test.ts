@@ -69,3 +69,15 @@ test('repository excludes file symlinks when supported',async(t)=>{
     await assert.rejects(readRepositoryFile(root,'src/link.md'),MissingError);
   }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test('repository browser includes application server and shared source',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'prism-self-source-'));
+  try{
+    for(const dir of ['src','server','shared','.prism','node_modules'])await mkdir(join(root,dir));
+    for(const path of ['src/App.tsx','server/index.ts','shared/records.ts','.prism/hidden.md','node_modules/private.ts','tsconfig.json'])await writeFile(join(root,path),'sample');
+    assert.deepEqual((await indexRepository(root)).files.map(f=>f.path),['server/index.ts','shared/records.ts','src/App.tsx','tsconfig.json']);
+    assert.equal((await readRepositoryFile(root,'server/index.ts')).content,'sample');
+    assert.equal((await readRepositoryFile(root,'shared/records.ts')).content,'sample');
+    await assert.rejects(readRepositoryFile(root,'.prism/hidden.md'),MissingError);
+  }finally{await rm(root,{recursive:true,force:true});}
+});

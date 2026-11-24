@@ -1,0 +1,10 @@
+version: 1
+id: 05-requirements
+title: "05 · Requirements"
+mode: Relationships
+filters:
+  type: "Requirement"
+  status: "Any status"
+  priority: "Any priority"
+  search: ""
+  sort: "Priority"

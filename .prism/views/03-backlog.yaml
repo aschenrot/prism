@@ -1,0 +1,10 @@
+version: 1
+id: 03-backlog
+title: "03 · Development backlog"
+mode: Board
+filters:
+  type: "Task"
+  status: "Any status"
+  priority: "Any priority"
+  search: ""
+  sort: "Priority"

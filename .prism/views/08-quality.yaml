@@ -1,0 +1,10 @@
+version: 1
+id: 08-quality
+title: "08 · Quality gates"
+mode: Table
+filters:
+  type: "All records"
+  status: "Any status"
+  priority: "Any priority"
+  search: "quality"
+  sort: "Priority"

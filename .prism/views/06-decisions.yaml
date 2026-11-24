@@ -1,0 +1,10 @@
+version: 1
+id: 06-decisions
+title: "06 · Decision log"
+mode: Wiki
+filters:
+  type: "Decision"
+  status: "Any status"
+  priority: "Any priority"
+  search: ""
+  sort: "Title"
