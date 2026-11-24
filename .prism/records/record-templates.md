@@ -14,3 +14,4 @@ Versioned per-project template definitions store initial title, semantic role, c
 
 
 Technical integration: PR #21 merged at 0aaa7827c55a5392cf8116aa4967acf48c04ec8f; final run 45458675908 passed all four hosted configurations, 78 unit and 24 browser scenarios per job at checkout 0492ee84d259f6f474e02ef86addda081b9daeff, identical tree to head a306083cb467a053506dd4f5a5fdca13795e3e19. Clean eligible evidence, no failed/flaky/skipped tests and zero reported audit vulnerabilities. Human K08 acceptance pending.
+Follow-up: definition-form-recovery retains incomplete template form input in the browser with explicit resume/export and expected-revision saves.

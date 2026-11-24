@@ -22,3 +22,6 @@ Local project backups: see local-project-backups. Explicit CLI, exact-byte verif
 
 
 Recovery workspace: see recovery-workspace. Expose stored browser-local drafts even after their canonical files become unavailable. Export, restore canonical file and review, or explicitly discard with the same recovery token guard. Filesystem-backed draft storage remains a separate architecture decision.
+
+
+Definition-form-recovery extends local recovery to unfinished schema, entity and template definitions, separate from canonical record drafts. Keep/export/resume without rewriting saved definitions. No server draft store.

@@ -77,3 +77,5 @@ PR #29 integrated at 1e23237ada57af271b73720ab96ce651ab92f7a3. Run 45480891681: 
 PR #30 integrated at a90cb758cfe3f4dcd2759f653325a2f06b471297. Run 45481688645: 95 unit + 31 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout 0004c0ddd8acc84a323216d94bc8f70b2a82a769, identical tree to proposed head. K17 human review pending.
 
 Integration evidence: PR #31 merged at `1856444a1c8e79737b33dd895cb3aa820cfdd0f0`. [Verify 45482796406](https://github.com/aschenrot/prism/actions/runs/45482796406): all four configurations passed 96 unit and 32 browser scenarios each, zero failures/skips/flakes, clean exact checkout and zero audit vulnerabilities. Human acceptance remains pending.
+
+Integration evidence: PR #32 merged at `a9f3adfc9984a2f7935ce00c7eb6888a2344665a`. [Verify 45483607451](https://github.com/aschenrot/prism/actions/runs/45483607451): all four configurations passed 96 unit and 33 browser scenarios each, zero failures/skips/flakes, clean exact checkout and zero audit vulnerabilities. Human acceptance remains pending.
