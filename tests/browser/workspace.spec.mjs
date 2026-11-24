@@ -408,3 +408,35 @@ test('custom entity definitions retain built-in roles, scoped fields and collect
   await open(page,plain,other);await edit(page);await expect(page.getByLabel('Custom entity type',{exact:true})).toHaveCount(0);
  }finally{await unlink(schemaPath).catch(()=>{});}
 });
+
+test('configurable table columns preserve order and values across saved views and schema retirement',async({page,request})=>{
+ const schemaPath=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'other','schema.yaml'),otherPrefix='/api/projects/'+other;
+ const definition={version:1,fields:[{id:'estimate',label:'Estimate',kind:'number',appliesTo:['Task']}]};
+ try{
+  await writeFile(schemaPath,JSON.stringify(definition));
+  const record=await create(request,'Table estimate fixture','Task',other);
+  const schema=await (await request.get(otherPrefix+'/schema')).json();
+  const savedRecord=await request.put(otherPrefix+'/records/'+record.id,{data:{expectedRevision:record.revision,expectedSchemaRevision:schema.revision,changes:{...editable(record),customProperties:{estimate:42}}}});
+  expect(savedRecord.ok()).toBeTruthy();
+  await page.goto('/#/projects/'+other+'/work');
+  const table=page.locator('.records-table');await expect(table.getByRole('columnheader',{name:'Status',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Columns',exact:true}).click();
+  const settings=page.getByRole('region',{name:'Table columns'});
+  await settings.getByRole('button',{name:'Hide Status',exact:true}).click();await expect(table.getByRole('columnheader',{name:'Status',exact:true})).toHaveCount(0);
+  await settings.getByLabel('Add column',{exact:true}).selectOption('property:estimate');await settings.getByRole('button',{name:'Move Estimate up',exact:true}).click();
+  const headers=()=>table.locator('thead th').allTextContents();
+  await expect.poll(headers).toEqual(['','Title','Type','Estimate','Priority','Actions']);
+  await expect(table.getByRole('row').filter({hasText:record.title}).getByText('42',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Saved views',exact:true}).click();
+  await page.getByRole('button',{name:'Save current view',exact:true}).click();await page.getByLabel('View name',{exact:true}).fill('Estimates only');await page.getByRole('button',{name:'Save new view',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Estimates only',exact:true})).toBeVisible();
+  await expect.poll(headers).toEqual(['','Title','Type','Estimate','Priority','Actions']);
+  await page.reload();await expect.poll(headers).toEqual(['','Title','Type','Estimate','Priority','Actions']);
+  await writeFile(schemaPath,JSON.stringify({...definition,fields:[{...definition.fields[0],label:'Estimated effort',retired:true}]}));
+  await expect(table.getByRole('columnheader',{name:'Estimated effort (retired)',exact:true})).toBeVisible({timeout:12000});
+  await expect(table.getByRole('row').filter({hasText:record.title}).getByText('42 (preserved)',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Columns',exact:true}).click();await settings.getByRole('button',{name:'Reset columns',exact:true}).click();
+  await expect(table.getByRole('columnheader',{name:'Status',exact:true})).toBeVisible();
+  await expect(page.getByText('Saved view modified — update to persist changes.')).toBeVisible();
+ }finally{await unlink(schemaPath).catch(()=>{});}
+});

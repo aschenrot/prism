@@ -59,7 +59,7 @@ export function overviewFor(records:ProjectRecord[]){
 }
 
 // A single navigation snapshot defines destination, view, filters and saved-view identity.
-export type NavigationState={destinationId:string;view:DestinationMode;filters:Filters;savedView:SavedView|null};
+export type NavigationState={destinationId:string;view:DestinationMode;filters:Filters;tableColumns?:string[];savedView:SavedView|null};
 export function orderedModes(destination:Destination):DestinationMode[]{
   return modeOrder.filter(mode=>destination.modes.includes(mode));
 }
@@ -68,7 +68,7 @@ export function navigationFor(destination:Destination,preferred?:unknown):Naviga
   return {destinationId:destination.id,view,filters:{...defaultFilters,type:destination.type,sort:destination.id==='work'?'Priority':'Title'},savedView:null};
 }
 export function navigationForSaved(savedView:SavedView):NavigationState{
-  return {destinationId:'library',view:savedView.mode,filters:{...savedView.filters},savedView};
+  return {destinationId:'library',view:savedView.mode,filters:{...savedView.filters},...(savedView.tableColumns!==undefined?{tableColumns:[...savedView.tableColumns]}:{}),savedView};
 }
 export function navigationMode(state:NavigationState,destination:Destination,view:DestinationMode):NavigationState{
   return state.destinationId===destination.id&&destination.modes.includes(view)?{...state,view}:state;

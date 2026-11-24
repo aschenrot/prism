@@ -45,3 +45,16 @@ test('legacy priority sorts remain high first; direction and column toggles are 
 test('created and last edited sort newest first by default; missing dates stay last',async()=>{
  const root=await mkdtemp(join(tmpdir(),'prism-date-sort-'));try{const store=await RecordStore.open(root);const a=await store.create('Alpha','Task'),b=await store.create('Beta','Task'),c=await store.create('Unknown','Task');const records=[{...a,createdAt:'2025-01-01T00:00:00Z',updatedAt:'2026-01-01T00:00:00Z'},{...b,createdAt:'2025-02-01T00:00:00Z',updatedAt:'2025-02-01T00:00:00Z'},{...c,createdAt:undefined,updatedAt:undefined}];assert.deepEqual(selectRecords(records,{...defaultFilters,sort:'Created'}).map(r=>r.title),['Beta','Alpha','Unknown']);assert.deepEqual(selectRecords(records,{...defaultFilters,sort:'Created',direction:'Ascending'}).map(r=>r.title),['Alpha','Beta','Unknown']);assert.deepEqual(selectRecords(records,{...defaultFilters,sort:'Last edited'}).map(r=>r.title),['Alpha','Beta','Unknown']);assert.equal(sortBy(defaultFilters,'Created').direction,'Descending');}finally{await rm(root,{recursive:true,force:true});}
 });
+
+test('saved column IDs persist in explicit order, including empty and unavailable property columns',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'prism-columns-'));try{
+  const store=await ViewStore.open(root),columns=['priority','property:cost','type','created'];
+  const saved=await store.create({title:'Custom table',mode:'Table',filters:defaultFilters,tableColumns:columns});
+  assert.deepEqual((await (await ViewStore.open(root)).get(saved.id)).tableColumns,columns);
+  const updated=await store.update(saved.id,saved.revision,{title:'Title only',mode:'Table',filters:defaultFilters,tableColumns:[]});
+  assert.deepEqual(updated.tableColumns,[]);
+  const legacy=await store.create({title:'Legacy table',mode:'Table',filters:defaultFilters});
+  assert.equal(legacy.tableColumns,undefined);
+  for(const invalid of [['title'],['property:../x'],['status','status'],Array.from({length:13},(_,i)=>'property:p'+i)])await assert.rejects(store.create({title:'Invalid',mode:'Table',filters:defaultFilters,tableColumns:invalid}));
+ }finally{await rm(root,{recursive:true,force:true});}
+});
