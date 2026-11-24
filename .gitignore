@@ -8,3 +8,9 @@ coverage/
 .prism/cache/
 .prism/projects.local.yaml
 .prism/*.local.json
+
+# Local IDE configuration
+.idea/
+
+# Generated npm audit reports
+audit-report.json
