@@ -62,7 +62,15 @@ test('blocked navigation is a toast and does not lose input; saved collection co
   await page.getByRole('textbox',{name:'Search records'}).fill(record.title);
   await page.getByRole('link',{name:record.title,exact:true}).click();
   await expect(page).toHaveURL(new RegExp('/records/'+record.id+'$'));
-  await edit(page);await title(page).fill('Dirty navigation title');
+  const trigger=page.locator('.record-page').getByRole('button',{name:'Actions for '+record.title,exact:true});
+  await trigger.click();
+  const menu=page.getByRole('menu',{name:'Actions for '+record.title});
+  await expect(menu).toBeVisible();
+  // Reproduce a deferred navigation/scroll notification without moving the anchor.
+  await page.evaluate(()=>window.dispatchEvent(new Event('scroll')));
+  await expect(menu.getByRole('menuitem',{name:'Edit',exact:true})).toBeVisible();
+  await menu.getByRole('menuitem',{name:'Edit',exact:true}).click();
+  await expect(title(page)).toBeVisible();await title(page).fill('Dirty navigation title');
   await page.getByRole('button',{name:'Back',exact:true}).click();
   await expect(page.getByText('Navigation paused',{exact:true})).toBeVisible();
   await expect(title(page)).toHaveValue('Dirty navigation title');

@@ -45,13 +45,16 @@ export async function readRepositoryFile(root:string,path:string){
   const parts=path.split('/');
   if(parts.some(p=>!p||p.startsWith('.')||ignored.has(p)||p.includes('\\')||p.includes(':'))||parts.length>MAX_DEPTH+2||
     (parts.length>1&&!sourceRoots.has(parts[0]))||!classify(path))throw new MissingError('File not available');
-  const full=resolve(root,...parts);
-  if(!within(root,full))throw new MissingError('File not available');
   try{
-    let current=root;
+    // Compare real paths in the same namespace. Windows temporary paths can use
+    // short names or directory aliases; the configured root itself is trusted.
+    const canonicalRoot=await realpath(root);
+    const full=resolve(canonicalRoot,...parts);
+    if(!within(canonicalRoot,full))throw new MissingError('File not available');
+    let current=canonicalRoot;
     for(const part of parts){current=join(current,part);if((await lstat(current)).isSymbolicLink())throw new MissingError('File not available');}
     const actual=await realpath(full);
-    if(!within(root,actual))throw new MissingError('File not available');
+    if(!within(canonicalRoot,actual))throw new MissingError('File not available');
     const stat=await lstat(actual);
     if(!stat.isFile()||stat.size>MAX_BYTES)throw new MissingError('File is not available for preview (512 KB limit)');
     return {path,content:await readFile(actual,'utf8')};
