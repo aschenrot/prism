@@ -396,7 +396,7 @@ test('custom entity definitions retain built-in roles, scoped fields and collect
   await save(page).click();await expect(page.getByText('Saved to disk',{exact:true})).toBeVisible();
   const saved=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.id===bug.id);
   expect(saved.type).toBe('Task');expect(saved.customTypeId).toBe('bug-report');expect(saved.customProperties.severity).toBe(4);
-  await page.getByRole('button',{name:'Return to record',exact:true}).click();await page.getByRole('link',{name:'Work',exact:true}).click();
+  await page.getByRole('button',{name:'Return to record',exact:true}).click();await page.getByRole('navigation',{name:'Project navigation'}).getByRole('link',{name:'Work',exact:true}).click();
   await page.getByRole('button',{name:'Filter',exact:true}).click();
   await page.getByLabel('Custom entity',{exact:true}).selectOption('bug-report');
   await expect(page.getByRole('link',{name:bug.title,exact:true})).toBeVisible();await expect(page.getByRole('link',{name:plain.title,exact:true})).toHaveCount(0);
