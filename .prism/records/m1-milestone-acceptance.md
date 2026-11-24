@@ -24,6 +24,7 @@ relationships:
   - draft-command-history
   - opt-in-autosave
   - local-project-backups
+  - local-project-registration
   - quality-gates
 ---
 ## Review instructions
@@ -68,3 +69,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K14 — **Use opt-in autosave safely** — Enable autosave on a disposable record, type valid and invalid values, simulate an external change during a pending save, then resume the retained draft. Expected: valid acknowledged saves only, no invalid or conflicting overwrite, no automatic retry or auto-enable on reopen, clear pause state.
 
 - [ ] K15 — **Back up and restore disposable project data** — Stop editors, create and verify a backup, restore into a new directory, register/open the restored copy and compare records, schema, templates and trash. Expected: exact data, no overwrite or registry leakage, integrity failures visible, incomplete restores cannot open.
+
+- [ ] K16 — **Register and reopen an independent project** — Stop Prism, register an existing disposable folder using the local command, restart and select it, save a record, change its title/profile settings, restart and switch between projects. Expected: stable identity, isolated data, no machine paths in browser metadata, no overwritten portable registry, explicit overrides still work.

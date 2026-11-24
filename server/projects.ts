@@ -1,6 +1,6 @@
 import { lstat, mkdir, readFile, realpath } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
-import { parse } from 'yaml';
+import { selectRegistry } from './localRegistry';
 import { registrySchema, type ProjectConfig, type ProjectInfo } from '../shared/projects';
 import { ConflictError,MissingError, RecordStore } from './store';
 import { ViewStore } from './views';
@@ -46,19 +46,7 @@ export class Projects {
 // Explicit overrides take precedence. A malformed configured registry is an error,
 // never a reason to silently switch to demo data.
 export async function loadProjects(cwd=process.cwd(),env:NodeJS.ProcessEnv=process.env){
-  const fromRegistry=async(raw:string)=>Projects.open(registrySchema.parse(parse(raw,{maxAliasCount:0})).map(config=>({...config,root:resolve(cwd,config.root)})));
-  if(env.PRISM_PROJECTS){
-    return fromRegistry(await readFile(resolve(cwd,env.PRISM_PROJECTS),'utf8'));
-  }
-  if(!env.PRISM_PROJECT){
-    for(const candidate of ['.prism/projects.local.yaml','.prism/projects.yaml','examples/bevy.projects.yaml']){
-      let raw:string;
-      try{raw=await readFile(resolve(cwd,candidate),'utf8');}
-      catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')continue;throw e;}
-      return fromRegistry(raw);
-    }
-  }
-  const root=resolve(cwd,env.PRISM_PROJECT||'workspace');
-  await mkdir(root,{recursive:true});
-  return Projects.open([{id:'local',title:env.PRISM_PROJECT?'Local project':'Demo game project',root,storage:'standalone',profiles:['core','game']}]);
+ const selection=await selectRegistry(cwd,env);
+ if(selection.fallback)await mkdir(selection.configs[0].root,{recursive:true});
+ return Projects.open(selection.configs.map(config=>({...config,root:resolve(cwd,config.root)})));
 }
