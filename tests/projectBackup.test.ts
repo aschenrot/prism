@@ -38,3 +38,9 @@ test('backup rejects a mistaken source or backup-as-project and restores a genui
  const result=await createProjectBackup(empty,backup);assert.equal(result.files.length,0);await verifyProjectBackup(backup);await assert.rejects(rejectIncompleteRestore(backup),/not a writable project/);await assert.rejects(createProjectBackup(backup,join(root,'backup-copy')),/not a writable project/);
  await restoreProjectBackup(backup,restored);assert.ok((await lstat(join(restored,'records'))).isDirectory());await rejectIncompleteRestore(restored);
 }));
+
+test('interrupted backup marker prevents project open, verification and restore even if a manifest exists',()=>fixture(async(root,source)=>{
+ const backup=join(root,'backup'),restored=join(root,'restored');await createProjectBackup(source,backup);
+ const marker=join(backup,'.prism-backup-incomplete');await writeFile(marker,'interrupted');await assert.rejects(rejectIncompleteRestore(backup),/Incomplete project backup/);await assert.rejects(verifyProjectBackup(backup),/Incomplete project backup/);
+ await assert.rejects(restoreProjectBackup(backup,restored));await assert.rejects(lstat(restored));await rm(marker);await verifyProjectBackup(backup);
+}));

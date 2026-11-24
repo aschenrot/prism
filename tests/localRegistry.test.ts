@@ -40,3 +40,11 @@ test('local registry rejects corrupt or symlinked registries and competing comma
  await writeFile(local,'broken');await assert.rejects(changeLocalRegistry(cwd,{}, {action:'add',config:config('second','second')}));assert.equal(await readFile(local,'utf8'),'broken');
  await rm(local);await symlink(join(cwd,'first'),local,'junction');await assert.rejects(changeLocalRegistry(cwd,{}, {action:'add',config:config('second','second')}));
 }));
+
+test('startup preflights every configured data root before opening stores, including manual overrides',()=>fixture(async cwd=>{
+ const outer=join(cwd,'first'),nested=join(outer,'nested');await mkdir(nested);
+ await writeFile(join(cwd,'override.yaml'),stringify([config('one','first'),config('nested','first/nested')]));
+ await assert.rejects(loadProjects(cwd,{PRISM_PROJECTS:'override.yaml'}),/overlap/);await assert.rejects(lstat(join(outer,'records')));await assert.rejects(lstat(join(nested,'records')));
+ await mkdir(join(cwd,'second','.prism'));await writeFile(join(cwd,'override.yaml'),stringify([config('repo','second','repository'),config('same-data','second/.prism')]));
+ await assert.rejects(loadProjects(cwd,{PRISM_PROJECTS:'override.yaml'}),/overlap/);await assert.rejects(lstat(join(cwd,'second','.prism','records')));
+}));
