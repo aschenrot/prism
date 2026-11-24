@@ -48,3 +48,13 @@ test('history snapshots match the current URL and guarded traversal returns to t
   assert.deepEqual(guardedTraversal(two,null),{kind:'restore'});
   assert.deepEqual(guardedTraversal(two,{...one,trail:'other'}),{kind:'restore'});
 });
+
+test('table presentation survives history and saved-view reopening without entering filters',()=>{
+ const columns=['property:estimate','status','type'];
+ const saved:SavedView={id:'custom-columns',title:'Estimates',version:1,mode:'Table',filters:navigationFor(library).filters,tableColumns:columns,revision:'a'.repeat(64)};
+ const initial=navigationForSaved(saved);assert.deepEqual(initial.tableColumns,columns);
+ const context=contextFor(initial);assert.deepEqual(context.tableColumns,columns);
+ assert.deepEqual(restoreCollection(library,'Board',{...context,mode:'Board'},saved).tableColumns,columns);
+ assert.deepEqual(restoreCollection(library,'Table',{...context,tableColumns:[]},saved).tableColumns,[]);
+ assert.deepEqual(restoreCollection(library,'Table',{...context,tableColumns:['status','status']},saved).tableColumns,columns);
+});
