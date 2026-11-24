@@ -531,3 +531,20 @@ test('board status moves use canonical revisions, keyboard control and recovery 
  await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Board move');
  await page.getByRole('textbox',{name:'Search records'}).fill(a.title);await page.getByRole('button',{name:'Filter',exact:true}).click();await page.getByLabel('Status',{exact:true}).selectOption('Ready');await move(a.title).focus();await move(a.title).selectOption('Concept');await expect(board.getByText('No matching records. Create a record or change your filters.',{exact:true})).toBeVisible();await expect(board).toBeFocused();
 });
+
+test('planning uses explicit dependency directions, shows filtered prerequisites and cycles, and retains navigation',async({page,request})=>{
+ const a=await create(request,'Plan fixture prerequisite','Document'),b=await create(request,'Plan fixture task'),c=await create(request,'Plan fixture cycle A'),d=await create(request,'Plan fixture cycle B'),e=await create(request,'Plan fixture missing');
+ await update(request,a,{status:'Ready',relationships:[{kind:'blocks',target:b.id}]});
+ await update(request,b,{relationships:[{kind:'depends-on',target:a.id}]});
+ await update(request,c,{relationships:[{kind:'depends-on',target:d.id}]});await update(request,d,{relationships:[{kind:'depends-on',target:c.id}]});
+ await update(request,e,{relationships:[{kind:'depends-on',target:'missing-plan-fixture'}]});
+ await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Plan',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Plan fixture');
+ const panel=page.getByRole('region',{name:'Dependency planning'}),task=panel.getByRole('article',{name:'Dependencies for '+b.title});
+ await expect(task.getByText('Direct prerequisites marked Ready',{exact:true})).toBeVisible();
+ await expect(task.getByText('Direct prerequisites (1)',{exact:true})).toBeVisible();await expect(task.getByText('Outside current filter',{exact:true})).toBeVisible();
+ await expect(panel.getByRole('article',{name:'Dependencies for '+c.title}).getByText('Dependency cycle',{exact:true})).toBeVisible();
+ await expect(panel.getByRole('article',{name:'Dependencies for '+e.title}).getByText('Unavailable: missing-plan-fixture',{exact:true})).toBeVisible();
+ await task.getByRole('link',{name:a.title,exact:true}).click();await expect(page.getByRole('heading',{name:a.title,exact:true})).toBeVisible();await page.goBack();
+ await expect(panel).toBeVisible();await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Plan fixture');
+ expect((await recordOnDisk(request,b.id)).status).toBe('Concept');
+});

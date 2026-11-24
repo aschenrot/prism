@@ -4,7 +4,7 @@ import { defaultFilters,selectRecords,type Filters,type ViewInput,type SavedView
 export type RecordMode=ViewInput['mode'];
 export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes'|'Trash'|'Schemas'|'Search'|'Templates'|'Inbox';
 // Global visual order is independent of each destination's recommended mode.
-export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Slides','Audit','Repository','Changes','Overview','Trash','Schemas','Search','Templates','Inbox'] as const satisfies readonly DestinationMode[];
+export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Plan','Slides','Audit','Repository','Changes','Overview','Trash','Schemas','Search','Templates','Inbox'] as const satisfies readonly DestinationMode[];
 export const navigationGroups=['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio','Configuration'] as const;
 export type NavigationGroup=typeof navigationGroups[number];
 export type Destination={id:string;label:string;description:string;group:NavigationGroup;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
@@ -12,15 +12,15 @@ const dest=(id:string,label:string,description:string,group:NavigationGroup,mode
 const common=[
   dest('overview','Overview','Current milestones, active work and what needs attention.','Workspace','Overview'),
   dest('inbox','Inbox','Capture ideas and triage records without changing their identity.','Workspace','Inbox'),
-  dest('work','Work','Plan tasks and review their status.','Management','Table','Task',['Table','Board']),
-  dest('increments','Increments','Manage explicit delivery scope, implementation and review evidence.','Management','Table','Increment',['Table','Board','Wiki']),
-  dest('roadmap','Roadmap','Review development milestones in order.','Management','Table','Milestone',['Table','Board','Wiki']),
+  dest('work','Work','Plan tasks and review their status.','Management','Table','Task',['Table','Board','Plan']),
+  dest('increments','Increments','Manage explicit delivery scope, implementation and review evidence.','Management','Table','Increment',['Table','Board','Wiki','Plan']),
+  dest('roadmap','Roadmap','Review development milestones in order.','Management','Table','Milestone',['Table','Board','Wiki','Plan']),
   dest('quality','Quality','Review test records and record integrity.','Management','Audit','Test',['Audit','Table','Wiki']),
   dest('documentation','Documentation','Read and navigate authored knowledge.','Knowledge','Wiki','Document',['Wiki','Table']),
   dest('decisions','Decisions','Review why choices were made.','Knowledge','Wiki','Decision',['Wiki','Table']),
   dest('architecture','Architecture','Explore systems and their connections.','Knowledge','Relationships','System',['Relationships','Wiki','Table']),
   dest('presentations','Presentations','Present live project information.','Studio','Slides','All records',['Slides']),
-  dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Slides','Search']),
+  dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Plan','Slides','Search']),
   dest('trash','Trash','Restore records that were moved out of active collections.','Workspace','Trash'),
   dest('schemas','Schemas','Configure project properties without rewriting record values.','Configuration','Schemas'),
   dest('templates','Templates','Manage reusable initial record content.','Configuration','Templates')

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { idSchema, priorities, statuses, types, type ProjectRecord } from './records';
 import { schemaId } from './customProperties';
 import { tableColumnsSchema } from './tableColumns';
-export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships'] as const;
+export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships','Plan'] as const;
 export const sortFields=['Title','Priority','Status','Type','ID','Created','Last edited'] as const;
 export const sortDirections=['Ascending','Descending'] as const;
 export const filtersSchema=z.object({

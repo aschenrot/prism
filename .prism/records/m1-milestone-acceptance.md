@@ -19,6 +19,7 @@ relationships:
   - record-templates
   - inbox-capture
   - board-status-movement
+  - dependency-planning
   - quality-gates
 ---
 ## Review instructions
@@ -53,3 +54,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K09 — **Capture and triage knowledge** — Capture a title and notes, open the saved record, edit it if needed and finish triage. Expected: one independent canonical record, protected unsaved input, unchanged identity and content during triage, no cross-project leakage.
 
 - [ ] K10 — **Move board records safely** — Move a disposable task between status columns using a drag handle and the keyboard-operable Move to control. Attempt movement with a retained draft or externally changed revision. Expected: confirmed status, stable identity, no silent overwrite, clear blocking feedback, predictable focus and retained filters.
+
+- [ ] K11 — **Inspect dependencies without changing work** — Create explicit depends-on and blocks relationships, including a duplicate assertion, unresolved target and cycle. Open Plan in Work, filter and follow a prerequisite outside the collection. Expected: consistent direction, no duplicate edge, clear missing/cyclic state and unchanged authored status, with return context.

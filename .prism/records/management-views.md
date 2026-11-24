@@ -12,3 +12,6 @@ Support timelines, milestones, task dependencies, prioritization, requirements m
 
 
 First board movement slice: board-status-movement. Cross-column status commands reuse the canonical write path; manual per-column order and dependency scheduling are separate. Do not infer acceptance from movement to Ready.
+
+
+Dependency planning: see dependency-planning. A derived projection of explicit links, with direct prerequisite status and exact cycle membership. Timeline dates will use configured authored date fields rather than inferred schedules.
