@@ -31,3 +31,10 @@ test('backup refuses incomplete restore and unexpected project store entries',()
 test('backup does not traverse linked project directories',()=>fixture(async(root,source)=>{
  await rm(join(source,'views'),{recursive:true});const external=join(root,'external');await mkdir(external);await writeFile(join(external,'secret.yaml'),'secret');await symlink(external,join(source,'views'),'junction');await assert.rejects(createProjectBackup(source,join(root,'backup')),/real directory/);
 }));
+
+test('backup rejects a mistaken source or backup-as-project and restores a genuinely empty project',()=>fixture(async(root,source)=>{
+ const wrong=join(root,'wrong'),empty=join(root,'empty'),backup=join(root,'empty-backup'),restored=join(root,'empty-restored');await mkdir(wrong);await mkdir(join(empty,'records'),{recursive:true});
+ await assert.rejects(createProjectBackup(wrong,join(root,'wrong-backup')),/Not a Prism data root/);await assert.rejects(lstat(join(root,'wrong-backup')));
+ const result=await createProjectBackup(empty,backup);assert.equal(result.files.length,0);await verifyProjectBackup(backup);await assert.rejects(rejectIncompleteRestore(backup),/not a writable project/);await assert.rejects(createProjectBackup(backup,join(root,'backup-copy')),/not a writable project/);
+ await restoreProjectBackup(backup,restored);assert.ok((await lstat(join(restored,'records'))).isDirectory());await rejectIncompleteRestore(restored);
+}));
