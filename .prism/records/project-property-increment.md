@@ -6,6 +6,7 @@ status: In progress
 priority: High
 accent: teal
 tags: [current, knowledge, product]
+githubPullRequests: [{repository: aschenrot/prism, number: 16}, {repository: aschenrot/prism, number: 17}, {repository: aschenrot/prism, number: 18}, {repository: aschenrot/prism, number: 19}]
 relationships:
   - knowledge-engine
   - custom-schemas

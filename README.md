@@ -107,3 +107,8 @@ Table supports inline status/priority and bounded visible-record multi-selection
 ## Register local projects
 
 Use `npm run project -- list` and `npm run project -- add <id> <title> <existing-folder> <standalone|repository> <profiles>` with Prism stopped, then restart and select the registered project. See [local registration and settings](docs/project-registration.md) and [backup and restore](docs/backup.md).
+
+
+## M1 knowledge and management workflows
+
+The configurable knowledge and management baseline uses versioned project schemas, stable custom entity roles, reusable record templates, Inbox capture and triage, Data library search, configurable tables, Board status movement, Plan dependencies, Timeline authored dates and Traceability. Edit a canonical record once; views derive from saved project data. Use the Recovery workspace to find local drafts, the record editor for typed values and opt-in autosave, and definition form recovery for unfinished schema/entity/template inputs. Repository increments support explicitly authored pull request references and separately initiated hosted metadata lookups. Local project registration and backup commands are documented above. See [M1 scope and review readiness](.prism/records/m1-review-readiness.md) and [consolidated review](.prism/records/m1-milestone-acceptance.md); technical integration is not human acceptance.

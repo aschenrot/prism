@@ -29,6 +29,15 @@ relationships:
     target: hosted-delivery-increment
   - kind: contains
     target: project-property-increment
+  - kind: contains
+    target: knowledge-workflow-increment
+  - kind: contains
+    target: management-planning-increment
+  - kind: contains
+    target: editing-reliability-increment
+  - kind: contains
+    target: project-configuration-increment
+  - m1-review-readiness
   - m1-milestone-acceptance
 ---
 Dogfood requirements before extending the generic engine. Support custom entity schemas, typed relationships, schema-driven editors, templates, inbox, richer search, persistent edits and project management views. Acceptance: a requirement linked to an objective and task is edited once and updates relevant views; old records remain valid or migrate explicitly.
@@ -58,3 +67,7 @@ PRs #13–15 integrated through mandatory hosted checks, main run 45391844584 pa
 
 
 PRs #16–22 integrated after exact hosted verification. Custom schemas, entity identity, tables, search, templates and inbox are technically integrated; K03–K09 human review remains pending. Next management work: board-status-movement, dependency planning and timelines. Reliability and registration still open.
+
+
+## Consolidated M1 candidate scope
+Use the seven explicit delivery increments, m1-review-readiness and the single m1-milestone-acceptance definition. PRs #23–35 cover management views, reliability, project settings, explicit hosted reference authoring and closure fixes. Technical status is established by exact current matrix evidence, not an authored Ready flag. The remaining integration and human review gates must pass before M1 acceptance. No M2 implementation authority implied.

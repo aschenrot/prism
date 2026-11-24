@@ -6,7 +6,7 @@ status: In progress
 priority: High
 accent: teal
 tags: [current, quality, management]
-githubPullRequests: [{repository: aschenrot/prism, number: 14}]
+githubPullRequests: [{repository: aschenrot/prism, number: 14}, {repository: aschenrot/prism, number: 15}, {repository: aschenrot/prism, number: 35}]
 relationships:
   - ci-import
   - delivery-evidence
@@ -15,6 +15,8 @@ relationships:
     target: hosted-workflow-metadata
   - kind: contains
     target: hosted-pr-association
+  - kind: contains
+    target: hosted-reference-authoring
   - kind: contains
     target: m1-milestone-acceptance
 ---

@@ -30,10 +30,17 @@ relationships:
   - recovery-workspace
   - definition-form-recovery
   - m1-filesystem-hardening
+  - m1-review-readiness
+  - knowledge-workflow-increment
+  - management-planning-increment
+  - editing-reliability-increment
+  - project-configuration-increment
   - quality-gates
 ---
 ## Review instructions
 Owner-approved consolidated M1 product review. Do not execute as final until the complete milestone scope is delivered and verified on the exact candidate. Review definition evolves as increments add concrete capabilities; do not mark cases passed before observations. Existing accepted historical reviews remain historical. Automated CI evidence and human product acceptance are distinct. Use disposable isolated projects/records, never destructive operations on live project data. Record environment, exact revision, observations and explicit final decision. Escalate consequential issues before the final review if necessary.
+
+Use the final verified clean main revision, not a stacked draft branch. Open Roadmap / M1 to inspect all seven delivery increments and their explicit scopes. Start the native review from Overview / Awaiting acceptance in the Prism Development repository. Use a disposable registered project for editing, schema, backup and restore checks. Test definitions and authored planning records are not disposable. Keep actual observations in the separate local acceptance run. Do not mark any case as passed based solely on CI. If blocked or failed, record observations and request changes; only explicit owner acceptance completes the milestone.
 
 ## H. Hosted delivery evidence
 - [ ] H01 — **Read hosted workflow metadata** — Open Quality for the configured Prism repository, request GitHub runs, follow one run and associated PR link, and inspect the reported head and observation time. Expected: intentional lookup, clear source and provider state, useful links, no implication that a PR head proves its checkout or that CI proves manual acceptance.
@@ -49,7 +56,7 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 
 ## K. Knowledge and project management
 - [ ] K01 — **Edit a linked requirement once** — In a disposable project, connect an objective, requirement and task and edit the requirement through the supported editor. Expected: one canonical record updates the relevant views; existing records remain valid or migrate explicitly.
-- [ ] K02 — **Find and manage work** — Review the final M1 schema, search, template, inbox and management-view capabilities using the delivered product workflows. Expected: cohesive workflows with clear scope, accessible interaction and no duplicate source of truth. Refine concrete cases as the corresponding increments are implemented.
+- [ ] K02 — **Find and manage work** — Review the final M1 schema, search, template, inbox and management-view capabilities using the delivered product workflows. Expected: cohesive workflows with clear scope, accessible interaction and no duplicate source of truth. Use K03–K19 for the specific workflows; evaluate consistency of interaction and terminology across them.
 
 - [ ] K03 — **Edit configured properties safely** — In a disposable project with a version-1 schema, edit text, number, date, enum, boolean and record-reference properties. Keep a draft, reopen, and save after reviewing an externally changed schema. Expected: recoverable values, clear validation, stable property identity, stale-schema rejection, no data loss or leakage to another project.
 
