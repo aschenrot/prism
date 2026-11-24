@@ -9,7 +9,7 @@ type Session={revision:string;base:ProjectPropertySchema;original?:PropertyDefin
 const kinds=['text','number','date','boolean','enum','reference'] as const;
 const labelFor={text:'Text',number:'Number',date:'Date',boolean:'Yes / No',enum:'Choice',reference:'Record reference'};
 function changeKind(field:PropertyDefinition,kind:PropertyDefinition['kind']):PropertyDefinition{
- const common={id:field.id,label:field.label,appliesTo:field.appliesTo};
+ const common={id:field.id,label:field.label,appliesTo:field.appliesTo,appliesToEntities:field.appliesToEntities};
  return kind==='enum'?{...common,kind,options:[{id:'',label:''}]}:kind==='reference'?{...common,kind}:{...common,kind};
 }
 function ScopePicker({label,value,onChange}:{label:string;value:Editable['type'][]|undefined;onChange:(value:Editable['type'][]|undefined)=>void}){
@@ -44,7 +44,7 @@ export default function SchemaAdministration({projectId,records,incomplete,onBus
  const save=(event:FormEvent)=>{
   event.preventDefault();if(!session||stale||mutation.isPending)return;
   const fields=session.original?session.base.fields.map(f=>f.id===session.original?.id?session.draft:f):[...session.base.fields,session.draft];
-  const parsed=projectPropertySchema.safeParse({version:1,fields});
+  const parsed=projectPropertySchema.safeParse({...session.base,fields});
   if(!parsed.success){setError(parsed.error.issues.map(i=>i.message).join('; '));return;}
   const issue=schemaTransitionIssue(session.base,parsed.data);if(issue){setError(issue);return;}
   mutation.mutate({revision:session.revision,definition:parsed.data});

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { compareDraft,reconcileDraft,type EditorDraft,type EditableField,type ConflictChoices } from '../shared/editor';
 import type { ProjectRecord } from '../shared/records';
-const labels:Record<EditableField,string>={title:'Title',type:'Type',status:'Status',priority:'Priority',accent:'Accent',tags:'Tags',relationships:'Relationships',body:'Notes',customProperties:'Custom properties'};
+const labels:Record<EditableField,string>={title:'Title',type:'Type',status:'Status',priority:'Priority',accent:'Accent',tags:'Tags',relationships:'Relationships',body:'Notes',customProperties:'Custom properties',customTypeId:'Custom entity type'};
 function display(value:unknown){return typeof value==='string'?value||'(empty)':JSON.stringify(value,null,2);}
 export default function DraftConflict({session,record,onResolve,disabled}:{session:EditorDraft;record:ProjectRecord;onResolve:(next:EditorDraft)=>void;disabled:boolean}){
   const [choices,setChoices]=useState<ConflictChoices>({});
