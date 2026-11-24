@@ -2,10 +2,13 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readdir, readFile, lstat, realpath, rename, unlink, writeFile, link, rmdir } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
 import { parse, stringify } from 'yaml';
+import { readProjectSchema } from './projectSchema';
+import { changedCustomKeys,customPropertyIssue } from '../shared/customProperties';
 import { idSchema, metadataSchema, recordSchema, editableSchema, propertyChangesSchema, type PropertyChanges, type Editable, type ProjectRecord, type RecordList, type TrashList } from '../shared/records';
 
 export class ConflictError extends Error {}
 export class MissingError extends Error {}
+export class CustomPropertyError extends Error {}
 export class RecordStore {
   private queue: Promise<unknown> = Promise.resolve();
   private constructor(private dir: string) {}
@@ -21,6 +24,7 @@ export class RecordStore {
     this.queue = task.then(() => undefined, () => undefined);
     return task;
   }
+  schema(){return readProjectSchema(dirname(this.dir));}
   async get(id: string): Promise<ProjectRecord> {return this.readAt(id,this.path(id));}
   private async readAt(id:string,path:string):Promise<ProjectRecord>{
     let raw: string;
@@ -140,12 +144,33 @@ export class RecordStore {
       return this.persist({...previous,...Object.fromEntries(Object.entries(next).filter(([,value])=>value!==undefined)),updatedAt:new Date().toISOString()});
     });
   }
-  update(id: string, revision: string, changes: Editable) {
+  update(id: string, revision: string, changes: Editable, expectedSchemaRevision?:string) {
     return this.serialize(async () => {
       const current = await this.get(id);
       if (current.revision !== revision) throw new ConflictError('Record changed on disk. Reload before saving.');
       const {revision: _, ...previous} = current;
       const next=editableSchema.parse(changes);
+      // Omitted customProperties means preserve, for existing clients and recovery drafts.
+      // Changed keys alone are validated: historical/inactive values survive unrelated edits.
+      if(next.customProperties!==undefined){
+        const keys=changedCustomKeys(current.customProperties,next.customProperties);
+        if(keys.length){
+          const schema=await this.schema();
+          if(schema.state!=='available'||schema.revision!==expectedSchemaRevision)throw new CustomPropertyError('Project schema changed or is unavailable. Review the current schema before saving custom properties.');
+          for(const key of keys){
+            const field=schema.definition.fields.find(f=>f.id===key);
+            const value=next.customProperties[key];
+            if(!field)throw new CustomPropertyError('Unconfigured property cannot be changed: '+key);
+            const target=field.kind==='reference'&&typeof value==='string'?await this.get(value).catch(()=>undefined):undefined;
+            const issue=customPropertyIssue(field,next.type,value,id,target);
+            if(issue)throw new CustomPropertyError(field.label+': '+issue);
+          }
+          // Recheck just before persistence. Non-cooperating filesystem writers cannot be locked.
+          const latest=await this.schema();
+          if(latest.state!=='available'||latest.revision!==schema.revision)throw new CustomPropertyError('Project schema changed during validation. Review before saving.');
+          if((await this.get(id)).revision!==revision)throw new ConflictError('Record changed during property validation. Review before saving.');
+        }
+      }else delete next.customProperties;
       if(Object.entries(next).every(([key,value])=>JSON.stringify(current[key])===JSON.stringify(value)))return current;
       return this.persist({...previous,...next,id,updatedAt:new Date().toISOString()});
     });

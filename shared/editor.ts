@@ -1,19 +1,20 @@
 import { z } from 'zod';
 import { editableSchema,type Editable,type ProjectRecord } from './records';
-export const editableFields=['title','type','status','priority','accent','tags','relationships','body'] as const satisfies readonly (keyof Editable)[];
+export const editableFields=['title','type','status','priority','accent','tags','relationships','body','customProperties'] as const satisfies readonly (keyof Editable)[];
 export type EditableField=typeof editableFields[number];
 // Intermediate input may be invalid for saving (e.g. an empty title or unfinished tag).
 const draftInput=editableSchema.extend({title:z.string().max(160),tags:z.array(z.string().max(4000)).max(4001)});
 export const editorDraftSchema=z.strictObject({
   version:z.literal(1),
   baseRevision:z.string().regex(/^[a-f0-9]{64}$/),
+  schemaRevision:z.string().regex(/^[a-f0-9]{64}$/).optional(),
   base:editableSchema,
   draft:draftInput,
   updatedAt:z.string().max(40).refine(v=>Number.isFinite(Date.parse(v)),'Invalid draft timestamp')
 });
 export type EditorDraft=z.infer<typeof editorDraftSchema>;
 export function editableRecord(r:ProjectRecord):Editable{
-  return {title:r.title,type:r.type,status:r.status,priority:r.priority,accent:r.accent,tags:r.tags,relationships:r.relationships,body:r.body};
+  return {title:r.title,type:r.type,status:r.status,priority:r.priority,accent:r.accent,tags:r.tags,relationships:r.relationships,body:r.body,...(r.customProperties===undefined?{}:{customProperties:r.customProperties})};
 }
 export function freshDraft(r:ProjectRecord):EditorDraft{
   const base=editableRecord(r);
@@ -42,5 +43,5 @@ export function reconcileDraft(session:EditorDraft,current:ProjectRecord,choices
     if(!equal(session.base[key],session.draft[key])&&(!conflicts.includes(key)||choices[key]==='local'))draft[key]=session.draft[key];
   }
   editableFields.forEach(assign);
-  return {version:1,baseRevision:current.revision,base:disk,draft,updatedAt:new Date().toISOString()};
+  return {version:1,baseRevision:current.revision,base:disk,draft,...(session.schemaRevision?{schemaRevision:session.schemaRevision}:{}),updatedAt:new Date().toISOString()};
 }

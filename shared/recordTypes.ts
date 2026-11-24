@@ -1,0 +1,1 @@
+export const types = ['Idea', 'Mechanic', 'Asset', 'Character', 'Location', 'System', 'Task', 'Decision', 'Objective', 'Feature', 'Requirement', 'Milestone', 'Increment', 'Risk', 'Research', 'Document', 'Test'] as const;
