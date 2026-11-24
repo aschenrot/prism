@@ -36,7 +36,8 @@ export async function validateRegistration(configs:ProjectConfig[],cwd:string){
   const root=await realDirectory(resolve(cwd,config.root));
   if(roots.has(root))throw Error('Project roots must be distinct');roots.add(root);
   const data=config.storage==='repository'?join(root,'.prism'):root;
-  try{if(!(await lstat(data)).isDirectory())throw Error('Project data directory must be a real directory');await rejectIncompleteRestore(data);}catch(e){if(!absent(e)||config.storage!=='repository')throw e;}
+  try{if(!(await lstat(data)).isDirectory())throw Error('Project data directory must be a real directory');await rejectIncompleteRestore(data);
+   for(const store of ['records','views','templates','trash','acceptance.local']){try{if(!(await lstat(join(data,store))).isDirectory())throw Error('Project store must be a real directory: '+store);}catch(e){if(!absent(e))throw e;}}}catch(e){if(!absent(e)||config.storage!=='repository')throw e;}
   if(dataRoots.some(existing=>contains(existing,data)||contains(data,existing)))throw Error('Project data directories must not overlap');
   dataRoots.push(data);
  }

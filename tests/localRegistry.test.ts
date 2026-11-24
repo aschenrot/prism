@@ -38,5 +38,5 @@ test('local registry rejects corrupt or symlinked registries and competing comma
  const local=join(cwd,'.prism/projects.local.yaml'),lock=local+'.lock';
  await writeFile(lock,'other command');await assert.rejects(changeLocalRegistry(cwd,{}, {action:'add',config:config('second','second')}));await rm(lock);
  await writeFile(local,'broken');await assert.rejects(changeLocalRegistry(cwd,{}, {action:'add',config:config('second','second')}));assert.equal(await readFile(local,'utf8'),'broken');
- await rm(local);await mkdir(local);await assert.rejects(changeLocalRegistry(cwd,{}, {action:'add',config:config('second','second')}));
+ await rm(local);await symlink(join(cwd,'first'),local,'junction');await assert.rejects(changeLocalRegistry(cwd,{}, {action:'add',config:config('second','second')}));
 }));
