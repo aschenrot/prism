@@ -487,3 +487,29 @@ test('templates initialize independent records and retirement prevents new use',
  const retiredValue=await retired.json();const blocked=await request.post(otherPrefix+'/templates/'+id+'/instantiate',{data:{expectedRevision:retiredValue.revision,title:'Should not exist'}});expect(blocked.status()).toBe(409);
  expect((await (await request.get(otherPrefix+'/records')).json()).records.find(v=>v.id===r.id).body).toBe('Template body');
 });
+
+test('inbox capture is project-local and triage preserves canonical record identity',async({page,request})=>{
+ const otherPrefix='/api/projects/'+other;
+ await page.goto('/#/projects/'+other+'/inbox');
+ const panel=page.getByRole('region',{name:'Project inbox'});
+ await panel.getByLabel('Capture title',{exact:true}).fill('Capture fixture for triage');
+ await panel.getByLabel('Notes',{exact:true}).fill('Keep this original note.');
+ await page.getByRole('navigation',{name:'Project navigation'}).getByRole('link',{name:'Work',exact:true}).click();
+ await expect(panel.getByLabel('Capture title',{exact:true})).toHaveValue('Capture fixture for triage');
+ await panel.getByRole('button',{name:'Capture',exact:true}).click();
+ const link=panel.getByRole('link',{name:'Capture fixture for triage',exact:true});
+ await expect(link).toBeVisible();
+ const captured=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.title==='Capture fixture for triage');
+ expect(captured).toMatchObject({type:'Idea',status:'Concept',inbox:true,body:'Keep this original note.',relationships:[]});
+ expect((await (await request.get(prefix+'/records')).json()).records.some(r=>r.id===captured.id)).toBe(false);
+ await link.click();await expect(page.getByRole('heading',{name:captured.title,exact:true})).toBeVisible();
+ await expect(page.getByText('Needs triage',{exact:true})).toBeVisible();
+ await page.goBack();await expect(link).toBeVisible();
+ await panel.getByRole('button',{name:'Finish triage for '+captured.title,exact:true}).click();
+ await expect(link).toHaveCount(0);
+ const saved=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.id===captured.id);
+ expect(saved).toMatchObject({id:captured.id,title:captured.title,type:captured.type,status:captured.status,body:captured.body,inbox:false});
+ const stale=await request.put(otherPrefix+'/records/'+captured.id+'/inbox',{data:{expectedRevision:captured.revision,inbox:true}});expect(stale.status()).toBe(409);
+ await open(page,saved,other);await expect(page.getByRole('heading',{name:captured.title,exact:true})).toBeVisible();
+ await expect(page.getByText('Needs triage',{exact:true})).toHaveCount(0);
+});

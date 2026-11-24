@@ -47,3 +47,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K07 — **Find authored knowledge across a project** — Search saved records by text and configured properties, follow a matching record and navigate back. Search repository documentation/source content and preview a file. Switch projects. Expected: relevant results with provenance, clear incomplete/unavailable states, preserved return query, no cross-project results, no indexing of unsaved or trashed data.
 
 - [ ] K08 — **Create from a project template** — Define a template with initial content and a typed default, create a record in the matching collection, then edit or retire the template. Expected: independent new Concept record, current schema validation, stable template identity, no copied acceptance or delivery evidence, unchanged previously created records.
+
+- [ ] K09 — **Capture and triage knowledge** — Capture a title and notes, open the saved record, edit it if needed and finish triage. Expected: one independent canonical record, protected unsaved input, unchanged identity and content during triage, no cross-project leakage.
