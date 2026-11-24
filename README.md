@@ -84,3 +84,6 @@ View tabs retain a consistent relative order across categories. Prism uses the r
 
 Unsaved editor changes have browser-local recovery copies. Reopen a record to recover the draft; close retains it, while Discard draft explicitly removes it. Export draft produces a JSON copy. If the disk record changes, review field-level conflicts before saving. Browser-local recovery is not a backup or cross-device synchronization. Canonical saves still require current revision and validated input.
 An opened editor stays available if its record disappears externally; saving remains blocked until the file is restored.
+
+## Record navigation
+Open records from Overview, collections or related links to read their content in the main workspace. Edit record / Resume draft explicitly opens the editor; closing returns to the record. Use Back/Forward or browser history to revisit prior pages; use breadcrumbs to return to the owning category or project Overview. Copy the fragment URL to reopen a specific project, collection, saved view or record. Overview / Awaiting acceptance and record Linked tests expose acceptance handoffs without searching saved views. History restores collection mode and filters; scroll restoration is best effort. Browser-local recovery remains distinct from saved Markdown.

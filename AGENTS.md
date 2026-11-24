@@ -47,3 +47,7 @@
 ## Acceptance handoff
 - Each substantial implementation PR must have a linked, actionable Test record with stable case IDs, setup, action, expected result, exact tested revision/environment and explicit acceptance decision. Leave new checks unchecked until observed. Keep the test discoverable through the Acceptance queue and link from the implementation task; do not duplicate the checklist in chat or PR text as the authoritative copy.
 - Reconcile accepted narrow tasks promptly without claiming broad feature or release acceptance. Separate historical evidence from current next actions. Verification runs use clean revisions; acceptance record edits are reviewed separately and must not include scratch project data.
+
+## Workspace navigation
+- Opening a record is a reading/navigation action, never implicitly entering edit mode. Use stable project/record identities in addresses; real links support browser semantics. Keep sidebar and breadcrumb navigation available in the main workspace, and preserve history context separately from canonical data.
+- Breadcrumbs express hierarchy; Back/Forward express visit order. Guard dirty and pending edits across all navigation paths, including browser traversal. Never infer acceptance from a record link or completed-looking UI.

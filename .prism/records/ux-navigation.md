@@ -2,7 +2,7 @@
 id: ux-navigation
 type: Feature
 title: Purpose-driven workspace navigation and overview
-status: Ready
+status: In progress
 priority: High
 accent: teal
 tags: [current, design, usability]
@@ -33,3 +33,5 @@ Owner requested consistent visualization tab ordering. Implement canonical relat
 
 ## Foundation acceptance
 Owner explicitly accepted foundation PR #1. Local verification passed at 859efb773d22544fed85567e01f4623d35f788d0 on Windows, Node 26.13.1: locked install, typecheck, 27 tests passed / one expected file-symlink permission skip, production build and both audits (zero vulnerabilities). Regular merge commit 156700abada6ec691e5fb0e7e4225cc2fffe9af0 has the same tree as the tested head. This is evidence of the accepted baseline, not verification of later editor changes.
+
+Post-foundation owner feedback identified a new navigation scope: record activation should open the main content, not a narrow editor; back/forward and breadcrumb traversal must be functional. The accepted M0 scope remains historical, while the broader feature is reopened for record-navigation in M1. No new manual acceptance claimed.

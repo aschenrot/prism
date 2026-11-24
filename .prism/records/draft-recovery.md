@@ -29,3 +29,5 @@ Limitations: browser storage is not a backup or cross-machine sync; no atomic br
 - Manual acceptance additionally covers external removal of the selected file: editor stays open, export remains possible, and save is disabled until a valid record returns.
 
 Current review: implementation at 742f7846e049c13dc63f026a37bd12d56ccb48e5 is in draft PR #9. Follow editor-acceptance for the canonical actionable checklist and actual outcomes. Implementation remains In progress until accepted; no test is pre-marked passed.
+
+Navigation follow-up: canonical records now open read-only in the main workspace. Edit record or Resume draft explicitly opens the recoverable editor, and close returns to reading. Review record-navigation and the expanded editor-acceptance checklist together.
