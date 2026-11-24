@@ -24,6 +24,7 @@ import { draftStorage } from './draftStorage';
 import SchemaAdministration from './SchemaAdministration';
 import { useProjectSchema,CustomPropertyFields,EntityTypeField } from './CustomProperties';
 import { changedCustomKeys,customPropertyIssue,entityTypeIssue,entityTypeLabel,type CustomValue } from '../shared/customProperties';
+import { emptyDraftHistory,endDraftGroup,recordDraftEdit,stepDraftHistory } from '../shared/draftHistory';
 import { freshDraft,isDirty,changedSinceCheckpoint,type EditorDraft } from '../shared/editor';
 import DraftConflict from './DraftConflict';
 import NavigationToast from './NavigationToast';
@@ -64,6 +65,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   const qc=useQueryClient();
   const [initial]=useState(()=>draftStorage.read(projectId,record.id));
   const [session,setSession]=useState<EditorDraft>(()=>initial.state==='available'?initial.draft:freshDraft(record));
+  const [draftHistory,setDraftHistory]=useState(emptyDraftHistory);
   const token=useRef(initial.token);
   const checkpoint=useRef<EditorDraft|null>(initial.state==='available'?initial.draft:null);
   const [recovery,setRecovery]=useState<'stored'|'none'|'unavailable'|'conflict'|'invalid'>(initial.state==='available'?'stored':initial.state==='empty'?'none':initial.state);
@@ -89,16 +91,19 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
     }
     setRecovery(result.state);setRecoveryMessage(result.message);return false;
   };
-  const changeSession=(next:EditorDraft)=>{
-    setSession(next);setValidation('');
-    persist(isDirty(next)?next:null);
+  const applySession=(next:EditorDraft)=>{
+    setSession(next);setValidation('');persist(isDirty(next)?next:null);
   };
-  const update=<K extends keyof Editable>(key:K,value:Editable[K])=>changeSession({...session,...(key==='type'&&draft.customTypeId&&schema&&!schemaStale?{schemaRevision:schema.revision}:{}),draft:{...draft,[key]:value},updatedAt:new Date().toISOString()});
+  const changeSession=(next:EditorDraft,group?:string)=>{
+    setDraftHistory(history=>recordDraftEdit(history,session,next,group,Date.now()));applySession(next);
+  };
+  const replaceSession=(next:EditorDraft)=>{setDraftHistory(emptyDraftHistory());applySession(next);};
+  const update=<K extends keyof Editable>(key:K,value:Editable[K])=>changeSession({...session,...(key==='type'&&draft.customTypeId&&schema&&!schemaStale?{schemaRevision:schema.revision}:{}),draft:{...draft,[key]:value},updatedAt:new Date().toISOString()},key==='title'||key==='body'||key==='tags'?key:undefined);
   const changeCustom=(id:string,value:CustomValue|undefined)=>{
     if(!schema||schemaStale)return;
     const values={...draft.customProperties};
     if(value===undefined)delete values[id];else values[id]=value;
-    changeSession({...session,schemaRevision:schema.revision,draft:{...draft,customProperties:Object.keys(values).length||session.base.customProperties!==undefined?values:undefined},updatedAt:new Date().toISOString()});
+    changeSession({...session,schemaRevision:schema.revision,draft:{...draft,customProperties:Object.keys(values).length||session.base.customProperties!==undefined?values:undefined},updatedAt:new Date().toISOString()},['text','number','date'].includes(schema.definition.fields.find(f=>f.id===id)?.kind??'')?'property:'+id:undefined);
   };
   const changeEntity=(id:string|null)=>{
     if(!schema||schemaStale)return;
@@ -107,7 +112,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   };
   const reviewSchema=()=>{
     if(!schema)return;
-    changeSession({...session,schemaRevision:schema.revision,updatedAt:new Date().toISOString()});
+    replaceSession({...session,schemaRevision:schema.revision,updatedAt:new Date().toISOString()});
   };
   const restoreCustom=(id:string)=>{
     const values={...draft.customProperties};
@@ -118,7 +123,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   const discard=()=>{
     if(!window.confirm(recordUnavailable?'Discard this draft? The canonical record is unavailable.':'Discard this draft and use the current disk record?'))return;
     if(!persist(null,true)&&!window.confirm('Recovery storage could not be cleared. Discard the in-memory edits anyway? Other stored recovery data will remain.'))return;
-    checkpoint.current=null;setSession(freshDraft(record));setRecovered(false);setConflictResponse(false);setValidation('');
+    checkpoint.current=null;setDraftHistory(emptyDraftHistory());setSession(freshDraft(record));setRecovered(false);setConflictResponse(false);setValidation('');
   };
   const exportDraft=()=>{
     const blob=new Blob([JSON.stringify({projectId,recordId:record.id,...session},null,2)],{type:'application/json'});
@@ -129,17 +134,22 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   const mutation=useMutation({mutationFn:(changes:Editable)=>api.update(projectId,record.id,session.baseRevision,changes,session.schemaRevision),onSuccess:async next=>{
     await qc.cancelQueries({queryKey:['records',projectId]});
     // Never delete a newer draft written in another window.
-    persist(null);checkpoint.current=null;setSession(freshDraft(next));setRecovered(false);setConflictResponse(false);setValidation('');
+    persist(null);checkpoint.current=null;setDraftHistory(emptyDraftHistory());setSession(freshDraft(next));setRecovered(false);setConflictResponse(false);setValidation('');
     qc.setQueryData(['records',projectId],(old:Awaited<ReturnType<typeof api.list>>|undefined)=>old?{...old,records:old.records.map(r=>r.id===next.id?next:r)}:old);
     void qc.invalidateQueries({queryKey:['records',projectId]});
   },onError:error=>{
     if(error instanceof ApiError&&error.status===422)void schemaQuery.refetch();
     if(error instanceof ApiError&&error.status===409){setConflictResponse(true);void qc.invalidateQueries({queryKey:['records',projectId]});}
   }});
-  useEffect(()=>{if(!recordUnavailable&&stale&&!dirty&&!mutation.isPending){setSession(freshDraft(record));setConflictResponse(false);}},[record.revision,dirty,session.baseRevision,mutation.isPending,recordUnavailable]);
+  useEffect(()=>{if(!recordUnavailable&&stale&&!dirty&&!mutation.isPending){setDraftHistory(emptyDraftHistory());setSession(freshDraft(record));setConflictResponse(false);}},[record.revision,dirty,session.baseRevision,mutation.isPending,recordUnavailable]);
   useLayoutEffect(()=>{onBusyChange(protectedEdit||mutation.isPending);},[protectedEdit,mutation.isPending,onBusyChange]);
   useLayoutEffect(()=>()=>onBusyChange(false),[onBusyChange]);
   useEffect(()=>{if(!protectedEdit&&!mutation.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[protectedEdit,mutation.isPending]);
+  const historyBlocked=mutation.isPending||stale||conflictResponse;
+  const historyStep=(direction:'undo'|'redo')=>{
+    if(historyBlocked)return;const next=stepDraftHistory(draftHistory,session,direction,new Date().toISOString());if(!next)return;
+    setDraftHistory(next.history);applySession(next.session);
+  };
   const cancel=()=>{
     if(mutation.isPending)return;
     if(!sessionChanged){onClose();return;}
@@ -170,10 +180,11 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   };
   return <aside className={"inspector"+(expanded?" expanded-inspector":"")} aria-label="Record editor"><div className="inspector-top"><span>{record.type.toUpperCase()} / EDIT RECORD</span><div className="inspector-tools"><button type="button" className="icon-button" aria-label={expanded?"Collapse record editor":"Expand record editor"} onClick={onExpand}>{expanded?<Minimize2 size={17}/>:<Maximize2 size={17}/>}</button><button type="button" className="secondary" disabled={mutation.isPending} onClick={close}><ArrowLeft size={15}/>{dirty?"Keep draft & close":"Return to record"}</button></div></div>
     <h1 className="editor-record-title">{record.title}</h1>
-    <form onSubmit={save} className="editor">
+    <form onSubmit={save} className="editor" onBlurCapture={()=>setDraftHistory(endDraftGroup)} onKeyDown={event=>{if(event.nativeEvent.isComposing||event.altKey||!(event.ctrlKey||event.metaKey))return;const key=event.key.toLowerCase();const direction=key==='z'?(event.shiftKey?'redo':'undo'):key==='y'&&!event.shiftKey?'redo':undefined;if(direction){event.preventDefault();historyStep(direction);}}}>
       {recordUnavailable&&<div className="warning" role="alert">The record file is missing or invalid. Your editor stays open. Export or keep the draft, or restore the file to resume saving.</div>}
       <div className="draft-state" role="status">{recovered&&dirty?'Recovered unsaved draft · ':''}{dirty?(recovery==='stored'?'Recovery copy stored locally':'Recovery not confirmed'):'No unsaved changes'}</div>
       {recoveryMessage&&<div className="warning" role="alert">{recoveryMessage}{recovery==='invalid'&&<button type="button" className="secondary" disabled={mutation.isPending} onClick={discard}>Discard unreadable recovery</button>}{recovery!=='invalid'&&dirty&&<button type="button" className="secondary" disabled={mutation.isPending} onClick={()=>persist(session)}>Retry recovery storage</button>}</div>}
+      <div className="draft-history-controls" role="group" aria-label="Draft editing history"><button type="button" className="secondary" disabled={historyBlocked||!draftHistory.past.length} onClick={()=>historyStep('undo')}>Undo draft edit</button><button type="button" className="secondary" disabled={historyBlocked||!draftHistory.future.length} onClick={()=>historyStep('redo')}>Redo draft edit</button><small>Unsaved edits only · resets on save, reload or conflict review</small></div>
       <fieldset disabled={mutation.isPending||(stale&&dirty)||conflictResponse}>
       <label>Title<input value={draft.title} maxLength={160} required onChange={e=>update('title',e.target.value)}/></label>
       <div className="field-pair"><label>Type<select aria-label="Type" value={draft.type} onChange={e=>update('type',e.target.value as Editable['type'])}>{types.map(v=><option key={v}>{v}</option>)}</select></label>
@@ -186,7 +197,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
       <CustomPropertyFields query={schemaQuery} type={draft.type} entityId={draft.customTypeId} sourceId={record.id} values={draft.customProperties} base={session.base.customProperties} records={records} schemaStale={schemaStale} onChange={changeCustom} onReview={reviewSchema} onRestore={restoreCustom}/>
       <RelationshipEditor sourceId={record.id} sourceType={draft.type} links={draft.relationships} records={records} onChange={links=>update('relationships',links)}/>
       </fieldset>
-      {!recordUnavailable&&stale&&dirty&&<DraftConflict key={record.revision} session={session} record={record} disabled={mutation.isPending} onResolve={next=>{mutation.reset();setConflictResponse(false);changeSession(next);}}/>}
+      {!recordUnavailable&&stale&&dirty&&<DraftConflict key={record.revision} session={session} record={record} disabled={mutation.isPending} onResolve={next=>{mutation.reset();setConflictResponse(false);replaceSession(next);}}/>}
       {!recordUnavailable&&conflictResponse&&!stale&&<div className="warning" role="alert">Save rejected because the disk revision changed. Your draft remains intact.<button type="button" className="secondary" onClick={()=>{void qc.invalidateQueries({queryKey:['records',projectId]});}}>Refresh record</button></div>}
       {validation&&<p className="warning" role="alert">{validation}</p>}
       {dirty&&<div className="draft-actions"><button type="button" className="secondary" disabled={mutation.isPending} onClick={close}>Keep draft &amp; close</button><button type="button" className="secondary" disabled={mutation.isPending} onClick={exportDraft}>Export draft</button><button type="button" className="secondary" disabled={mutation.isPending} onClick={()=>{discard();mutation.reset();}}>Discard draft</button></div>}
