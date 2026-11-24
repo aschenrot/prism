@@ -29,6 +29,33 @@ This inventory is metadata, not legal clearance. Review actual installed license
 - [ ] Owner confirms visibility change after privacy and licensing review. Public source/history cannot reliably be made private again once copied. Publish a development preview, not a stable release.
 - [ ] Observe successful hosted verification on supported matrix configurations. Inspect report revision and environment. Only then adopt required checks in branch rules and reduce repeated local automated runs. Preserve focused human acceptance; no automatic merge. CI ingestion into Prism is follow-up work.
 
+## Preliminary remote review — 2026-11-24
+
+Read-only GitHub inspection before publication: main `a9d5ca8`, record-management head `b625b19`, public-preview head `0e36250`.
+
+- 10 listed branches (main, two topic branches and seven Dependabot branches); no tag refs returned. Record-management history returned 38 reachable commits; this is not a scan of all branch contents or historical blobs.
+- Record-management head: 244 tracked blobs, complete tree listing; no obvious secret-related filenames in a narrow filename check. The public-preview tree was also listed. These checks do not establish the absence of secrets.
+- Screened titles/bodies of all 12 listed PRs and the available issue/inline-comment collections (zero returned) for common token/private-key/credential-URL/user-path/email patterns. No matches. This does not cover review submissions, attachments, deleted content, full issue metadata or logs. No releases returned.
+- Screened commit messages and author/committer emails in the 38 returned record-management commits. Three email-pattern matches were GitHub service committer addresses; no author email match under this limited rule. Review author identity preferences independently.
+- 22 historical Actions runs returned. Logs and artifacts have not been scanned. Review or remove sensitive historical material before changing visibility. Do not expose raw scan output in the public repository.
+- LICENSE matched the official SPDX `AGPL-3.0-only.txt` text exactly at inspection. Manifest uses the same identifier. This confirms text consistency, not ownership or third-party legal clearance.
+- CI source has read-only permissions, pinned action SHAs, no persisted checkout credentials and public-only automatic jobs. Actual matrix execution remains unverified.
+
+### Owner-side full-history check (PowerShell)
+
+Use a reviewed stable [Gitleaks release](https://github.com/gitleaks/gitleaks/releases). In a separate directory outside the development checkout, make a fresh mirror (requires repository access):
+
+```powershell
+git clone --mirror https://github.com/aschenrot/prism.git prism-publication-audit.git
+Set-Location prism-publication-audit.git
+git rev-parse --is-shallow-repository
+git for-each-ref --format='%(refname)'
+gitleaks git --redact=100 --log-opts="--all" .
+$LASTEXITCODE
+````
+
+Expect a non-shallow mirror; compare refs to the repository and inspect scanner coverage/errors. A zero scanner exit code is one input to the review, not proof of privacy. Nonzero findings or errors require investigation; rotate or revoke affected credentials and remediate history if needed before publication. Review GitHub review submissions, attachments, issue/PR conversations, Actions logs/artifacts and any refs not obtained by the mirror separately. Inspect personal paths and confidential project content even if the scanner does not flag them. Do not commit the mirror or scanner reports. Keep the repository private until all outstanding checks and explicit approval are complete.
+
 ## Hosted CI policy
 
 The Verify workflow triggers on PRs targeting main and pushes to main. Automatic jobs run only for public repositories, retaining explicit manual dispatch for private testing when allowance is available. Standard hosted runners are used on Ubuntu/Windows with Node 22/26; no new npm dependencies. Official actions are pinned to reviewed release commit SHAs and use read-only permissions with checkout credentials not persisted.
