@@ -38,7 +38,7 @@ test('navigation changes destination, view and filters together without an inter
   assert.equal(before.view,'Table');assert.equal(before.filters.type,'Task');
   const next=navigationFor(requirements);
   assert.equal(next.destinationId,'requirements');assert.equal(next.view,'Relationships');assert.equal(next.filters.type,'Requirement');
-  assert.deepEqual(orderedModes(requirements),['Table','Wiki','Relationships']);
+  assert.deepEqual(orderedModes(requirements),['Table','Wiki','Relationships','Traceability']);
   assert.equal(navigationMode(next,requirements,'Board'),next);
   assert.equal(navigationMode(next,requirements,'Table').view,'Table');
   assert.equal(navigationFor(docs).view,'Wiki');

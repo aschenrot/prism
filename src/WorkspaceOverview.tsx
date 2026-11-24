@@ -2,6 +2,7 @@ import { ArrowUpRight,ArrowRight,AlertTriangle,Flag,Target,ListChecks } from 'lu
 import type { ProjectRecord } from '../shared/records';
 import type { ProjectInfo } from '../shared/projects';
 import { overviewFor } from '../shared/navigation';
+import { traceabilityFor } from '../shared/traceability';
 import { scopeFor } from '../shared/increments';
 import Status from './Status';
 import RouteLink from './RouteLink';
@@ -13,6 +14,7 @@ function Row({record,onSelect,hrefFor}:{record:ProjectRecord;onSelect:(id:string
 function description(body:string){return body.split('\n').find(line=>line.trim()&&!line.startsWith('#')&&!line.startsWith('-'))||'No description yet.';}
 export default function WorkspaceOverview({project,records,findings,incomplete,history,historyError,onSelect,onNavigate,hrefFor}:Props){
   const data=overviewFor(records);
+  const trace=traceabilityFor(records);
   const increments=records.filter(r=>r.type==='Increment'&&r.status==='In progress');
   const acceptance=records.filter(r=>r.type==='Test'&&r.status!=='Ready'&&r.tags.some(tag=>tag.toLowerCase()==='acceptance'));
   const reconciliation=history?.state==='available'?reconcileHistory(records,history):undefined;
@@ -31,6 +33,7 @@ export default function WorkspaceOverview({project,records,findings,incomplete,h
         <button className="overview-audit" onClick={()=>onNavigate('quality')}>{findings} record integrity finding{findings===1?'':'s'} <ArrowRight size={14}/></button>
       </section>
     </div>
+    {trace.rows.length>0&&<section className="overview-section"><div className="overview-section-head"><h3>Requirements and feature links</h3>{project.profiles.includes('product')&&<button className="text-action" onClick={()=>onNavigate('requirements')}>Requirements <ArrowRight size={14}/></button>}</div><p className="overview-note">{trace.rows.length} requirements and features · {trace.missingImplementation} without explicit implementation links · {trace.missingTests} without explicit test links · {trace.invalid} invalid incoming links. Authored link counts, not test or acceptance results.</p></section>}
     {increments.length>0&&<section className="overview-section"><div className="overview-section-head"><h3>Active delivery increments</h3><button className="text-action" onClick={()=>onNavigate('increments')}>All increments <ArrowRight size={14}/></button></div>{increments.map(r=>{const scope=scopeFor(r,records,historyError?undefined:history);return <div key={r.id} className="milestone-preview"><Row record={r} onSelect={onSelect} hrefFor={hrefFor}/><p>{scope.ready} / {scope.tasks.length} tasks marked Ready · {scope.tests.length} scoped tests{scope.issues.length?' · '+scope.issues.length+' scope issues':''}</p></div>;})}</section>}
     {acceptance.length>0&&<section className="overview-section"><div className="overview-section-head"><div><span className="eyebrow"><ListChecks size={14}/> REVIEW</span><h3>Awaiting acceptance</h3></div></div><p className="overview-note">Start or resume acceptance directly. Results are tied to the reviewed revision.</p>{acceptance.map(r=><Row key={r.id} record={r} onSelect={onSelect} hrefFor={hrefFor}/>)}</section>}
     <section className="overview-section"><div className="overview-section-head"><div><span className="eyebrow"><ListChecks size={14}/> EXECUTION</span><h3>Active work</h3></div><button className="text-action" onClick={()=>onNavigate('work')}>All tasks <ArrowRight size={14}/></button></div>

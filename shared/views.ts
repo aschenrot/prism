@@ -3,7 +3,7 @@ import { idSchema, priorities, statuses, types, type ProjectRecord } from './rec
 import { schemaId } from './customProperties';
 import { tableColumnsSchema } from './tableColumns';
 import { timelineConfigSchema } from './timeline';
-export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships','Plan','Timeline'] as const;
+export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships','Plan','Timeline','Traceability'] as const;
 export const sortFields=['Title','Priority','Status','Type','ID','Created','Last edited'] as const;
 export const sortDirections=['Ascending','Descending'] as const;
 export const filtersSchema=z.object({
