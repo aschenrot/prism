@@ -2,10 +2,10 @@
 id: collection-interaction
 type: Task
 title: Unify collection controls and safe record management
-status: In progress
+status: Ready
 priority: High
 accent: teal
-tags: [current, design, usability, implementation]
+tags: [design, usability, implementation]
 relationships:
   - management-views
   - ux-navigation
@@ -22,4 +22,7 @@ Acceptance direction: shared collection toolbar with left search and contextual 
 Shared collection toolbar: left search with token matching and clear, compact filters, explicit sort field and direction, contextual New action. Legacy saved views without direction retain Priority high-first, others ascending. Table headings toggle sort; direction stored with view/history. Direct Edit in Table, Board, Gallery, Wiki, Relationships and Slides uses the same draft-protected editor. Typed collections lock creation to the applicable type, new records open directly in editing. Wiki reader follows filtered visible records. Saved-view mutation completion checks navigation scope before applying results. Record pages offer Move to trash with relationship impact warning and local recovery checks; Trash restores original file/ID using revision checks and exclusive no-overwrite hard link. No permanent deletion. Trash is canonical Git-trackable data, not a cache; links and acceptance evidence remain unchanged. Filesystems without hard links fail safely. No distributed locking; external races may require inspecting Trash. Inline property editing, bulk operations, table customization, board drag/drop, searchable relationships and evidence rollups remain later scope. Three new browser scenarios and sorting/trash tests written; actual verification pending.
 
 ## Final polish feedback
-Owner confirmed both automated gates after selector fix 0687350 and reported the rest of the UX passing nicely, with three refinements: reserve sort icon spacing, add creation/last-edited sorting, replace trash browser popups. Implement fixed indicator slots; optional authored createdAt/updatedAt on new records, updatedAt on actual successful edits (old unknown dates sort last; external edits do not silently update them); and native accessible styled dialog with focus, Escape, impact list, recovery blocking and pending/error state. Added unit and browser coverage; new head verification pending. No explicit final merge approval yet.
+Owner confirmed both automated gates after selector fix 0687350 and reported the rest of the UX passing nicely, with three refinements: reserve sort icon spacing, add creation/last-edited sorting, replace trash browser popups. Implement fixed indicator slots; optional authored createdAt/updatedAt on new records, updatedAt on actual successful edits (old unknown dates sort last; external edits do not silently update them); and native accessible styled dialog with focus, Escape, impact list, recovery blocking and pending/error state. Added unit and browser coverage; new head verification pending. Final owner approval supplied; see historical evidence below.
+
+## Results
+Accepted PR #10: owner confirmed both automated gates and the UX passed after final polish head 79c95b609992d98be902f56f5d49d8092d7cce6e, explicitly approved regular merge and continued development on 2026-11-24. Final detailed report counts were not supplied. Merge a9d5ca8759ec13ff1fc37179a88368047d4eb126 preserves the identical accepted file tree. This is owner-reported historical acceptance, not evidence for subsequent changes.

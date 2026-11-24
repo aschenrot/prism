@@ -22,8 +22,10 @@ This inventory is metadata, not legal clearance. Review actual installed license
 ## Before switching visibility
 
 - [x] Owner selects AGPL-3.0-only.
-- [ ] Review and integrate the license and public-preview preparation PR, and accept the record-management increment.
-- [ ] Fetch all branches/tags and scan complete reachable Git history for secrets using a reviewed secret scanner (for example Gitleaks with redacted output). Review hidden and ignored file boundaries, all tracked author emails and personal paths, project records, demo files, GitHub issues/PR conversations, attachments, releases and Actions logs/artifacts. Review actual remote refs and archived or deleted content separately where available. Do not paste secret values into a PR. Rotate/revoke exposed credentials before publication; removing a file at HEAD is not sufficient.
+- [x] Accept and integrate the record-management increment (PR #11).
+- [ ] Verify and integrate the license and public-preview preparation PR.
+- [x] Owner ran Gitleaks on a fresh non-shallow mirror, with --all and redaction enabled; 44 commits scanned, about 1.15 MB, no findings, exit 0. This covers the mirrored snapshot before subsequent integration/documentation commits.
+- [ ] Review hidden and ignored file boundaries, all tracked author emails and personal paths, project records, demo files, GitHub issues/PR conversations, attachments, releases and Actions logs/artifacts. Review actual remote refs and archived or deleted content separately where available. Do not paste secret values into a PR. Rotate/revoke exposed credentials before publication; removing a file at HEAD is not sufficient.
 - [ ] Confirm ownership and licenses of code, documentation, examples and assets; review actual third-party notices, including Rust/Bevy. Preserve applicable notices when distributing.
 - [ ] Enable private vulnerability reporting if available; review collaborator access and Actions settings. Do not use privileged pull_request_target workflows to execute untrusted code. Keep tokens read-only, no secrets passed to fork tests, no self-hosted runners for untrusted contributions.
 - [ ] Owner confirms visibility change after privacy and licensing review. Public source/history cannot reliably be made private again once copied. Publish a development preview, not a stable release.
@@ -52,9 +54,13 @@ git rev-parse --is-shallow-repository
 git for-each-ref --format='%(refname)'
 gitleaks git --redact=100 --log-opts="--all" .
 $LASTEXITCODE
-````
+```
 
 Expect a non-shallow mirror; compare refs to the repository and inspect scanner coverage/errors. A zero scanner exit code is one input to the review, not proof of privacy. Nonzero findings or errors require investigation; rotate or revoke affected credentials and remediate history if needed before publication. Review GitHub review submissions, attachments, issue/PR conversations, Actions logs/artifacts and any refs not obtained by the mirror separately. Inspect personal paths and confidential project content even if the scanner does not flag them. Do not commit the mirror or scanner reports. Keep the repository private until all outstanding checks and explicit approval are complete.
+
+## Owner-reported history scan — 2026-11-24
+
+Fresh mirror clone: 897 objects received, shallow repository false. `gitleaks git --redact=100 --log-opts="--all" .` reported 44 commits scanned, approximately 1,145,463 bytes, no leaks found; process exit 0. Exact mirrored ref list and scanner version were not supplied. This is owner-reported successful secret screening of that snapshot. Review new commits and refresh the mirror before switching visibility; confidential content, GitHub-hosted material and licensing review remain separate. PR #11 accepted and merged at `c96c5c728acfbcc64953d8e1e94579bd44dfcc30`. No public visibility change or hosted CI success claimed.
 
 ## Hosted CI policy
 

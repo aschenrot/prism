@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readdir, readFile, lstat, realpath, rename, unlink, writeFile, link, rmdir } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
 import { parse, stringify } from 'yaml';
-import { idSchema, metadataSchema, recordSchema, editableSchema, type Editable, type ProjectRecord, type RecordList, type TrashList } from '../shared/records';
+import { idSchema, metadataSchema, recordSchema, editableSchema, propertyChangesSchema, type PropertyChanges, type Editable, type ProjectRecord, type RecordList, type TrashList } from '../shared/records';
 
 export class ConflictError extends Error {}
 export class MissingError extends Error {}
@@ -118,6 +118,26 @@ export class RecordStore {
     return this.serialize(async () => {
       const now=new Date().toISOString();
       return this.persist({id:randomUUID(),title,type,status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body:'',createdAt:now,updatedAt:now});
+    });
+  }
+  // Duplicate only saved, editable content. A copy is new work, never inherited acceptance.
+  duplicate(id:string,revision:string){
+    return this.serialize(async()=>{
+      const source=await this.get(id);
+      if(source.revision!==revision)throw new ConflictError('Record changed on disk. Refresh before duplicating.');
+      const now=new Date().toISOString(),suffix=' (copy)';
+      const title=source.title.slice(0,160-suffix.length).replace(/[\uD800-\uDBFF]$/,'').trimEnd()+suffix;
+      return this.persist({id:randomUUID(),title,type:source.type,status:'Concept',priority:source.priority,accent:source.accent,tags:source.tags.filter(t=>!['acceptance','current','blocker'].includes(t.toLowerCase())),relationships:[],body:source.body,createdAt:now,updatedAt:now});
+    });
+  }
+  updateProperties(id:string,revision:string,changes:PropertyChanges){
+    return this.serialize(async()=>{
+      const current=await this.get(id);
+      if(current.revision!==revision)throw new ConflictError('Record changed on disk. Refresh before editing its properties.');
+      const next=propertyChangesSchema.parse(changes);
+      if(Object.entries(next).every(([key,value])=>value===undefined||current[key]===value))return current;
+      const {revision:_,...previous}=current;
+      return this.persist({...previous,...Object.fromEntries(Object.entries(next).filter(([,value])=>value!==undefined)),updatedAt:new Date().toISOString()});
     });
   }
   update(id: string, revision: string, changes: Editable) {

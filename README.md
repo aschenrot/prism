@@ -97,3 +97,8 @@ The editor supports Cancel (restore pre-session draft), Keep draft & close and e
 
 ## Collection management
 Use the left collection search, Filter, sort field and ascending/descending direction; Table headers toggle ordering. New is contextual and opens the editor; direct Edit actions are available across record views. Record pages offer Move to trash, with impact confirmation; Trash restores original records without overwriting an existing ID. Trash is tracked project data, not a permanent-delete operation. See the linked delivery and acceptance records for current review status.
+
+Record commands use an ellipsis menu with Edit and Move to trash across record views. Collection removal stays in the current collection and offers View Trash after success. Relationship targets can be searched by title, ID, type or tags within compatible records. PR #11 was accepted and integrated.
+
+## Record management and increments
+Table supports inline status/priority and bounded visible-record multi-selection with a bulk preview and per-record outcomes. Record actions include Duplicate and Copy record link. Increments define explicit task/test scope through Contains relationships and show authored status, linked Git evidence, local npm/browser gates and revision-specific acceptance. The first dogfooding increment is Record management and interaction (PR #11). PR #11 passed owner-reported automated and manual acceptance and was merged.
