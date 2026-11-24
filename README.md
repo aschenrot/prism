@@ -25,7 +25,7 @@ npm run typecheck
 npm run build
 ```
 
-Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. Automatic hosted verification is configured for public PRs and main; private automatic runs remain disabled to avoid spending the private allowance. Until hosted checks are demonstrated and required, local verification remains the automated merge gate. Manual acceptance remains required independently; platform support claims require actual platform evidence.
+Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. Automatic hosted verification is configured for public PRs and main; private automatic runs remain disabled to avoid spending the private allowance. For owner-delegated M1 integration, review of the complete current hosted Verify matrix is the automated gate; local verification remains available for diagnosis. Human acceptance remains separate. Platform support claims require actual platform evidence.
 
 Dependency policy: latest compatible stable releases, verified migrations and reproducible installs. See [dependency maintenance](docs/dependencies.md). For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. The committed npm lockfile is required by the local verifier; use npm ci for clean reproducible installs.
 
@@ -55,7 +55,7 @@ Repository view previews original documentation, source and manifest files in co
 
 Filter by type, status, priority and text; choose title, priority or status sorting. Save the configuration to a project-scoped YAML view, reopen it, update it or delete it without deleting any records. Emberfall includes four ready-made views. Wiki renders record Markdown; Relationships exposes direct links and labeled backlinks. Explicit implements, verifies, depends-on, blocks, documents and related-to edges coexist with legacy generic IDs. Repository Markdown can be toggled between rendered and source modes. No AI or compiler is used to generate these pages.
 
-### Implemented in this first slice
+### Foundational capabilities
 
 - Four synchronized record views: board, table, gallery and slides; plus repository browser and record audit.
 - Multi-project switching, isolated stores, expanded management entity types and editable record links.
@@ -66,7 +66,7 @@ Filter by type, status, priority and text; choose title, priority or status sort
 
 ### Scope and limitations
 
-This is a development preview, not production-ready. There is no live multi-user collaboration, undo history, asset upload, drag-and-drop, custom schema editor, native desktop packaging or advanced motion timeline yet. Gallery artwork is generated from record metadata, not an asset browser. Git synchronization and backups are managed outside the app. Do not expose the local server to a network.
+This is a development preview, not production-ready. Live multi-user collaboration, asset upload, native desktop packaging and advanced motion timelines are not implemented. Gallery artwork is generated from record metadata, not an asset browser. M1 includes bounded draft undo/redo, board status movement and constrained versioned schema editing; see the M1 workflows below for boundaries. Git synchronization remains external; offline project backup and restore use the local commands documented below. Do not expose the local server to a network.
 
 Read [architecture](docs/architecture.md), [roadmap](docs/roadmap.md) and [AGENTS.md](AGENTS.md). Prism's own source is licensed under AGPL-3.0-only; third-party terms remain applicable.
 
@@ -76,7 +76,7 @@ Open the project Overview for current direction, milestones, blockers and work. 
 
 ## Delivery evidence
 
-Repository-mode projects with independent Git metadata expose Engineering / Changes, linked commits in Work and record details, and a reconciliation section on Overview. Install Git and use commit-message trailers `Prism-Record: <record-id>`. Exact historical hashes can be authored in `implementationCommits` metadata. No remote calls, automatic task completion or CI import. Unlinked commits are not necessarily errors; history is bounded to the latest 100 HEAD-reachable commits.
+Repository-mode projects with independent Git metadata expose Engineering / Changes, linked commits in Work and record details, and a reconciliation section on Overview. Install Git and use commit-message trailers `Prism-Record: <record-id>`. Exact historical hashes can be authored in `implementationCommits` metadata. Remote GitHub metadata lookup is separately initiated for configured repositories, and scoped to explicit associations; there is no automatic task completion or durable hosted artifact attestation. Unlinked commits are not necessarily errors; history is bounded to the latest 100 HEAD-reachable commits.
 
 ## Local verification and review
 
@@ -93,7 +93,7 @@ Open records from Overview, collections or related links to read their content i
 ## Acceptance review
 For acceptance-tagged Test records with grouped case definitions, a connected Git repository supports native review runs. Start/resume from Overview or linked tasks, record case outcomes and notes, and explicitly finalize the review. Saved runs live in the ignored local `acceptance.local` directory and retain the exact Git and definition revisions; export JSON for sharing or backups. A passed review is manual evidence, not automatic merge approval. Unstructured tests remain readable. Short navigation and case transitions respect reduced motion.
 
-The editor supports Cancel (restore pre-session draft), Keep draft & close and explicit Discard draft. Blocked navigation appears as a toast. Acceptance has Save & next and Copy review summary for deliberate PR/chat handoff. The local Playwright browser suite is locked and runs against isolated fixtures via `npm run test:browser`. Revision-specific verification and manual acceptance are tracked in Prism's records and the corresponding pull requests. See docs/development-workflow.md for exact tooling installation and isolated browser verification. Owner acceptance is five UX cases; technical regression coverage remains separate.
+The editor supports Cancel (restore pre-session draft), Keep draft & close and explicit Discard draft. Blocked navigation appears as a toast. Acceptance has Save & next and Copy review summary for deliberate PR/chat handoff. The local Playwright browser suite is locked and runs against isolated fixtures via `npm run test:browser`. Revision-specific verification and manual acceptance are tracked in Prism's records and the corresponding pull requests. See docs/development-workflow.md for exact tooling installation and isolated browser verification. The earlier five-case UX review remains historical; current M1 acceptance is defined by the consolidated milestone Test record. Technical regression coverage remains separate.
 
 ## Collection management
 Use the left collection search, Filter, sort field and ascending/descending direction; Table headers toggle ordering. New is contextual and opens the editor; direct Edit actions are available across record views. Record pages offer Move to trash, with impact confirmation; Trash restores original records without overwriting an existing ID. Trash is tracked project data, not a permanent-delete operation. See the linked delivery and acceptance records for current review status.
