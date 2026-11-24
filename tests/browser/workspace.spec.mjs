@@ -191,7 +191,16 @@ test('move to trash is reversible, keeps links and protects an existing recovery
 });
 
 test('sort headers reserve their width and date sorting orders authored records',async({page,request})=>{
- const a=await create(request,'Dates Alpha'),b=await create(request,'Dates Beta');await update(request,a,{title:'Dates Alpha edited'});await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Dates');const rows=page.locator('.record-table-title');await expect(rows).toHaveCount(2);const headers=page.locator('.table-wrap thead th');const widths=()=>headers.evaluateAll(nodes=>nodes.map(n=>{const rect=n.getBoundingClientRect();return [Math.round(rect.x*10),Math.round(rect.width*10)];}));const before=await widths();await page.getByRole('button',{name:'Title',exact:true}).click();expect(await widths()).toEqual(before);await page.getByRole('button',{name:'Title',exact:true}).click();expect(await widths()).toEqual(before);await page.getByRole('combobox',{name:'Sort by',exact:true}).selectOption('Created');await expect(page.getByRole('combobox',{name:'Sort direction'})).toHaveValue('Descending');const first=Date.parse(a.createdAt)<Date.parse(b.createdAt)?b.title:'Dates Alpha edited';await expect(rows.first()).toHaveText(first);await page.getByRole('combobox',{name:'Sort by',exact:true}).selectOption('Last edited');await expect(rows.first()).toHaveText('Dates Alpha edited');
+ const a=await create(request,'Dates Alpha'),b=await create(request,'Dates Beta');await update(request,a,{title:'Dates Alpha edited'});
+ await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Dates');const rows=page.locator('.record-table-title');await expect(rows).toHaveCount(2);
+ const headers=page.locator('.records-table thead th');const widths=()=>headers.evaluateAll(nodes=>nodes.map(n=>{const rect=n.getBoundingClientRect();return [Math.round(rect.x*10),Math.round(rect.width*10)];}));
+ const before=await widths();const titleSort=page.getByRole('button',{name:'Title',exact:true});
+ await titleSort.click();await expect(rows).toHaveText(['Dates Alpha edited','Dates Beta']);expect(await widths()).toEqual(before);
+ await titleSort.click();await expect(rows).toHaveText(['Dates Beta','Dates Alpha edited']);expect(await widths()).toEqual(before);
+ // The delivery column must not reflow when asynchronously loaded evidence changes text.
+ await page.locator('.records-table .delivery-cell').first().evaluate(node=>{node.textContent='History unavailable — a longer delivery evidence label';});expect(await widths()).toEqual(before);
+ await page.getByRole('combobox',{name:'Sort by',exact:true}).selectOption('Created');await expect(page.getByRole('combobox',{name:'Sort direction'})).toHaveValue('Descending');const first=Date.parse(a.createdAt)<Date.parse(b.createdAt)?b.title:'Dates Alpha edited';await expect(rows.first()).toHaveText(first);
+ await page.getByRole('combobox',{name:'Sort by',exact:true}).selectOption('Last edited');await expect(rows.first()).toHaveText('Dates Alpha edited');
 });
 
 test('record menus support keyboard and collection removal without losing search context',async({page,request})=>{
