@@ -9,8 +9,8 @@ Prism's authored records and view definitions live in .prism/records and .prism/
 - Product intent, decisions, tasks, requirements, milestones: Prism records.
 - Technical implementation: source files and Git history.
 - Detailed architecture, workflow and dependency policy: docs/ and AGENTS.md, referenced by knowledge records.
-- Actual build/test results: command output or CI run; summarize with revision and environment.
-- Code review and release approval: GitHub PRs and checks, not duplicate task status.
+- Actual build/test results: local verification report and command output (optional hosted CI evidence); summarize with revision and environment.
+- Code review and release approval: GitHub PRs and explicit local check evidence, not duplicate task status.
 
 ## Working agreement
 1. Read the current milestone, linked requirements, blockers and relevant source.
@@ -39,4 +39,9 @@ No custom schemas, custom relationship vocabularies, dependency-cycle analysis, 
 ## Reconcile work with implementation
 For substantial commits use a Git trailer, for example `Prism-Record: interaction-hit-areas`. Multiple trailers may refer to multiple tasks. This links explicit intent to a commit; do not derive completion from a commit message. In the same change, update the relevant task's implementation notes and acceptance state. Record actual checks and revision-specific evidence afterward. A narrow task can be accepted when its own criteria are met while a related integration requirement remains open. The completed lockfile configuration and outstanding cross-platform CI are an example.
 
-Prism now reads local Git trailers and explicit reviewed implementationCommits hashes and exposes linked changes in Work, Overview and record details. Engineering / Changes exposes unmatched references and commits without explicit links. Only the latest 100 HEAD-reachable commits are loaded, and shallow history is marked. CI ingestion, workflow transition semantics and scoped milestone progress are still future work. See .prism/records/delivery-evidence.md.
+Prism now reads local Git trailers and explicit reviewed implementationCommits hashes and exposes linked changes in Work, Overview and record details. Engineering / Changes exposes unmatched references and commits without explicit links. Only the latest 100 HEAD-reachable commits are loaded, and shallow history is marked. Optional hosted CI ingestion, workflow transition semantics and scoped milestone progress are still future work. See .prism/records/delivery-evidence.md.
+
+## Local-first merge policy
+Hosted Actions is optional and manual-only due to the owner's exhausted allowance. Stop dev, commit intended changes, check git status, run npm run verify. This reinstalls locked dependencies, runs typecheck/test/build and both audits, writes a bounded local report and exits nonzero for failed/skipped checks or dirty/changed revision. A dirty report is diagnostic. Network/install failure is not a passed check. Quality / Audit shows recorded results; compare the revision and recheck current tree cleanliness before review. Keep generated reports ignored, summarize actual outcomes and tested hash in PR review. Manual runtime, accessibility and acceptance checks remain necessary. Do not require hosted CI; verify other platforms locally when making platform-specific release claims.
+
+After the owner accepts the foundation, use main as integration branch and short-lived feat/, fix/, refactor/, docs/, chore/ branches with focused PRs. Preserve hashes using regular merge commits; GitHub currently allows only squash merging, so the owner must enable merge commits before PR #1 is merged. Do not rewrite already attributed history. No duplicate GitHub issues for Prism tasks; optional issues are external feedback intake. See development-workflow-decision.

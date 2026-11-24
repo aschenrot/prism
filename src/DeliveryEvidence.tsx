@@ -11,7 +11,7 @@ function CommitRow({commit}:{commit:CommitEvidence}){
 export function RecordEvidence({record,history,loading,error,onRefresh}:HistoryProps&{record:ProjectRecord}){
   const commits=linkedCommits(record,history);
   return <section className="delivery-panel"><div className="eyebrow">DELIVERY EVIDENCE</div><Context {...{history,loading,error,onRefresh}}/>
-    {history?.state==='available'&&<>{commits.length?commits.map(c=><CommitRow key={c.sha} commit={c}/>):<p className="link-empty">No linked change found in the loaded history.</p>}{(record.implementationCommits||[]).some(sha=>!commits.some(c=>c.sha===sha))&&<p className="link-empty">Some explicitly referenced historical revisions are outside the loaded history or not reachable.</p>}<p className="link-empty">Linked commits establish attribution, not acceptance. CI verification is not imported yet.</p></>}
+    {history?.state==='available'&&<>{commits.length?commits.map(c=><CommitRow key={c.sha} commit={c}/>):<p className="link-empty">No linked change found in the loaded history.</p>}{(record.implementationCommits||[]).some(sha=>!commits.some(c=>c.sha===sha))&&<p className="link-empty">Some explicitly referenced historical revisions are outside the loaded history or not reachable.</p>}<p className="link-empty">Linked commits establish attribution, not acceptance. See Quality for local project verification evidence. A project-wide check does not establish individual task acceptance.</p></>}
   </section>;
 }
 export function Changes({records,onSelect,...props}:HistoryProps&{records:ProjectRecord[];onSelect:(id:string)=>void}){

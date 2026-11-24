@@ -21,3 +21,5 @@ Acceptance: after a task-linked commit, Prism can display implementation evidenc
 
 ## First delivery slice
 Local Git adapter reads bounded HEAD history and explicit Prism-Record trailers. Reviewed historical implementation hashes are optional metadata and do not rewrite history. Work, record details, Changes and Overview derive attribution from the same read-only projection. Missing links and invalid references are visible; nested projects cannot inherit parent history. CI evidence, explicit workflow transitions, stale verification and scoped milestone rollups remain unimplemented. Verification pending; see git-evidence-slice.
+
+Local verification is the mandatory gate after owner feedback; hosted CI is optional. Quality now reads the latest revision-specific local report. See local-verification. A project-wide result does not satisfy individual task acceptance automatically.

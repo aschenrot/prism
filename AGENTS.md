@@ -17,7 +17,7 @@
 - Prefer the latest compatible stable release; no beta, RC, nightly or floating latest in committed manifests. Document any exception, especially for major upgrades and platform-specific packages. Keep React/React DOM, Vite/plugin and related type packages compatible.
 - Separate security fixes from unrelated major upgrades where possible. Review migrations, license, native/install scripts and transitive dependencies. Never use forced audit fixes or broad script approval as a substitute for review.
 - Use a checked-in package-lock.json and npm ci once the lockfile is generated in a registry-enabled environment. Do not fabricate a lockfile. Run npm outdated and npm audit after resolution; treat high/critical findings as release blockers unless an explicit documented exception exists.
-- Run typecheck, unit/integration tests, build and runtime smoke tests on Windows and Linux, using the latest supported Node LTS and supported older lines. Do not claim a version combination is verified until checks actually pass.
+- Run local npm run verify and runtime smoke tests before merging; obtain platform-specific local evidence before claiming Windows/Linux and supported Node compatibility. Hosted CI is optional. Do not claim a version combination is verified until checks actually pass.
 - Keep dependency install-script approvals narrowly scoped to reviewed versions; review new scripts after every upgrade.
 
 ## Dogfooding
@@ -31,3 +31,7 @@
 - Update implementation notes and acceptance status in the same change. Do not leave a completed narrow task open solely because a separate integration gate remains; move that gate to its actual owning record with explicit links.
 - Record test/CI outcome, revision and environment separately from authored task status. A commit alone never establishes acceptance. Never fabricate a self-referential commit SHA inside the same commit; use commit trailers, then record observed revisions in follow-up evidence.
 - Interactive surfaces should have coherent hit areas, keyboard activation, hover/focus/selection and visible blocked-state reasons. Check actual pointer targets, not just the visual design.
+
+## Integration policy
+- Hosted GitHub Actions is optional and manual-only; local automated verification and human acceptance are the merge gate. Use npm run verify on a clean committed revision; do not claim a dirty or historical report as current evidence. Keep local reports under ignored .prism/cache, and record reviewed outcomes in PRs.
+- After foundation PR #1 is locally verified and accepted, use short-lived topic branches from main, focused PRs and regular history-preserving merge commits. Do not squash or rebase already attributed commits. Never merge without explicit owner approval. Prism owns the internal backlog; GitHub Issues are optional intake, not duplicate tasks.

@@ -23,9 +23,9 @@ npm run typecheck
 npm run build
 ```
 
-Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. CI covers Linux and Windows on Node 22 and 26.
+Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. Hosted CI is optional. Local verification and manual acceptance are required for merges; platform support claims need evidence from those platforms.
 
-Dependency policy: latest compatible stable releases, verified migrations and reproducible installs. See [dependency maintenance](docs/dependencies.md). For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. The committed npm lockfile is required by CI; use npm ci for clean reproducible installs.
+Dependency policy: latest compatible stable releases, verified migrations and reproducible installs. See [dependency maintenance](docs/dependencies.md). For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. The committed npm lockfile is required by the local verifier; use npm ci for clean reproducible installs.
 
 ## Develop Prism with Prism
 
@@ -75,3 +75,7 @@ Open the project Overview for current direction, milestones, blockers and work. 
 ## Delivery evidence
 
 Repository-mode projects with independent Git metadata expose Engineering / Changes, linked commits in Work and record details, and a reconciliation section on Overview. Install Git and use commit-message trailers `Prism-Record: <record-id>`. Exact historical hashes can be authored in `implementationCommits` metadata. No remote calls, automatic task completion or CI import. Unlinked commits are not necessarily errors; history is bounded to the latest 100 HEAD-reachable commits.
+
+## Local verification and review
+
+Stop the development server, commit intended changes, and run `npm run verify` from the Prism repository. This performs npm ci (replaces node_modules), typecheck, tests, build and both dependency audits; the audits and installation need npm registry access or suitable cached packages. A nonzero exit is not a passing gate. The ignored report `.prism/cache/verification/latest.json` is displayed in Quality / Audit. It identifies the tested revision and recorded clean-tree checks, not current dirty state or manual acceptance. Hosted Actions runs only when manually dispatched. Use [development workflow](docs/development-workflow.md) for PR review and history-preserving merges.

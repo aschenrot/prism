@@ -12,6 +12,7 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
+    "verify": "node scripts/verify.mjs",
     "deps:outdated": "npm outdated",
     "deps:audit": "npm audit",
     "deps:audit:prod": "npm audit --omit=dev"

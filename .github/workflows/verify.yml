@@ -1,8 +1,7 @@
 name: Verify
 on:
-  pull_request:
-  push:
-    branches: [main]
+  # Hosted verification is optional; local npm run verify is the merge gate.
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
