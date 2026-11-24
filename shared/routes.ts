@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { idSchema,type ProjectRecord } from './records';
 import { filtersSchema,type SavedView } from './views';
+import { tableColumnsSchema } from './tableColumns';
 import { modeOrder,navigationFor,navigationForSaved,type Destination,type NavigationState } from './navigation';
 
 export type WorkspaceRoute=
@@ -34,18 +35,19 @@ export function parentDestination(destinations:Destination[],record:ProjectRecor
 export const collectionContextSchema=z.strictObject({
   mode:z.enum(modeOrder),
   filters:filtersSchema,
+  tableColumns:tableColumnsSchema.optional(),
   focus:idSchema.optional(),
   slide:z.number().int().min(0).max(1000000).optional()
 });
 export type CollectionContext=z.infer<typeof collectionContextSchema>;
-export function contextFor(navigation:NavigationState):CollectionContext{return {mode:navigation.view,filters:navigation.filters};}
+export function contextFor(navigation:NavigationState):CollectionContext{return {mode:navigation.view,filters:navigation.filters,...(navigation.tableColumns!==undefined?{tableColumns:navigation.tableColumns}:{})};}
 export function restoreCollection(destination:Destination,preferred:unknown,context:unknown,saved?:SavedView):NavigationState{
   const initial=saved?navigationForSaved(saved):navigationFor(destination,preferred);
   const parsed=collectionContextSchema.safeParse(context);
   if(!parsed.success||!destination.modes.includes(parsed.data.mode))return initial;
   const filters=parsed.data.filters;
   if(destination.id!=='library'&&filters.type!==destination.type)return initial;
-  return {...initial,view:parsed.data.mode,filters};
+  return {...initial,view:parsed.data.mode,filters,tableColumns:parsed.data.tableColumns};
 }
 export const historyEntrySchema=z.strictObject({
   version:z.literal(1),
