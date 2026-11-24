@@ -4,10 +4,11 @@ import { Inbox as InboxIcon,Plus } from 'lucide-react';
 import type { ProjectRecord } from '../shared/records';
 import { api } from './api';
 import RouteLink from './RouteLink';
+import { draftStorage } from './draftStorage';
 export default function Inbox({projectId,records,incomplete,onOpen,hrefFor,onMerge,onRefresh,onBusyChange}:{projectId:string;records:ProjectRecord[];incomplete:boolean;onOpen:(id:string)=>void;hrefFor:(id:string)=>string;onMerge:(records:ProjectRecord[])=>Promise<void>;onRefresh:()=>void;onBusyChange:(busy:boolean)=>void}){
  const [title,setTitle]=useState(''),[body,setBody]=useState(''),[message,setMessage]=useState('');
  const capture=useMutation({mutationFn:()=>api.capture(projectId,title,body),onSuccess:async r=>{await onMerge([r]);setTitle('');setBody('');setMessage('Captured '+r.title+' in this project.');},onSettled:onRefresh});
- const triage=useMutation({mutationFn:(r:ProjectRecord)=>api.setInbox(projectId,r.id,r.revision,false),onSuccess:async r=>{await onMerge([r]);setMessage(r.title+' moved out of the inbox. The record remains in your library.');},onSettled:onRefresh});
+ const triage=useMutation({mutationFn:(r:ProjectRecord)=>{if(draftStorage.read(projectId,r.id).state!=='empty')throw Error('Recovery draft or unavailable recovery storage; resolve it before triage.');return api.setInbox(projectId,r.id,r.revision,false);},onSuccess:async r=>{await onMerge([r]);setMessage(r.title+' moved out of the inbox. The record remains in your library.');},onSettled:onRefresh});
  const dirty=!!(title||body),pending=capture.isPending||triage.isPending;
  useLayoutEffect(()=>{onBusyChange(dirty||pending);},[dirty,pending,onBusyChange]);useLayoutEffect(()=>()=>onBusyChange(false),[onBusyChange]);
  useEffect(()=>{if(!dirty&&!pending)return;const warn=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[dirty,pending]);
