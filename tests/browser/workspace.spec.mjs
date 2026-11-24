@@ -196,8 +196,8 @@ test('record menus support keyboard and collection removal without losing search
 });
 test('relationship search limits candidates and saves only compatible selected targets',async({page,request})=>{
  const source=await create(request,'Relationship search fixture'),target=await create(request,'Requirement search target','Requirement'),incompatible=await create(request,'Task search target','Task');
- await open(page,source);await edit(page);await page.getByLabel('Relationship type',{exact:true}).selectOption('implements');
- const search=page.getByLabel('Search compatible records',{exact:true}),select=page.getByLabel('Target record',{exact:true});
+ await open(page,source);await edit(page);const kind=page.getByRole('combobox',{name:'Relationship type',exact:true});await expect(kind).toBeVisible();await kind.selectOption('implements');
+ const search=page.getByRole('searchbox',{name:'Search compatible records',exact:true}),select=page.getByRole('combobox',{name:'Target record',exact:true});await expect(search).toBeVisible();await expect(select).toBeVisible();
  await search.fill('search target');await expect(select.locator('option')).toHaveCount(2);await expect(select.locator('option[value="'+incompatible.id+'"]')).toHaveCount(0);await select.selectOption(target.id);await page.getByRole('button',{name:'Add relationship',exact:true}).click();await expect(page.getByRole('button',{name:'Add relationship',exact:true})).toBeDisabled();await expect(select.locator('option[value="'+target.id+'"]')).toHaveCount(0);
  await save(page).click();await expect(page.getByText('No unsaved changes',{exact:true})).toBeVisible();expect((await recordOnDisk(request,source.id)).relationships).toContainEqual({kind:'implements',target:target.id});
 });
@@ -209,9 +209,9 @@ test('inline properties and bounded bulk selection preserve recovery and report 
  await page.getByRole('combobox',{name:'Status for '+a.title,exact:true}).selectOption('In progress');await expect(page.getByText(a.title+' saved.',{exact:true})).toBeVisible();
  expect((await recordOnDisk(request,a.id)).status).toBe('In progress');await expect(page).toHaveURL(/\/work$/);
  await page.getByRole('checkbox',{name:'Select all visible records'}).check();await expect(page.getByText('3 selected',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Edit selected',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Edit 3 selected records'});await dialog.getByLabel('Priority',{exact:true}).selectOption('High');await dialog.getByRole('button',{name:'Apply changes'}).click();
+ await page.getByRole('button',{name:'Edit selected',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Edit 3 selected records'});await expect(dialog).toBeVisible();const priority=dialog.getByRole('combobox',{name:'Priority',exact:true});await expect(priority).toBeVisible();await expect(dialog.getByRole('combobox',{name:'Status',exact:true})).toHaveValue('');await priority.selectOption('High');await dialog.getByRole('button',{name:'Apply changes'}).click();
  const result=page.getByRole('dialog',{name:'Bulk edit results'});await expect(result.getByText('2 confirmed · 1 not updated or unconfirmed')).toBeVisible();await expect(result.getByText(c.title,{exact:true})).toBeVisible();
- expect((await recordOnDisk(request,b.id)).priority).toBe('High');expect((await recordOnDisk(request,c.id)).priority).toBe('Normal');await result.getByRole('button',{name:'Done',exact:true}).click();
+ expect((await recordOnDisk(request,a.id)).priority).toBe('High');expect((await recordOnDisk(request,a.id)).status).toBe('In progress');expect((await recordOnDisk(request,b.id)).priority).toBe('High');expect((await recordOnDisk(request,b.id)).status).toBe('Concept');expect((await recordOnDisk(request,c.id)).priority).toBe('Normal');await result.getByRole('button',{name:'Done',exact:true}).click();
  await page.getByRole('checkbox',{name:'Select '+a.title,exact:true}).check();await page.getByRole('textbox',{name:'Search records'}).fill(b.title);await expect(page.getByText('1 selected',{exact:true})).toHaveCount(0);
  await open(page,c);await page.getByRole('button',{name:'Resume draft'}).click();await expect(title(page)).toHaveValue('Protected local draft');await keep(page).click();
 });

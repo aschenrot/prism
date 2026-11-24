@@ -14,10 +14,10 @@ export default function RelationshipEditor({sourceId,sourceType,links,records,on
   const canAdd=visible.some(r=>r.id===target)&&links.length<200;
   return <div className="relationship-editor">
     <div className="eyebrow">RELATIONSHIPS</div>
-    <label>Relationship type<select value={kind} onChange={e=>{setKind(e.target.value as RelationshipKind);setTarget('');setSearch('');}}>{relationshipKinds.map(k=><option key={k} value={k}>{relationshipLabels[k].outgoing}</option>)}</select></label>
-    <label>Search compatible records<input type="search" maxLength={300} placeholder="Title, ID, type or tag…" value={search} onChange={e=>{setSearch(e.target.value);setTarget('');}}/></label>
+    <label>Relationship type<select aria-label="Relationship type" value={kind} onChange={e=>{setKind(e.target.value as RelationshipKind);setTarget('');setSearch('');}}>{relationshipKinds.map(k=><option key={k} value={k}>{relationshipLabels[k].outgoing}</option>)}</select></label>
+    <label>Search compatible records<input aria-label="Search compatible records" type="search" maxLength={300} placeholder="Title, ID, type or tag…" value={search} onChange={e=>{setSearch(e.target.value);setTarget('');}}/></label>
     <p className="link-empty" role="status">{matches.length} compatible {matches.length===1?'record':'records'}{matches.length>50?' · showing first 50, refine your search':''}</p>
-    <label>Target record<select value={canAdd?target:''} disabled={!visible.length||links.length>=200} onChange={e=>setTarget(e.target.value)}><option value="">Choose a compatible record…</option>{visible.map(r=><option key={r.id} value={r.id}>{r.title} ({r.type})</option>)}</select></label>
+    <label>Target record<select aria-label="Target record" value={canAdd?target:''} disabled={!visible.length||links.length>=200} onChange={e=>setTarget(e.target.value)}><option value="">Choose a compatible record…</option>{visible.map(r=><option key={r.id} value={r.id}>{r.title} ({r.type})</option>)}</select></label>
     <button className="secondary" type="button" disabled={!canAdd} onClick={()=>{if(canAdd){onChange([...links,{kind,target}]);setTarget('');}}}>Add relationship</button>
     {!!candidates.length&&!matches.length&&<p className="link-empty">No matching compatible records. Try a different search.</p>}
     {!candidates.length&&<p className="link-empty">No compatible unlinked records for this relationship.</p>}
