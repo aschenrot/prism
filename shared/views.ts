@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { idSchema, priorities, statuses, types, type ProjectRecord } from './records';
 export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships'] as const;
-export const sortFields=['Title','Priority','Status','Type','ID'] as const;
+export const sortFields=['Title','Priority','Status','Type','ID','Created','Last edited'] as const;
 export const sortDirections=['Ascending','Descending'] as const;
 export const filtersSchema=z.object({
   type:z.enum(['All records',...types]),
@@ -20,8 +20,9 @@ export type SavedView=ViewDefinition & {revision:string};
 export type ViewList={views:SavedView[];errors:{file:string;message:string}[]};
 export const defaultFilters:Filters={type:'All records',status:'Any status',priority:'Any priority',search:'',sort:'Title'};
 // Old version-1 views retain their original ordering when direction is absent.
-export function sortDirection(filters:Pick<Filters,'sort'|'direction'>){return filters.direction??(filters.sort==='Priority'?'Descending':'Ascending');}
-export function sortBy(filters:Filters,sort:Filters['sort']):Filters{return {...filters,sort,direction:sort===filters.sort?(sortDirection(filters)==='Ascending'?'Descending':'Ascending'):(sort==='Priority'?'Descending':'Ascending')};}
+export function defaultSortDirection(sort:Filters['sort']):NonNullable<Filters['direction']>{return sort==='Priority'||sort==='Created'||sort==='Last edited'?'Descending':'Ascending';}
+export function sortDirection(filters:Pick<Filters,'sort'|'direction'>){return filters.direction??defaultSortDirection(filters.sort);}
+export function sortBy(filters:Filters,sort:Filters['sort']):Filters{return {...filters,sort,direction:sort===filters.sort?(sortDirection(filters)==='Ascending'?'Descending':'Ascending'):defaultSortDirection(sort)};}
 function matchesSearch(record:ProjectRecord,terms:string[]){
   if(!terms.length)return true;
   const text=[record.id,record.title,record.type,record.body,...record.tags].join(' ').toLowerCase();
@@ -36,6 +37,14 @@ export function selectRecords(records:ProjectRecord[],filters:Filters){
     (filters.priority==='Any priority'||r.priority===filters.priority)&&
     matchesSearch(r,query)
   ).sort((a,b)=>{
+    if(filters.sort==='Created'||filters.sort==='Last edited'){
+      const key=filters.sort==='Created'?'createdAt':'updatedAt';
+      const left=a[key],right=b[key];
+      // Unknown dates sort last in either direction. Stable ties remain alphabetical.
+      if(!!left!==!!right)return left?-1:1;
+      if(left&&right){const difference=Date.parse(left)-Date.parse(right);if(difference)return direction*difference;}
+      return a.title.localeCompare(b.title)||a.id.localeCompare(b.id);
+    }
     const primary=filters.sort==='Priority'?priorities.indexOf(a.priority)-priorities.indexOf(b.priority):filters.sort==='Status'?statuses.indexOf(a.status)-statuses.indexOf(b.status):filters.sort==='Type'?a.type.localeCompare(b.type):filters.sort==='ID'?a.id.localeCompare(b.id):a.title.localeCompare(b.title);
     return direction*primary||a.title.localeCompare(b.title)||a.id.localeCompare(b.id);
   });

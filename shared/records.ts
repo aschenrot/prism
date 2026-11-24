@@ -10,6 +10,8 @@ export const relationshipKindSchema=z.enum(relationshipKinds);
 export const relationshipSchema=z.union([idSchema,z.strictObject({kind:relationshipKindSchema,target:idSchema})]);
 export type Relationship=z.infer<typeof relationshipSchema>;
 export type RelationshipKind=z.infer<typeof relationshipKindSchema>;
+// Authored timestamps are optional for older records; never infer them from file mtime.
+const recordTimestamp=z.iso.datetime({offset:true});
 const metadataShape = {
   id: idSchema,
   title: z.string().trim().min(1).max(160),
@@ -19,6 +21,8 @@ const metadataShape = {
   accent: z.enum(accents),
   tags: z.array(z.string().trim().min(1).max(60)).max(30),
   relationships: z.array(relationshipSchema).max(200),
+  createdAt:recordTimestamp.optional(),
+  updatedAt:recordTimestamp.optional(),
   // Explicit, reviewed historical attribution; not editable via ordinary record mutations.
   implementationCommits: z.array(z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/)).max(100).optional()
 };

@@ -27,6 +27,7 @@ import RouteLink from './RouteLink';
 import CollectionToolbar,{SortHeading} from './CollectionToolbar';
 import CollectionEditAction from './CollectionEditAction';
 import TrashView from './TrashView';
+import TrashDialog from './TrashDialog';
 import { relationshipsFor } from '../shared/relationships';
 import { collectionRoute,recordRoute,savedRoute,routeHash,parentDestination,restoreCollection,contextFor } from '../shared/routes';
 import { useWorkspaceHistory,type WorkspaceHistory } from './workspaceHistory';
@@ -214,20 +215,28 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   const beginCreate=()=>{if(!controlsDisabled){create.reset();setNewType(creationType||'Idea');setNewTitle('');setCreating(true);}};
   const changeView=(v:View)=>{if(busy||creating)return;viewPreferences.remember(projectId,navigation,destination,v);router.replaceContext(contextFor(navigationMode(navigation,destination,v)));};
   const submit=(e:FormEvent)=>{e.preventDefault();if(!busy&&!create.isPending)create.mutate();};
-  const trash=useMutation({mutationFn:(target:ProjectRecord)=>api.moveToTrash(projectId,target.id,target.revision),onSuccess:async target=>{await qc.cancelQueries({queryKey:['records',projectId]});qc.setQueryData(['records',projectId],(old:Awaited<ReturnType<typeof api.list>>|undefined)=>old?{...old,records:old.records.filter(r=>r.id!==target.id)}:old);router.go(collectionRoute(projectId,'trash'),undefined,true);},onSettled:()=>{void qc.invalidateQueries({queryKey:['records',projectId]});void qc.invalidateQueries({queryKey:['trash',projectId]});}});
+  const [trashTarget,setTrashTarget]=useState<ProjectRecord|null>(null);
+  const [trashProblem,setTrashProblem]=useState<string|undefined>();
+  const trash=useMutation({mutationFn:(target:ProjectRecord)=>api.moveToTrash(projectId,target.id,target.revision),onSuccess:async target=>{await qc.cancelQueries({queryKey:['records',projectId]});qc.setQueryData(['records',projectId],(old:Awaited<ReturnType<typeof api.list>>|undefined)=>old?{...old,records:old.records.filter(r=>r.id!==target.id)}:old);setTrashTarget(null);setTrashProblem(undefined);router.go(collectionRoute(projectId,'trash'),undefined,true);},onSettled:()=>{void qc.invalidateQueries({queryKey:['records',projectId]});void qc.invalidateQueries({queryKey:['trash',projectId]});}});
   const moveToTrash=()=>{
     if(!record||!liveRecord||busy||trash.isPending||query.isError)return;
-    const recovery=draftStorage.read(projectId,record.id);
-    if(recovery.state!=='empty'){window.alert('Resolve or export the recovery draft before moving this record to trash. Recovery data was not changed.');return;}
-    const links=relationshipsFor(records,record.id),incoming=new Set(links.incoming.map(l=>l.id)).size;
-    if(window.confirm('Move “'+record.title+'” to Trash? '+incoming+' other record(s) reference it. Links and acceptance evidence remain unchanged; you can restore the original record from Trash.'))trash.mutate(record);
+    trash.reset();setTrashTarget(record);
+    setTrashProblem(draftStorage.read(projectId,record.id).state!=='empty'?'Resolve or export the recovery draft before moving this record to trash. Your recovery data has not been changed.':undefined);
   };
+  const confirmTrash=()=>{
+    if(!trashTarget||trash.isPending||busy)return;
+    if(query.isError){setTrashProblem('Could not refresh the project records. Close this dialog and retry when storage is available.');return;}
+    if(!liveRecord||liveRecord.id!==trashTarget.id||liveRecord.revision!==trashTarget.revision){setTrashProblem('The saved record has changed. Close this dialog, review the latest version and try again.');return;}
+    if(draftStorage.read(projectId,trashTarget.id).state!=='empty'){setTrashProblem('A recovery draft now exists. Resolve it before moving this record to trash.');return;}
+    trash.mutate(trashTarget);
+  };
+  const trashIncoming=trashTarget?[...new Map(relationshipsFor(records,trashTarget.id).incoming.map(link=>[link.id,link.record])).values()]:[];
   const findings=auditRecords(records);
   const projectSwitchHint=project.storage==='repository'?'Connected repository':'Local workspace';
-  const navigationGuard=trash.isPending?'Moving a record to trash.':busy?(editing?'Save, keep your draft, or cancel editing before leaving.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
+  const navigationGuard=trash.isPending?'Moving a record to trash.':trashTarget?'Close the record removal dialog before navigating.':busy?(editing?'Save, keep your draft, or cancel editing before leaving.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
   // The same guard covers sidebar, related links, breadcrumbs and browser history.
   useLayoutEffect(()=>{router.setGuard(navigationGuard);if(!navigationGuard)router.clearNotice();return()=>router.setGuard('');},[navigationGuard]);
-  useEffect(()=>{if(!creating&&!create.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[creating,create.isPending]);
+  useEffect(()=>{if(!creating&&!create.isPending&&!trash.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[creating,create.isPending,trash.isPending]);
   const switchProject=(id:string)=>{if(id!==projectId&&projects.some(p=>p.id===id))router.go(collectionRoute(id));};
   const ready=!query.isPending&&(route.kind!=='saved'||!savedQuery.isPending);
   useLayoutEffect(()=>{
@@ -258,6 +267,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
       <span className="disk-state"><span className="local-dot"/>{query.isError?'Offline / error':'Local project'}</span>
     </header>
     <NavigationToast message={router.notice} onDismiss={router.clearNotice}/>
+    {trashTarget&&<TrashDialog record={trashTarget} incoming={trashIncoming} incomplete={!!query.data?.errors.length||query.isError} blocked={trashProblem} error={trash.error?.message} pending={trash.isPending} onCancel={()=>{if(!trash.isPending){setTrashTarget(null);setTrashProblem(undefined);trash.reset();}}} onConfirm={confirmTrash}/>}
       <div className="workspace-content" ref={pageRef} tabIndex={-1} aria-label={record?.title||savedView?.title||destination.label}>
       {route.kind==='record'&&query.error&&<p className="warning" role="alert">Could not refresh the record: {query.error.message}</p>}
       {route.kind==='record'?(query.isPending?<div className="empty" role="status">Opening record…</div>:record?<>{editing?<Inspector key={record.id} projectId={projectId} record={record} recordUnavailable={!liveRecord} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>{setEditEntry(null);setExpanded(false);router.clearNotice();window.scrollTo(0,0);requestAnimationFrame(()=>pageRef.current?.focus({preventScroll:true}));}} expanded={expanded} onExpand={()=>setExpanded(v=>!v)} history={history} historySupported={project.storage==='repository'} historyLoading={historyQuery.isFetching} historyError={historyQuery.isError} onRefreshHistory={refreshHistory}/>:<RecordPage key={record.id} projectId={projectId} record={record} records={records} unavailable={!liveRecord} onOpen={select} hrefFor={hrefFor} onBusyChange={setBusy} busy={busy||trash.isPending} onTrash={moveToTrash} trashError={trash.variables?.id===record.id?trash.error?.message:undefined} onEdit={()=>{if(busy||trash.isPending)return;setEditEntry(router.entryKey);window.scrollTo(0,0);requestAnimationFrame(()=>pageRef.current?.focus({preventScroll:true}));}} repository={project.storage==='repository'} history={history} historyLoading={historyQuery.isFetching} historyError={historyQuery.isError} onRefresh={refreshHistory}/>}</>:<div className="empty"><h1>Record unavailable</h1><p>The record could not be found or read in this project.</p><button className="secondary" onClick={()=>navigate('library')}>Open Data library</button></div>):routeMissing||savedMissing?<div className="empty"><h1>{routeMissing?'Category unavailable':'Saved view unavailable'}</h1><p>{route.kind==='saved'&&savedQuery.error?savedQuery.error.message:'The address no longer matches an available destination.'}</p><button className="secondary" onClick={()=>navigate('overview')}>Return to Overview</button></div>:route.kind==='saved'&&!activeSaved?<div className="empty" role="status">Opening saved view…</div>:<>

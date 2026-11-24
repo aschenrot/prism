@@ -115,16 +115,19 @@ export class RecordStore {
     return this.get(String(metadata.id));
   }
   create(title: string, type: Editable['type']) {
-    return this.serialize(async () => this.persist({
-      id: randomUUID(), title, type, status:'Concept', priority:'Normal', accent:'violet', tags:[], relationships:[], body:''
-    }));
+    return this.serialize(async () => {
+      const now=new Date().toISOString();
+      return this.persist({id:randomUUID(),title,type,status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body:'',createdAt:now,updatedAt:now});
+    });
   }
   update(id: string, revision: string, changes: Editable) {
     return this.serialize(async () => {
       const current = await this.get(id);
       if (current.revision !== revision) throw new ConflictError('Record changed on disk. Reload before saving.');
       const {revision: _, ...previous} = current;
-      return this.persist({...previous, ...editableSchema.parse(changes), id});
+      const next=editableSchema.parse(changes);
+      if(Object.entries(next).every(([key,value])=>JSON.stringify(current[key])===JSON.stringify(value)))return current;
+      return this.persist({...previous,...next,id,updatedAt:new Date().toISOString()});
     });
   }
 }

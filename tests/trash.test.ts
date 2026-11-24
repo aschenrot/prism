@@ -25,3 +25,7 @@ test('trash retains exact bytes and stable ID; stale moves and restores never ov
   await assert.rejects(reopened.moveToTrash('../bad',r.revision));
  }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test('timestamps are authored by successful record saves, not guessed for legacy records or changed by trash',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'prism-time-'));try{const store=await RecordStore.open(root),r=await store.create('New','Task');assert.ok(r.createdAt);assert.equal(r.createdAt,r.updatedAt);const path=join(root,'records',r.id+'.md');const legacy=(await readFile(path,'utf8')).replace(/^createdAt:.*\r?\n|^updatedAt:.*\r?\n/gm,'');await writeFile(path,legacy);const prior=await store.get(r.id);assert.equal(prior.createdAt,undefined);assert.equal(prior.updatedAt,undefined);const editable={title:prior.title,type:prior.type,status:prior.status,priority:prior.priority,accent:prior.accent,tags:prior.tags,relationships:prior.relationships,body:prior.body};assert.equal((await store.update(prior.id,prior.revision,editable)).revision,prior.revision);const changed=await store.update(prior.id,prior.revision,{...editable,title:'Edited'});assert.equal(changed.createdAt,undefined);assert.ok(changed.updatedAt);await store.moveToTrash(changed.id,changed.revision);const restored=await store.restoreTrash(changed.id,changed.revision);assert.equal(restored.updatedAt,changed.updatedAt);assert.equal(restored.revision,changed.revision);}finally{await rm(root,{recursive:true,force:true});}
+});
