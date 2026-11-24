@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { pullReferencesSchema } from './hostedVerification';
 import { types } from './recordTypes';
-import { customValuesSchema } from './customProperties';
+import { customValuesSchema,schemaId } from './customProperties';
 export { types } from './recordTypes';
 export const statuses = ['Concept', 'In progress', 'Ready'] as const;
 export const priorities = ['Low', 'Normal', 'High'] as const;
@@ -29,14 +29,15 @@ const metadataShape = {
   // Explicit, reviewed historical attribution; not editable via ordinary record mutations.
   githubPullRequests: pullReferencesSchema.optional(),
   customProperties: customValuesSchema.optional(),
+  customTypeId:schemaId.nullable().optional(),
   implementationCommits: z.array(z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/)).max(100).optional()
 };
 export const metadataSchema = z.looseObject(metadataShape);
 export const recordSchema = metadataSchema.extend({ body: z.string().max(500_000) });
 // Preserve unknown on-disk metadata but reject unrecognized API mutation fields.
-export const editableSchema = z.strictObject({title:metadataShape.title,type:metadataShape.type,status:metadataShape.status,priority:metadataShape.priority,accent:metadataShape.accent,tags:metadataShape.tags,relationships:metadataShape.relationships,customProperties:metadataShape.customProperties,body:z.string().max(500_000)});
+export const editableSchema = z.strictObject({title:metadataShape.title,type:metadataShape.type,status:metadataShape.status,priority:metadataShape.priority,accent:metadataShape.accent,tags:metadataShape.tags,relationships:metadataShape.relationships,customProperties:metadataShape.customProperties,customTypeId:metadataShape.customTypeId,body:z.string().max(500_000)});
 export const updateSchema = z.object({ expectedRevision: z.string().regex(/^[a-f0-9]{64}$/), changes: editableSchema, expectedSchemaRevision:z.string().regex(/^[a-f0-9]{64}$/).optional() }).strict();
-export const createSchema = z.object({title: z.string().trim().min(1).max(160), type:z.enum(types)}).strict();
+export const createSchema = z.object({title: z.string().trim().min(1).max(160), type:z.enum(types),customTypeId:schemaId.optional(),expectedSchemaRevision:z.string().regex(/^[a-f0-9]{64}$/).optional()}).strict();
 export const propertyChangesSchema=z.strictObject({status:metadataShape.status.optional(),priority:metadataShape.priority.optional()}).refine(v=>v.status!==undefined||v.priority!==undefined,'Choose a property to change');
 export const propertyUpdateSchema=z.strictObject({expectedRevision:updateSchema.shape.expectedRevision,changes:propertyChangesSchema});
 export type PropertyChanges=z.infer<typeof propertyChangesSchema>;

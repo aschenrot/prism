@@ -81,7 +81,7 @@ app.get('/api/projects/:projectId/changes',async request=>{const p=projectFor(re
 app.get('/api/projects/:projectId/file', async request => {const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readRepositoryFile(p.root,z.object({path:z.string().min(1).max(500)}).parse(request.query).path);});
 app.post('/api/projects/:projectId/records', async (request, reply) => {
   const input = createSchema.parse(request.body);
-  return reply.code(201).send(await projectFor(request).store.create(input.title,input.type));
+  return reply.code(201).send(await projectFor(request).store.create(input.title,input.type,input.customTypeId,input.expectedSchemaRevision));
 });
 app.put('/api/projects/:projectId/records/:id', async request => {
   const id = idSchema.parse((request.params as {id:string}).id);

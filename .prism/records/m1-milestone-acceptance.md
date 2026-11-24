@@ -13,6 +13,7 @@ relationships:
   - hosted-pr-association
   - project-property-increment
   - property-schema-foundation
+  - custom-entity-types
   - quality-gates
 ---
 ## Review instructions
@@ -35,3 +36,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K03 — **Edit configured properties safely** — In a disposable project with a version-1 schema, edit text, number, date, enum, boolean and record-reference properties. Keep a draft, reopen, and save after reviewing an externally changed schema. Expected: recoverable values, clear validation, stable property identity, stale-schema rejection, no data loss or leakage to another project.
 
 - [ ] K04 — **Manage schema definitions without rewriting values** — In a disposable project open Schemas, create a numeric or choice property, save a record value, rename and retire the definition, then reactivate it. Expected: stable identity, clear usage and impact, retained value, protected stale writes and no implicit type conversion or removal.
+
+- [ ] K05 — **Create and use custom entity identities** — Define a custom Task-role entity in Schemas, add an entity-scoped property, assign it to a disposable Task and save its value. Filter Work by that identity, rename/retire the type, and reopen the existing record. Expected: stable custom identity, preserved built-in behavior, correct scoped properties and filters, no new retired assignment or implicit data conversion.

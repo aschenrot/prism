@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdtemp,writeFile,rm,readFile,symlink,mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { projectPropertySchema,customValuesSchema,customPropertyIssue,changedCustomKeys,schemaTransitionIssue } from '../shared/customProperties';
+import { projectPropertySchema,customValuesSchema,customPropertyIssue,changedCustomKeys,schemaTransitionIssue,entityTypeIssue,appliesTo } from '../shared/customProperties';
 import { RecordStore,CustomPropertyError,ConflictError } from '../server/store';
 import { editableRecord } from '../shared/editor';
+import { defaultFilters,selectRecords,viewSchema } from '../shared/views';
 import { readProjectSchema,SchemaWriteConflict,SchemaWriteRejected } from '../server/projectSchema';
 const definition={version:1,fields:[{id:'effort',label:'Effort',kind:'number',appliesTo:['Task']},{id:'due',label:'Due',kind:'date'},{id:'state',label:'Review state',kind:'enum',options:[{id:'pending',label:'Pending'}]},{id:'objective',label:'Objective',kind:'reference',targetTypes:['Objective']},{id:'note',label:'Note',kind:'text'},{id:'checked',label:'Checked',kind:'boolean'}]};
 test('versioned property definitions and scalar value limits reject invalid input',()=>{
@@ -103,5 +104,48 @@ test('revision-checked schema writes do not rewrite record bytes or overwrite st
   await writeFile(join(root,'schema.yaml'),'invalid: true');
   await assert.rejects(store.updateSchema(restored.revision,restored.definition),SchemaWriteRejected);
   assert.equal(await readFile(join(root,'schema.yaml'),'utf8'),'invalid: true');
+ }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test('custom entity identity extends immutable built-in roles and scoped properties',()=>{
+ const entity={id:'bug-report',label:'Bug report',baseType:'Task' as const};
+ const schema=projectPropertySchema.parse({version:1,entityTypes:[entity],fields:[{id:'severity',label:'Severity',kind:'number',appliesToEntities:['bug-report']}]});
+ assert.equal(projectPropertySchema.safeParse({...schema,fields:[{...schema.fields[0],appliesToEntities:['unknown']}]}).success,false);
+ assert.equal(projectPropertySchema.safeParse({...schema,fields:[{...schema.fields[0],appliesTo:['Document']}]}).success,false);
+ assert.ok(schemaTransitionIssue(schema,{...schema,entityTypes:[]}));
+ assert.ok(schemaTransitionIssue(schema,{...schema,entityTypes:[{...entity,baseType:'Document'}]}));
+ assert.ok(schemaTransitionIssue(schema,{...schema,fields:[{...schema.fields[0],appliesToEntities:undefined}]}));
+ assert.equal(appliesTo(schema.fields[0],'Task','bug-report'),true);
+ assert.equal(appliesTo(schema.fields[0],'Task'),false);
+ assert.ok(entityTypeIssue(schema,'Document','bug-report',true));
+ assert.equal(entityTypeIssue(schema,'Task','bug-report',true),undefined);
+});
+test('custom entity assignment, retirement and filter identity preserve record data',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'prism-entity-'));
+ try{
+  const store=await RecordStore.open(root),before=await store.schema();if(before.state!=='available')throw Error('Schema unavailable');
+  const schema=await store.updateSchema(before.revision,projectPropertySchema.parse({version:1,entityTypes:[{id:'bug-report',label:'Bug report',baseType:'Task'}],fields:[{id:'severity',label:'Severity',kind:'number',appliesToEntities:['bug-report']}]}));if(schema.state!=='available')throw Error('Schema unavailable');
+  await assert.rejects(store.create('Wrong role','Document','bug-report',schema.revision),CustomPropertyError);
+  await assert.rejects(store.create('Stale','Task','bug-report',before.revision),CustomPropertyError);
+  const direct=await store.create('Direct custom','Task','bug-report',schema.revision);assert.equal(direct.customTypeId,'bug-report');
+  const record=await store.create('Bug','Task'),plain=await store.create('Plain','Task'),doc=await store.create('Document','Document');
+  await assert.rejects(store.update(doc.id,doc.revision,{...editableRecord(doc),customTypeId:'bug-report'},schema.revision),CustomPropertyError);
+  await assert.rejects(store.update(record.id,record.revision,{...editableRecord(record),customTypeId:'bug-report'}),CustomPropertyError);
+  await assert.rejects(store.update(record.id,record.revision,{...editableRecord(record),customProperties:{severity:5}},schema.revision),CustomPropertyError);
+  const saved=await store.update(record.id,record.revision,{...editableRecord(record),customTypeId:'bug-report',customProperties:{severity:5}},schema.revision);
+  assert.equal(saved.type,'Task');assert.equal(saved.customTypeId,'bug-report');
+  assert.deepEqual(selectRecords([saved,plain,doc],{...defaultFilters,type:'Task',entityType:'bug-report'}).map(r=>r.id),[saved.id]);
+  assert.equal(viewSchema.safeParse({id:'bugs',version:1,title:'Bugs',mode:'Table',filters:{...defaultFilters,type:'Task',entityType:'bug-report'}}).success,true);
+  const old=editableRecord(saved);delete old.customTypeId;delete old.customProperties;
+  const renamed=await store.update(saved.id,saved.revision,{...old,title:'Still a bug'});assert.equal(renamed.customTypeId,'bug-report');assert.equal(renamed.customProperties?.severity,5);
+  await assert.rejects(store.update(renamed.id,renamed.revision,{...editableRecord(renamed),type:'Document'},schema.revision),CustomPropertyError);
+  const copy=await store.duplicate(renamed.id,renamed.revision);assert.equal(copy.customTypeId,'bug-report');assert.equal(copy.customProperties,undefined);
+  const retired=await store.updateSchema(schema.revision,{...schema.definition,entityTypes:schema.definition.entityTypes!.map(e=>({...e,retired:true}))});if(retired.state!=='available')throw Error('Schema unavailable');
+  await assert.rejects(store.update(plain.id,plain.revision,{...editableRecord(plain),customTypeId:'bug-report'},retired.revision),CustomPropertyError);
+  await assert.rejects(store.duplicate(renamed.id,renamed.revision),CustomPropertyError);
+  await assert.rejects(store.create('Retired','Task','bug-report',retired.revision),CustomPropertyError);
+  const still=await store.update(renamed.id,renamed.revision,{...editableRecord(renamed),customProperties:{severity:6}},retired.revision);
+  const cleared=await store.update(still.id,still.revision,{...editableRecord(still),customTypeId:null},retired.revision);
+  assert.equal(cleared.customTypeId,null);assert.equal(cleared.customProperties?.severity,6);
  }finally{await rm(root,{recursive:true,force:true});}
 });

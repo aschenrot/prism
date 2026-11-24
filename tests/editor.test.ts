@@ -84,3 +84,10 @@ test('old recovery drafts stay compatible and custom property conflicts preserve
  const next=reconcileDraft(session,external,{customProperties:'local'});assert.ok(next);assert.equal(next.schemaRevision,session.schemaRevision);assert.deepEqual(next.draft.customProperties,{effort:4});
  assert.equal(editorDraftSchema.safeParse(next).success,true);
 });
+
+test('older drafts preserve a newly assigned custom entity during external reconciliation',()=>{
+ const old=freshDraft(record()),session={...old,draft:{...old.draft,title:'Local title'}};
+ const external=record({customTypeId:'bug-report',revision:'b'.repeat(64)});
+ const reconciled=reconcileDraft(session,external,{});assert.ok(reconciled);assert.equal(reconciled.draft.customTypeId,'bug-report');
+ assert.equal(reconciled.draft.title,'Local title');
+});

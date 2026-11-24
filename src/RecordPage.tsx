@@ -6,6 +6,7 @@ import AcceptanceWorkspace from './AcceptanceWorkspace';
 import { ArrowRight, ListChecks } from 'lucide-react';
 import type { ProjectRecord } from '../shared/records';
 import type { GitHistory } from '../shared/delivery';
+import { entityTypeLabel,entityTypeIssue } from '../shared/customProperties';
 import { relationshipsFor } from '../shared/relationships';
 import { RecordLinks } from './RecordLinks';
 import { RecordEvidence } from './DeliveryEvidence';
@@ -15,7 +16,7 @@ import RouteLink from './RouteLink';
 import RecordActions from './RecordActions';
 import IncrementPanel,{MilestoneScope} from './IncrementPanel';
 import ScopedHostedEvidence from './ScopedHostedEvidence';
-import { CustomPropertyReadout } from './CustomProperties';
+import { CustomPropertyReadout,useProjectSchema } from './CustomProperties';
 const MarkdownBody=lazy(()=>import('./Markdown'));
 function ReviewLink({projectId,test,head,href,onOpen}:{projectId:string;test:ProjectRecord;head:string|undefined;href:string;onOpen:()=>void}){
   const parsed=acceptanceDefinition(test);
@@ -26,6 +27,8 @@ function ReviewLink({projectId,test,head,href,onOpen}:{projectId:string;test:Pro
   return <RouteLink className="record-review-link acceptance-entry" href={href} onNavigate={onOpen}><span><strong>{test.title}</strong><small>{run?run.progress.passed+' / '+run.progress.total+' cases passed · '+(run.decision==='open'?'Review in progress':run.decision):total?total+' cases · '+(query.isError?'Run history unavailable':query.isPending?'Reading review history…':'No current review recorded'):test.status+' · '+test.priority+' priority'}</small></span><span className="review-entry-action">{action}<ArrowRight size={16}/></span></RouteLink>;
 }
 export default function RecordPage({projectId,githubRepository,record,records,incomplete,unavailable,onOpen,hrefFor,onEdit,onBusyChange,busy,onTrash,trashError,repository,history,historyLoading,historyError,onRefresh}:{projectId:string;githubRepository?:string;record:ProjectRecord;records:ProjectRecord[];incomplete:boolean;unavailable:boolean;onOpen:(id:string)=>void;hrefFor:(id:string)=>string;onEdit:()=>void;onBusyChange:(busy:boolean)=>void;busy:boolean;onTrash:()=>void;trashError?:string;repository:boolean;history:GitHistory|undefined;historyLoading:boolean;historyError:boolean;onRefresh:()=>void}){
+  const schemaQuery=useProjectSchema(projectId);
+  const schema=!schemaQuery.isError&&schemaQuery.data?.state==='available'?schemaQuery.data.definition:undefined;
   const links=relationshipsFor(records,record.id);
   const tests=[...new Map([...links.outgoing,...links.incoming].flatMap(link=>link.record?.type==='Test'&&link.id!==record.id?[[link.id,link.record] as const]:[])).values()];
   const recovery=draftStorage.read(projectId,record.id);
@@ -38,7 +41,8 @@ export default function RecordPage({projectId,githubRepository,record,records,in
   const reviewHead=!unavailable&&parsed.state==='available'?head:undefined;
   const nativeReview=repository&&!!definition;
   return <article className="record-page">
-    <header className="record-page-heading"><div><div className="eyebrow">{record.type} / {record.id}</div><h1>{record.title}</h1><div className="record-page-meta"><Status value={record.status}/><span>{record.priority} priority</span>{record.tags.map((tag,i)=><span className="record-tag" key={tag+':'+i}>{tag}</span>)}</div></div><div className="record-page-actions"><RecordActions record={record} onEdit={onEdit} onTrash={onTrash} disabled={unavailable||busy} editLabel={isAcceptanceTest(record)?'Edit test definition':'Edit'}/></div></header>
+    <header className="record-page-heading"><div><div className="eyebrow">{entityTypeLabel(schema,record.customTypeId,record.type)} / {record.id}</div><h1>{record.title}</h1><div className="record-page-meta"><Status value={record.status}/><span>{record.priority} priority</span>{record.tags.map((tag,i)=><span className="record-tag" key={tag+':'+i}>{tag}</span>)}</div></div><div className="record-page-actions"><RecordActions record={record} onEdit={onEdit} onTrash={onTrash} disabled={unavailable||busy} editLabel={isAcceptanceTest(record)?'Edit test definition':'Edit'}/></div></header>
+    {record.customTypeId&&(!schema||entityTypeIssue(schema,record.type,record.customTypeId,false))&&<p className="record-recovery-note">Custom entity definition is unavailable or incompatible. Stored identity is preserved.</p>}
     {trashError&&<p role="alert" className="warning">{trashError}</p>}
     {(record.createdAt||record.updatedAt)&&<div className="record-dates">{record.createdAt&&<span>Created <time dateTime={record.createdAt}>{new Date(record.createdAt).toLocaleString()}</time></span>}{record.updatedAt&&<span>Last saved <time dateTime={record.updatedAt}>{new Date(record.updatedAt).toLocaleString()}</time></span>}</div>}
     {unavailable&&<p role="alert" className="warning">The record is unavailable on disk. This is the last loaded version.</p>}

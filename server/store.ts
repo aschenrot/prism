@@ -3,7 +3,7 @@ import { mkdir, readdir, readFile, lstat, realpath, rename, unlink, writeFile, l
 import { join, resolve, dirname } from 'node:path';
 import { parse, stringify } from 'yaml';
 import { readProjectSchema,writeProjectSchema } from './projectSchema';
-import { changedCustomKeys,customPropertyIssue,type ProjectPropertySchema } from '../shared/customProperties';
+import { changedCustomKeys,customPropertyIssue,entityTypeIssue,type ProjectPropertySchema } from '../shared/customProperties';
 import { idSchema, metadataSchema, recordSchema, editableSchema, propertyChangesSchema, type PropertyChanges, type Editable, type ProjectRecord, type RecordList, type TrashList } from '../shared/records';
 
 export class ConflictError extends Error {}
@@ -119,10 +119,11 @@ export class RecordStore {
     } finally { await unlink(tmp).catch(() => undefined); }
     return this.get(String(metadata.id));
   }
-  create(title: string, type: Editable['type']) {
+  create(title: string, type: Editable['type'],customTypeId?:string,expectedSchemaRevision?:string) {
     return this.serialize(async () => {
+      if(customTypeId){const schema=await this.schema();if(schema.state!=='available'||schema.revision!==expectedSchemaRevision)throw new CustomPropertyError('Project schema changed or is unavailable. Review the current entity definition.');const issue=entityTypeIssue(schema.definition,type,customTypeId,true);if(issue)throw new CustomPropertyError(issue);}
       const now=new Date().toISOString();
-      return this.persist({id:randomUUID(),title,type,status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body:'',createdAt:now,updatedAt:now});
+      return this.persist({id:randomUUID(),title,type,status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body:'',...(customTypeId?{customTypeId}:{}),createdAt:now,updatedAt:now});
     });
   }
   // Duplicate only saved, editable content. A copy is new work, never inherited acceptance.
@@ -130,9 +131,10 @@ export class RecordStore {
     return this.serialize(async()=>{
       const source=await this.get(id);
       if(source.revision!==revision)throw new ConflictError('Record changed on disk. Refresh before duplicating.');
+      if(source.customTypeId){const schema=await this.schema();if(schema.state!=='available'||entityTypeIssue(schema.definition,source.type,source.customTypeId,true))throw new CustomPropertyError('The custom entity type is unavailable or retired. Reactivate or clear it before duplicating.');}
       const now=new Date().toISOString(),suffix=' (copy)';
       const title=source.title.slice(0,160-suffix.length).replace(/[\uD800-\uDBFF]$/,'').trimEnd()+suffix;
-      return this.persist({id:randomUUID(),title,type:source.type,status:'Concept',priority:source.priority,accent:source.accent,tags:source.tags.filter(t=>!['acceptance','current','blocker'].includes(t.toLowerCase())),relationships:[],body:source.body,createdAt:now,updatedAt:now});
+      return this.persist({id:randomUUID(),title,type:source.type,status:'Concept',priority:source.priority,accent:source.accent,tags:source.tags.filter(t=>!['acceptance','current','blocker'].includes(t.toLowerCase())),relationships:[],body:source.body,...(source.customTypeId?{customTypeId:source.customTypeId}:{}),createdAt:now,updatedAt:now});
     });
   }
   updateProperties(id:string,revision:string,changes:PropertyChanges){
@@ -151,27 +153,32 @@ export class RecordStore {
       if (current.revision !== revision) throw new ConflictError('Record changed on disk. Reload before saving.');
       const {revision: _, ...previous} = current;
       const next=editableSchema.parse(changes);
-      // Omitted customProperties means preserve, for existing clients and recovery drafts.
-      // Changed keys alone are validated: historical/inactive values survive unrelated edits.
-      if(next.customProperties!==undefined){
-        const keys=changedCustomKeys(current.customProperties,next.customProperties);
-        if(keys.length){
-          const schema=await this.schema();
-          if(schema.state!=='available'||schema.revision!==expectedSchemaRevision)throw new CustomPropertyError('Project schema changed or is unavailable. Review the current schema before saving custom properties.');
-          for(const key of keys){
-            const field=schema.definition.fields.find(f=>f.id===key);
-            const value=next.customProperties[key];
-            if(!field)throw new CustomPropertyError('Unconfigured property cannot be changed: '+key);
-            const target=field.kind==='reference'&&typeof value==='string'?await this.get(value).catch(()=>undefined):undefined;
-            const issue=customPropertyIssue(field,next.type,value,id,target);
-            if(issue)throw new CustomPropertyError(field.label+': '+issue);
-          }
-          // Recheck just before persistence. Non-cooperating filesystem writers cannot be locked.
-          const latest=await this.schema();
-          if(latest.state!=='available'||latest.revision!==schema.revision)throw new CustomPropertyError('Project schema changed during validation. Review before saving.');
-          if((await this.get(id)).revision!==revision)throw new ConflictError('Record changed during property validation. Review before saving.');
+      // Omitted fields preserve stored values for older clients and drafts.
+      const finalEntity=next.customTypeId===undefined?current.customTypeId:next.customTypeId;
+      const entityChanged=(finalEntity??null)!==(current.customTypeId??null);
+      const entityRoleChanged=!!finalEntity&&next.type!==current.type;
+      const keys=next.customProperties===undefined?[]:changedCustomKeys(current.customProperties,next.customProperties);
+      if(entityChanged||entityRoleChanged||keys.length){
+        const schema=await this.schema();
+        if(schema.state!=='available'||schema.revision!==expectedSchemaRevision)throw new CustomPropertyError('Project schema changed or is unavailable. Review the current schema before saving custom properties or entity type.');
+        if(entityChanged||entityRoleChanged){
+          const issue=entityTypeIssue(schema.definition,next.type,finalEntity,entityChanged);
+          if(issue)throw new CustomPropertyError(issue);
         }
-      }else delete next.customProperties;
+        for(const key of keys){
+          const field=schema.definition.fields.find(f=>f.id===key),value=next.customProperties?.[key];
+          if(!field)throw new CustomPropertyError('Unconfigured property cannot be changed: '+key);
+          if(field.appliesToEntities&&entityTypeIssue(schema.definition,next.type,finalEntity,false))throw new CustomPropertyError('Review the custom entity type before editing scoped properties.');
+          const target=field.kind==='reference'&&typeof value==='string'?await this.get(value).catch(()=>undefined):undefined;
+          const issue=customPropertyIssue(field,next.type,value,id,target,finalEntity);
+          if(issue)throw new CustomPropertyError(field.label+': '+issue);
+        }
+        const latest=await this.schema();
+        if(latest.state!=='available'||latest.revision!==schema.revision)throw new CustomPropertyError('Project schema changed during validation. Review before saving.');
+        if((await this.get(id)).revision!==revision)throw new ConflictError('Record changed during schema validation. Review before saving.');
+      }
+      if(next.customProperties===undefined)delete next.customProperties;
+      if(next.customTypeId===undefined)delete next.customTypeId;
       if(Object.entries(next).every(([key,value])=>JSON.stringify(current[key])===JSON.stringify(value)))return current;
       return this.persist({...previous,...next,id,updatedAt:new Date().toISOString()});
     });

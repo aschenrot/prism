@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { idSchema, priorities, statuses, types, type ProjectRecord } from './records';
+import { schemaId } from './customProperties';
 export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships'] as const;
 export const sortFields=['Title','Priority','Status','Type','ID','Created','Last edited'] as const;
 export const sortDirections=['Ascending','Descending'] as const;
@@ -9,7 +10,8 @@ export const filtersSchema=z.object({
   priority:z.enum(['Any priority',...priorities]),
   search:z.string().max(300),
   sort:z.enum(sortFields),
-  direction:z.enum(sortDirections).optional()
+  direction:z.enum(sortDirections).optional(),
+  entityType:schemaId.optional()
 }).strict();
 export const viewInputSchema=z.object({title:z.string().trim().min(1).max(80),mode:z.enum(modes),filters:filtersSchema}).strict();
 export const viewSchema=viewInputSchema.extend({id:idSchema,version:z.literal(1)}).strict();
@@ -25,7 +27,7 @@ export function sortDirection(filters:Pick<Filters,'sort'|'direction'>){return f
 export function sortBy(filters:Filters,sort:Filters['sort']):Filters{return {...filters,sort,direction:sort===filters.sort?(sortDirection(filters)==='Ascending'?'Descending':'Ascending'):defaultSortDirection(sort)};}
 function matchesSearch(record:ProjectRecord,terms:string[]){
   if(!terms.length)return true;
-  const text=[record.id,record.title,record.type,record.body,...record.tags].join(' ').toLowerCase();
+  const text=[record.id,record.title,record.type,record.customTypeId??'',record.body,...record.tags].join(' ').toLowerCase();
   return terms.every(term=>text.includes(term));
 }
 export function selectRecords(records:ProjectRecord[],filters:Filters){
@@ -33,6 +35,7 @@ export function selectRecords(records:ProjectRecord[],filters:Filters){
   const direction=sortDirection(filters)==='Ascending'?1:-1;
   return records.filter(r=>
     (filters.type==='All records'||r.type===filters.type)&&
+    (!filters.entityType||r.customTypeId===filters.entityType)&&
     (filters.status==='Any status'||r.status===filters.status)&&
     (filters.priority==='Any priority'||r.priority===filters.priority)&&
     matchesSearch(r,query)
