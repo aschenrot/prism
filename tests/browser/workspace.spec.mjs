@@ -372,3 +372,38 @@ test('schema administration creates, renames and retires fields without rewritin
   const removal=await request.put(otherPrefix+'/schema',{data:{expectedRevision:latest.revision,definition:{version:1,fields:[]}}});expect(removal.status()).toBe(422);
  }finally{await unlink(schemaPath).catch(()=>{});}
 });
+
+test('custom entity definitions retain built-in roles, scoped fields and collection filters',async({page,request})=>{
+ const schemaPath=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'other','schema.yaml'),otherPrefix='/api/projects/'+other;
+ try{
+  await page.goto('/#/projects/'+other+'/schemas');
+  const panel=page.getByRole('region',{name:'Project schema administration'}),entities=panel.getByRole('region',{name:'Custom entity definitions'});
+  await entities.getByRole('button',{name:'New entity type'}).click();
+  const form=entities.getByRole('form',{name:'Create entity definition'});
+  await form.getByLabel('Entity ID',{exact:true}).fill('bug-report');
+  await form.getByLabel('Entity label',{exact:true}).fill('Bug report');
+  await form.getByLabel('Built-in role',{exact:true}).selectOption('Task');
+  await form.getByRole('button',{name:'Save entity type'}).click();await expect(entities.getByRole('button',{name:'Edit entity Bug report'})).toBeVisible();
+  await panel.getByRole('button',{name:'New property'}).click();
+  const property=panel.getByRole('form',{name:'Create property definition'});
+  await property.getByLabel('Property ID',{exact:true}).fill('severity');await property.getByLabel('Property label',{exact:true}).fill('Severity');
+  await property.getByLabel('Value kind',{exact:true}).selectOption('number');
+  await property.getByLabel('All compatible entities',{exact:true}).uncheck();await property.getByLabel('Bug report',{exact:true}).check();
+  await property.getByRole('button',{name:'Save property'}).click();await expect(panel.getByRole('button',{name:'Edit Severity'})).toBeVisible();
+  const bug=await create(request,'Custom entity bug','Task',other),plain=await create(request,'Custom entity plain','Task',other);
+  await open(page,bug,other);await edit(page);await expect(page.getByLabel('Severity',{exact:true})).toHaveCount(0);
+  await page.getByLabel('Custom entity type',{exact:true}).selectOption('bug-report');await page.getByLabel('Severity',{exact:true}).fill('4');
+  await save(page).click();await expect(page.getByText('Saved to disk',{exact:true})).toBeVisible();
+  const saved=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.id===bug.id);
+  expect(saved.type).toBe('Task');expect(saved.customTypeId).toBe('bug-report');expect(saved.customProperties.severity).toBe(4);
+  await page.getByRole('button',{name:'Return to record',exact:true}).click();await page.getByRole('link',{name:'Work',exact:true}).click();
+  await page.getByRole('button',{name:'Filter',exact:true}).click();
+  await page.getByLabel('Custom entity',{exact:true}).selectOption('bug-report');
+  await expect(page.getByRole('link',{name:bug.title,exact:true})).toBeVisible();await expect(page.getByRole('link',{name:plain.title,exact:true})).toHaveCount(0);
+  await page.getByRole('link',{name:'Schemas',exact:true}).click();await entities.getByRole('button',{name:'Edit entity Bug report'}).click();
+  const editForm=entities.getByRole('form',{name:'Edit entity definition'});await expect(editForm.getByLabel('Built-in role',{exact:true})).toBeDisabled();await editForm.getByLabel('Retire entity type',{exact:true}).check();await editForm.getByRole('button',{name:'Save entity type'}).click();
+  await expect(entities.getByText('Bug report · Retired',{exact:true})).toBeVisible();
+  await open(page,saved,other);await expect(page.getByText(/Bug report · Task \(retired\)/)).toBeVisible();await expect(page.getByRole('region',{name:'Custom properties'}).getByText('4',{exact:true})).toBeVisible();
+  await open(page,plain,other);await edit(page);await expect(page.getByLabel('Custom entity type',{exact:true})).toHaveCount(0);
+ }finally{await unlink(schemaPath).catch(()=>{});}
+});
