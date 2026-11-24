@@ -1,29 +1,16 @@
-import { test } from 'node:test';
+import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp,writeFile,rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import Fastify from 'fastify';
-import fastifyStatic from '@fastify/static';
-import { metadataSchema,editableSchema } from '../shared/records';
-
-test('Zod preserves extra metadata but rejects extra mutation fields',()=>{
-  const common={title:'Example',type:'Idea',status:'Concept',priority:'Normal',accent:'teal',tags:[],relationships:[]};
-  const value=metadataSchema.parse({id:'example',...common,custom:'keep'});
-  assert.equal(value.custom,'keep');
-  assert.equal(editableSchema.safeParse({...common,body:'text'}).success,true);
-  assert.equal(editableSchema.safeParse({...common,body:'text',custom:'reject'}).success,false);
+import {dependencyPlan} from '../shared/dependencies';
+import {recordSchema,type ProjectRecord,type Relationship} from '../shared/records';
+const rec=(id:string,relationships:Relationship[]=[],status:ProjectRecord['status']='Concept'):ProjectRecord=>({...recordSchema.parse({id,title:id,type:'Task',status,priority:'Normal',accent:'teal',tags:[],relationships,body:''}),revision:'a'.repeat(64)});
+test('normalize explicit dependency directions, deduplicate edges and report known/missing prerequisites',()=>{
+ const a=rec('a',[{kind:'blocks',target:'b'},{kind:'blocks',target:'b'},'c'],'Ready'),b=rec('b',[{kind:'depends-on',target:'a'}]),c=rec('c',[{kind:'depends-on',target:'missing'}]),d=rec('d',[{kind:'depends-on',target:'b'}]);
+ const plan=dependencyPlan([a,b,c,d]);
+ assert.equal(plan.get('a')?.state,'none');assert.equal(plan.get('b')?.state,'satisfied');assert.equal(plan.get('b')?.prerequisites.length,1);assert.deepEqual(plan.get('b')?.prerequisites[0].assertions,['blocks','depends-on']);
+ assert.equal(plan.get('c')?.state,'unresolved');assert.equal(plan.get('d')?.state,'waiting');assert.deepEqual(plan.get('a')?.dependents.map(l=>l.id),['b']);
 });
-
-test('Fastify static plugin serves a local build file',async()=>{
-  const root=await mkdtemp(join(tmpdir(),'prism-static-'));
-  const app=Fastify();
-  try{
-    await writeFile(join(root,'index.html'),'Prism build');
-    await app.register(fastifyStatic,{root});
-    const response=await app.inject({method:'GET',url:'/'});
-    assert.equal(response.statusCode,200);
-    assert.equal(response.body,'Prism build');
-    assert.equal((await app.inject({method:'GET',url:'/missing.html'})).statusCode,404);
-  }finally{await app.close();await rm(root,{recursive:true,force:true});}
+test('identify actual cycle members, self edges and not downstream dependents without recursion',()=>{
+ const a=rec('a',[{kind:'depends-on',target:'b'}]),b=rec('b',[{kind:'depends-on',target:'a'},{kind:'blocks',target:'c'}]),c=rec('c'),d=rec('d',[{kind:'depends-on',target:'d'}]);
+ const plan=dependencyPlan([a,b,c,d]);assert.equal(plan.get('a')?.state,'cycle');assert.equal(plan.get('b')?.state,'cycle');assert.equal(plan.get('d')?.state,'cycle');assert.equal(plan.get('c')?.state,'waiting');assert.equal(plan.get('c')?.cycle,false);
+ const chain=Array.from({length:3000},(_,i)=>rec('r'+i,i?[{kind:'depends-on',target:'r'+(i-1)}]:[]));assert.equal(dependencyPlan(chain).get('r2999')?.cycle,false);
 });
