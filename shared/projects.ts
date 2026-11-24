@@ -1,14 +1,17 @@
 import { z } from 'zod';
 import { idSchema } from './records';
+import { githubRepositorySchema } from './hostedVerification';
 export const projectSchema = z.object({
   id: idSchema,
   title: z.string().trim().min(1).max(120),
   root: z.string().min(1),
   storage: z.enum(['standalone','repository']),
+  githubRepository: githubRepositorySchema.optional(),
   profiles: z.array(z.enum(['core','game','rust','product','project'])).default(['core'])
 }).strict();
 export const registrySchema = z.array(projectSchema).min(1).max(40).superRefine((items,ctx)=>{
   if(new Set(items.map(p=>p.id)).size!==items.length)ctx.addIssue({code:'custom',message:'Duplicate project IDs'});
+  if(items.some(p=>p.githubRepository&&p.storage!=='repository'))ctx.addIssue({code:'custom',message:'GitHub evidence requires repository storage'});
 });
 export type ProjectConfig = z.infer<typeof projectSchema>;
 export type ProjectInfo = Omit<ProjectConfig,'root'>;

@@ -249,3 +249,29 @@ test('delivery increments show explicit task scope and independent local evidenc
  const panel=page.getByRole('region',{name:'Delivery increment scope'});await expect(panel.getByRole('link',{name:new RegExp(task.title)})).toBeVisible();await expect(panel.getByRole('link',{name:new RegExp(outside.title)})).toHaveCount(0);await expect(panel.getByText('No executable acceptance definition',{exact:true})).toBeVisible();await expect(panel.getByText('Local npm verification',{exact:true})).toBeVisible();await expect(panel.getByText('Browser regression',{exact:true})).toBeVisible();
  await panel.getByRole('link',{name:parent.title,exact:true}).click();await expect(page.getByRole('heading',{name:'Delivery increments',exact:true})).toBeVisible();await expect(page.locator('.increment-panel').getByRole('link',{name:new RegExp(scoped.title)})).toBeVisible();
 });
+
+test('hosted verification is opt-in, revision-aware and does not retain a stale success on failure',async({page,request})=>{
+ const unavailable=await request.post(prefix+'/hosted-verification',{data:{}});expect(unavailable.ok()).toBeTruthy();expect((await unavailable.json()).state).toBe('unavailable');
+ const invalid=await request.post(prefix+'/hosted-verification',{data:{repository:'owner/other'}});expect(invalid.status()).toBe(400);
+ await page.route('**/api/projects',async route=>{const response=await route.fetch();const items=await response.json();await route.fulfill({response,json:items.map(item=>item.id===project?{...item,githubRepository:'owner/project'}:item)});});
+ let requests=0;
+ const revision='a'.repeat(40);
+ await page.route('**/api/projects/'+project+'/hosted-verification',async route=>{
+  requests++;expect(route.request().method()).toBe('POST');expect(route.request().postDataJSON()).toEqual({});
+  await route.fulfill({json:requests===1?{state:'available',repository:'owner/project',observedAt:'2026-11-24T10:00:00Z',total:1,runs:[{id:42,name:'Verify',branch:'main',head:revision,event:'pull_request',status:'completed',conclusion:'success',attempt:1,updatedAt:'2026-11-24T09:00:00Z',pullRequests:[13]}]}:{state:'unavailable',message:'GitHub access or anonymous rate limit reached. Try again later.'}});
+ });
+ await page.goto('/#/projects/'+project+'/quality');
+ const panel=page.getByRole('region',{name:'Hosted verification'});await expect(panel.getByText(/Nothing loaded/)).toBeVisible();expect(requests).toBe(0);
+ await panel.getByRole('button',{name:'Load GitHub runs'}).click();
+ await expect(panel.getByRole('link',{name:'Verify · #42'})).toHaveAttribute('href','https://github.com/owner/project/actions/runs/42');
+ await expect(panel.getByText(revision,{exact:true})).toBeVisible();
+ await expect(panel.getByRole('link',{name:'#13'})).toHaveAttribute('href','https://github.com/owner/project/pull/13');
+ await expect(panel.getByText(/not a verified job matrix/)).toBeVisible();
+ await panel.getByRole('button',{name:'Refresh GitHub runs'}).click();
+ await expect(panel.getByText(/anonymous rate limit reached/)).toBeVisible();await expect(panel.getByRole('link',{name:'Verify · #42'})).toHaveCount(0);expect(requests).toBe(2);
+ await page.goto('/#/projects/'+other+'/quality');const otherPanel=page.getByRole('region',{name:'Hosted verification'});
+ // The other fixture may use standalone storage, which intentionally has no repository panel.
+ await expect(page.getByRole('heading',{name:'Quality',exact:true})).toBeVisible();
+ if(await otherPanel.count())await expect(otherPanel.getByText(/No public GitHub repository configured/)).toBeVisible();
+ expect(requests).toBe(2);
+});

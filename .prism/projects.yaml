@@ -4,6 +4,7 @@
   title: Prism Development
   root: .
   storage: repository
+  githubRepository: aschenrot/prism
   profiles: [core, product, project]
 - id: emberfall
   title: Emberfall

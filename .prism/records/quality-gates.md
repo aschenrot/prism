@@ -15,3 +15,6 @@ Hosted CI is optional. Check supported platforms locally before claiming compati
 For interactive changes, require revision-specific local browser regression after the tooling is locked and verified, plus focused owner UX acceptance. Keep the original technical specification and make uncovered risks explicit. Do not confuse a green manual review with an executed browser suite. The browser-verification task tracks the pending setup and initial run.
 
 Public-preview preparation introduces automatic hosted verification gated by public visibility. Until successful hosted runs are observed and required checks adopted, the existing local merge gate remains. CI report revision and environment must be explicit; hosted execution never replaces manual acceptance. See docs/publication.md.
+
+## M1 integration delegation
+On 2026-11-24 the owner approved the delegated M1 policy in development-workflow-decision. Full current hosted matrix, reviewed exact revision/tree, security and technical regression checks gate in-scope integration; local verification remains a diagnostic alternative, not a mandatory duplicate run. Human product, usability, accessibility and visual acceptance are deferred to consolidated milestone review, not waived. Release remains a separate decision. Required GitHub checks must be configured and observed before claiming enforcement.

@@ -30,3 +30,6 @@ Review handoff now copies saved manual acceptance and matching npm verification 
 
 ## Delivery increment scope slice
 Record-management-increment is the first explicit scope. Milestones contain increments; increments contain tasks/tests. New projection shows authored Ready count, linked task commit count, exact current npm/browser gate states and latest exact-revision acceptance run per scoped Test. Local browser evidence is validated and read in Quality. Scope membership, implementation and acceptance remain separate; historical reports never imply current readiness. Structured remote PR association, cross-increment rollup/decision transitions and shared publishing remain future work. See delivery-increment-scope.
+
+## Hosted delivery increment
+First vertical slice: public GitHub run metadata and provider-supplied associated PR links in Quality. Explicit registry configuration, manual read, project-scoped query, bounded anonymous response, historical/reported revision comparison without implying verified checkout. No change to authored task status, local evidence or manual acceptance. The next slice will add explicit PR-to-increment attribution and job-level evidence; do not infer scope from PR title or branch name. See hosted-delivery-increment and ci-import.

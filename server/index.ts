@@ -9,6 +9,7 @@ import { loadProjects } from './projects';
 import { indexRepository, readRepositoryFile } from './repository';
 import { gitHistory } from './git';
 import { readVerification,readBrowserVerification } from './verification';
+import { hostedRuns } from './hostedVerification';
 import { z } from 'zod';
 import { viewInputSchema } from '../shared/views';
 import { startAcceptanceSchema,updateAcceptanceSchema } from '../shared/acceptance';
@@ -42,6 +43,14 @@ app.get('/api/projects/:projectId/records', async request => projectFor(request)
 app.get('/api/projects/:projectId/repository', async request => {const p=projectFor(request);return p.info.storage==='repository'?indexRepository(p.root):{files:[],truncated:false};});
 app.get('/api/projects/:projectId/verification',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readVerification(p.root);});
 app.get('/api/projects/:projectId/browser-verification',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readBrowserVerification(p.root);});
+// Outbound reads require explicit local JSON action and a registry-configured public repository.
+app.post('/api/projects/:projectId/hosted-verification',async(request,reply)=>{
+  z.strictObject({}).parse(request.body);
+  const p=projectFor(request);
+  reply.header('Cache-Control','no-store');
+  if(p.info.storage!=='repository'||!p.info.githubRepository)return {state:'unavailable',message:'No public GitHub repository configured.'};
+  return hostedRuns(p.info.githubRepository);
+});
 app.get('/api/projects/:projectId/changes',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return gitHistory(p.root);});
 app.get('/api/projects/:projectId/file', async request => {const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readRepositoryFile(p.root,z.object({path:z.string().min(1).max(500)}).parse(request.query).path);});
 app.post('/api/projects/:projectId/records', async (request, reply) => {
