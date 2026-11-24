@@ -81,3 +81,23 @@ test('repository browser includes application server and shared source',async()=
     await assert.rejects(readRepositoryFile(root,'.prism/hidden.md'),MissingError);
   }finally{await rm(root,{recursive:true,force:true});}
 });
+
+// A configured root may be an alias, unlike links beneath that root.
+test('repository reads through a canonicalized project root without allowing nested links',async()=>{
+  const base=await mkdtemp(join(tmpdir(),'prism-root-alias-'));
+  try{
+    const root=join(base,'project'),alias=join(base,'alias'),outside=join(base,'outside');
+    await mkdir(join(root,'src'),{recursive:true});await mkdir(outside);
+    await writeFile(join(root,'README.md'),'# Alias root');
+    await writeFile(join(root,'src','main.rs'),'fn main() {}');
+    await writeFile(join(outside,'private.rs'),'outside project');
+    const kind=process.platform==='win32'?'junction':'dir';
+    await symlink(root,alias,kind);await symlink(outside,join(root,'src','linked'),kind);
+    const index=await indexRepository(alias);
+    assert.deepEqual(index.files.map(f=>f.path),['README.md','src/main.rs']);
+    assert.equal((await readRepositoryFile(alias,'README.md')).content,'# Alias root');
+    assert.equal((await readRepositoryFile(alias,'src/main.rs')).content,'fn main() {}');
+    await assert.rejects(readRepositoryFile(alias,'src/linked/private.rs'),MissingError);
+    await assert.rejects(readRepositoryFile(alias,'../outside/private.rs'),MissingError);
+  }finally{await rm(base,{recursive:true,force:true});}
+});

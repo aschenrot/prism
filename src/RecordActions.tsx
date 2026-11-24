@@ -10,19 +10,29 @@ export default function RecordActions({record,onEdit,onTrash,disabled=false,edit
   const isOpen=()=>!!panel.current?.matches(':popover-open');
   const items=()=>Array.from(panel.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')||[]);
   const close=(restore=false)=>{if(isOpen())panel.current?.hidePopover();setOpen(false);if(restore)trigger.current?.focus({preventScroll:true});};
+  const position=()=>{
+    const button=trigger.current,menu=panel.current;
+    if(!button||!menu||!menu.matches(':popover-open'))return;
+    const anchor=button.getBoundingClientRect(),size=menu.getBoundingClientRect(),margin=8;
+    if(anchor.width===0||anchor.height===0||anchor.bottom<=0||anchor.top>=window.innerHeight||anchor.right<=0||anchor.left>=window.innerWidth){
+      menu.hidePopover();return;
+    }
+    menu.style.left=Math.max(margin,Math.min(anchor.right-size.width,window.innerWidth-size.width-margin))+'px';
+    menu.style.top=Math.max(margin,Math.min(anchor.bottom+5+size.height<=window.innerHeight-margin?anchor.bottom+5:anchor.top-size.height-5,window.innerHeight-size.height-margin))+'px';
+  };
   const show=(last=false)=>{
     const button=trigger.current,menu=panel.current;if(disabled||!button||!menu)return;
     if(!isOpen())menu.showPopover();
-    const anchor=button.getBoundingClientRect(),size=menu.getBoundingClientRect(),margin=8;
-    menu.style.left=Math.max(margin,Math.min(anchor.right-size.width,window.innerWidth-size.width-margin))+'px';
-    menu.style.top=Math.max(margin,Math.min(anchor.bottom+5+size.height<=window.innerHeight-margin?anchor.bottom+5:anchor.top-size.height-5,window.innerHeight-size.height-margin))+'px';
+    position();if(!isOpen())return;
     setOpen(true);const list=items();list[last?list.length-1:0]?.focus({preventScroll:true});
   };
   useLayoutEffect(()=>{
     const menu=panel.current;if(!menu)return;
     const toggle=()=>setOpen(menu.matches(':popover-open'));
     const dismiss=()=>{if(menu.matches(':popover-open'))menu.hidePopover();};
-    const scroll=(event:Event)=>{if(event.target instanceof Node&&menu.contains(event.target))return;dismiss();};
+    // Navigation restoration, focus and real scrolling can all dispatch scroll
+    // events. Keep a usable menu anchored rather than dismissing on every event.
+    const scroll=(event:Event)=>{if(event.target instanceof Node&&menu.contains(event.target))return;position();};
     menu.addEventListener('toggle',toggle);window.addEventListener('resize',dismiss);window.addEventListener('scroll',scroll,true);
     return()=>{menu.removeEventListener('toggle',toggle);window.removeEventListener('resize',dismiss);window.removeEventListener('scroll',scroll,true);if(menu.matches(':popover-open'))menu.hidePopover();};
   },[]);
