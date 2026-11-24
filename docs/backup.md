@@ -15,3 +15,5 @@ Included: record Markdown, saved views, templates, schema, trash and local accep
 Keep a separate protected copy on another device and periodically verify and restore into disposable directories.
 
 A valid source must already have a real records/ directory. Selecting an unrelated empty folder or a repository root instead of its .prism data directory fails rather than generating a misleading empty backup. A genuinely empty Prism project remains supported. A backup directory containing its manifest cannot be opened as a writable project; restore it first. Files are flushed on write, but this is not a filesystem-level crash-durability guarantee.
+
+An interrupted backup is marked `.prism-backup-incomplete` before data files are copied. Verification and writable project opening refuse the marked directory even when a manifest has been written. Create a fresh backup from the source instead of treating an interrupted copy as a project.

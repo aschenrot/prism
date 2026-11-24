@@ -5,3 +5,6 @@
 .prism/acceptance.local/
 
 .prism/projects.local.yaml.lock
+
+# Interrupted local registry writes can contain machine-private paths.
+.prism/.registry-*.tmp

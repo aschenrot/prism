@@ -1,6 +1,6 @@
 import { lstat, mkdir, readFile, realpath } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
-import { selectRegistry } from './localRegistry';
+import { selectRegistry,validateRegistration } from './localRegistry';
 import { registrySchema, type ProjectConfig, type ProjectInfo } from '../shared/projects';
 import { ConflictError,MissingError, RecordStore } from './store';
 import { ViewStore } from './views';
@@ -13,6 +13,9 @@ export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; vi
 export class Projects {
   private constructor(private projects:Map<string,OpenProject>) {}
   static async open(configs:ProjectConfig[]) {
+    // Preflight the complete registry before creating any project store, regardless
+    // of whether it came from the CLI, a portable file or an explicit override.
+    await validateRegistration(configs,process.cwd());
     const result = new Map<string,OpenProject>();
     const roots = new Set<string>();
     for(const config of registrySchema.parse(configs)){

@@ -7,6 +7,7 @@ const ID='[a-z0-9][a-z0-9-]{0,95}';
 const allowed=new RegExp('^(?:schema\\.yaml|records/'+ID+'\\.md|(?:views|templates)/'+ID+'\\.yaml|trash/('+ID+')/\\1\\.md|acceptance\\.local/'+ID+'\\.'+ID+'\\.json)$');
 const limit=16_000_000,totalLimit=256_000_000,countLimit=20_000;
 const marker='.prism-restore-incomplete';
+const backupMarker='.prism-backup-incomplete';
 const manifestName='prism-backup.json';
 const hash=(data:Buffer)=>createHash('sha256').update(data).digest('hex');
 const entrySchema=z.object({path:z.string().regex(allowed),bytes:z.number().int().min(0).max(limit),sha256:z.string().regex(/^[a-f0-9]{64}$/)}).strict();
@@ -75,16 +76,19 @@ export async function createProjectBackup(sourcePath:string,destinationPath:stri
  await directory(join(source,'records'));
  const paths=await scan(source),files=await collect(source,paths);
  await mkdir(target,{mode:0o700});
+ await writeNew(target,backupMarker,'Incomplete backup. Do not open.\n');
  await mkdir(join(target,'records'),{mode:0o700});
  // A backup is usable only once its final manifest exists. Never overwrite a backup.
  for(const file of files)await copyChecked(source,target,file);
  if(JSON.stringify(await collect(source,await scan(source)))!==JSON.stringify(files))throw new Error('Project changed during backup; stop editors and retry in a new directory');
  const manifest=manifestSchema.parse({version:1,createdAt:new Date().toISOString(),files});
  await writeNew(target,manifestName,JSON.stringify(manifest,null,2)+'\n');
+ await unlink(join(target,backupMarker));
  return manifest;
 }
 export async function verifyProjectBackup(path:string){
  const root=await realpath(path);await directory(root);
+ if(await exists(join(root,backupMarker)))throw new Error('Incomplete project backup; create a new backup from the source');
  const manifest=manifestSchema.parse(JSON.parse((await bytes(join(root,manifestName))).toString('utf8')));
  await directory(join(root,'records'));
  const actual=await collect(root,await scan(root));
@@ -104,5 +108,6 @@ export async function restoreProjectBackup(sourcePath:string,destinationPath:str
 }
 export async function rejectIncompleteRestore(root:string){
  if(await exists(join(root,marker)))throw new Error('Incomplete project restore; restore again into a new directory');
+ if(await exists(join(root,backupMarker)))throw new Error('Incomplete project backup; create a new backup from the source');
  if(await exists(join(root,manifestName)))throw new Error('Backup directory is not a writable project; restore into a new directory first');
 }
