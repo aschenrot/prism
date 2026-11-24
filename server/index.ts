@@ -9,6 +9,8 @@ import { schemaUpdateSchema } from '../shared/customProperties';
 import { SchemaWriteConflict,SchemaWriteRejected } from './projectSchema';
 import { loadProjects } from './projects';
 import { indexRepository, readRepositoryFile } from './repository';
+import { searchInputSchema,searchRecords,searchTerms,type ProjectSearchResult } from '../shared/search';
+import { searchRepository } from './search';
 import { gitHistory } from './git';
 import { readVerification,readBrowserVerification } from './verification';
 import { hostedRuns,hostedPull,hostedJobs } from './hostedVerification';
@@ -48,6 +50,15 @@ app.get('/api/projects', async () => projects.list());
 app.get('/api/projects/:projectId/schema',async request=>projectFor(request).store.schema());
 app.put('/api/projects/:projectId/schema',async request=>{const input=schemaUpdateSchema.parse(request.body);return projectFor(request).store.updateSchema(input.expectedRevision,input.definition);});
 app.get('/api/projects/:projectId/records', async request => projectFor(request).store.list());
+app.post('/api/projects/:projectId/search',async(request,reply)=>{
+ const p=projectFor(request),{query}=searchInputSchema.parse(request.body),terms=searchTerms(query);
+ reply.header('Cache-Control','no-store');
+ const [list,schema]=await Promise.all([p.store.list(),p.store.schema()]);
+ const records=searchRecords(list.records,schema.state==='available'?schema.definition:undefined,terms);
+ const result:ProjectSearchResult={query,records:records.hits,recordMatches:records.total,files:[],fileMatches:0,recordErrors:list.errors.length,schemaAvailable:schema.state==='available',repository:{state:'unavailable'}};
+ if(p.info.storage==='repository'){const found=await searchRepository(p.root,terms);result.files=found.hits;result.fileMatches=found.total;result.repository=found.repository;}
+ return result;
+});
 app.get('/api/projects/:projectId/repository', async request => {const p=projectFor(request);return p.info.storage==='repository'?indexRepository(p.root):{files:[],truncated:false};});
 app.get('/api/projects/:projectId/verification',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readVerification(p.root);});
 app.get('/api/projects/:projectId/browser-verification',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readBrowserVerification(p.root);});
