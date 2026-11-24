@@ -72,3 +72,15 @@ test('session cancel retains the draft present on entry and distinguishes a clea
   assert.equal(store.write('prism','task-a',later.token,previous).state,'stored');
   const restored=store.read('prism','task-a');assert.equal(restored.state,'available');if(restored.state==='available')assert.deepEqual(restored.draft,previous);
 });
+
+test('old recovery drafts stay compatible and custom property conflicts preserve explicit choices',()=>{
+ const old=freshDraft(record());assert.equal(editorDraftSchema.safeParse(old).success,true);
+ const disk=record({customProperties:{effort:3},revision:'b'.repeat(64)});
+ const titleEdit={...old,draft:{...old.draft,title:'Recovered title'}};
+ const combined=reconcileDraft(titleEdit,disk,{});assert.ok(combined);assert.deepEqual(combined.draft.customProperties,{effort:3});
+ const base=freshDraft(disk),session={...base,schemaRevision:'c'.repeat(64),draft:{...base.draft,customProperties:{effort:4}}};
+ const external=record({customProperties:{effort:5},revision:'d'.repeat(64)});
+ assert.deepEqual(compareDraft(session,external).conflicts,['customProperties']);
+ const next=reconcileDraft(session,external,{customProperties:'local'});assert.ok(next);assert.equal(next.schemaRevision,session.schemaRevision);assert.deepEqual(next.draft.customProperties,{effort:4});
+ assert.equal(editorDraftSchema.safeParse(next).success,true);
+});

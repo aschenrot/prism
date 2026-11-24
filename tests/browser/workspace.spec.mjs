@@ -1,5 +1,5 @@
 import { test,expect } from '@playwright/test';
-import { rename,readFile,writeFile } from 'node:fs/promises';
+import { rename,readFile,writeFile,unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 const project='browser-review',other='browser-other';
 const prefix='/api/projects/'+project;
@@ -297,4 +297,39 @@ test('increment shows only explicitly associated PR runs and exact attempt job m
  await panel.getByRole('button',{name:'Load jobs'}).click();await expect(panel.getByRole('link',{name:'verify matrix job'})).toBeVisible();
  await expect(panel.getByText(/Partial job list/)).toBeVisible();await expect(panel.getByText(/not actual checkout/)).toBeVisible();expect(calls).toBe(3);
  expect((await recordOnDisk(request,increment.id)).status).toBe('Concept');
+});
+
+test('schema-driven properties recover drafts and reject stale schema writes without losing values',async({page,request})=>{
+ const schemaPath=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'repo','.prism','schema.yaml');
+ const definition={version:1,fields:[{id:'effort',label:'Effort hours',kind:'number',appliesTo:['Task']},{id:'due',label:'Due date',kind:'date',appliesTo:['Task']},{id:'certainty',label:'Confidence',kind:'enum',options:[{id:'high',label:'High confidence'}]},{id:'reviewed',label:'Reviewed',kind:'boolean'},{id:'owner-note',label:'Owner note',kind:'text'},{id:'objective-ref',label:'Objective reference',kind:'reference',targetTypes:['Objective']}]};
+ try{
+  await writeFile(schemaPath,JSON.stringify(definition));
+  const record=await create(request,'Schema fixture'),target=await create(request,'Schema target','Objective');
+  const otherRecord=await create(request,'Other schema fixture','Task',other);
+  const schema=await (await request.get(prefix+'/schema')).json();expect(schema.state).toBe('available');
+  expect((await (await request.get('/api/projects/'+other+'/schema')).json()).configured).toBe(false);
+  await open(page,record);await edit(page);
+  await page.getByLabel('Effort hours',{exact:true}).fill('2.5');
+  await page.getByLabel('Due date',{exact:true}).fill('2026-12-01');
+  await page.getByLabel('Confidence',{exact:true}).selectOption('high');
+  await page.getByLabel('Reviewed',{exact:true}).selectOption('no');
+  await page.getByLabel('Owner note',{exact:true}).fill('Recover this property');
+  await page.getByLabel('Objective reference',{exact:true}).selectOption(target.id);
+  await keep(page).click();await page.reload();await page.getByRole('button',{name:'Resume draft'}).click();
+  await expect(page.getByLabel('Effort hours',{exact:true})).toHaveValue('2.5');
+  await expect(page.getByLabel('Owner note',{exact:true})).toHaveValue('Recover this property');
+  const changed={...definition,fields:definition.fields.map(f=>f.id==='effort'?{...f,label:'Estimated hours'}:f)};
+  await writeFile(schemaPath,JSON.stringify(changed));
+  const stale=await request.put(prefix+'/records/'+record.id,{data:{expectedRevision:record.revision,expectedSchemaRevision:schema.revision,changes:{...editable(record),customProperties:{effort:7}}}});
+  expect(stale.status()).toBe(422);expect((await recordOnDisk(request,record.id)).customProperties).toBeUndefined();
+  await expect(page.getByRole('button',{name:'Review current schema'})).toBeVisible({timeout:12000});
+  await expect(save(page)).toBeDisabled();await page.getByRole('button',{name:'Review current schema'}).click();
+  await expect(page.getByLabel('Estimated hours',{exact:true})).toHaveValue('2.5');await save(page).click();
+  await expect(page.getByText('Saved to disk',{exact:true})).toBeVisible();
+  const saved=await recordOnDisk(request,record.id);
+  expect(saved.customProperties).toEqual({effort:2.5,due:'2026-12-01',certainty:'high',reviewed:false,'owner-note':'Recover this property','objective-ref':target.id});
+  await page.getByRole('button',{name:'Return to record',exact:true}).click();
+  const panel=page.getByRole('region',{name:'Custom properties'});await expect(panel.getByText('High confidence',{exact:true})).toBeVisible();await expect(panel.getByText('Schema target',{exact:true})).toBeVisible();
+  await open(page,otherRecord,other);await expect(page.getByRole('region',{name:'Custom properties'})).toHaveCount(0);
+ }finally{await unlink(schemaPath).catch(()=>{});}
 });
