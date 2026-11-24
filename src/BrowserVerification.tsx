@@ -1,0 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
+import { ShieldCheck,RefreshCw } from 'lucide-react';
+import { api } from './api';
+import { browserVerificationState } from '../shared/browserVerification';
+import type { GitHistory } from '../shared/delivery';
+export default function BrowserVerification({projectId,history}:{projectId:string;history:GitHistory|undefined}){
+ const query=useQuery({queryKey:['browser-verification',projectId],queryFn:()=>api.browserVerification(projectId),refetchInterval:10000,retry:false});
+ const report=!query.isError&&query.data?.state==='available'?query.data.report:undefined,state=report?browserVerificationState(report,history?.state==='available'?history.head:undefined):undefined;
+ const label=state==='passed'?'Browser regression passed for recorded clean HEAD':state==='historical'?'Historical browser evidence — HEAD changed':state==='diagnostic'?'Diagnostic only — dirty or changed revision':state==='not-passed'?'Browser gate not passed':'Cannot compare with current HEAD';
+ return <section className="local-verification overview-section" aria-label="Browser verification"><div className="overview-section-head"><div><span className="eyebrow"><ShieldCheck size={14}/> LOCAL BROWSER GATE</span><h3>Browser regression evidence</h3></div><button className="secondary" disabled={query.isFetching} onClick={()=>{void query.refetch();}}><RefreshCw size={14}/> Refresh</button></div>{query.isError?<p className="warning" role="alert">Could not refresh browser report.</p>:report?<><p className={'verification-result '+(state==='passed'?'check-passed':'')}>{label}</p><p className="overview-note">Revision <code>{report.revision.slice(0,12)}</code> · {new Date(report.finishedAt).toLocaleString()} · {report.environment.browser} / Playwright {report.environment.playwright}</p>{report.stats&&<p>{report.stats.passed} passed · {report.stats.failed} failed · {report.stats.skipped} skipped · {report.stats.flaky} flaky · minimum {report.minimumScenarios}</p>}<p className="overview-note">Local report. Cleanliness was observed during execution only. Manual acceptance remains separate.</p></>:<p className="overview-note">{query.isPending?'Reading local browser report…':query.data?.state==='unavailable'||query.data?.state==='error'?query.data.message:'No report available.'}</p>}</section>;
+}

@@ -5,7 +5,8 @@ export const relationshipLabels:Record<RelationshipKind,{outgoing:string;incomin
   'verifies':{outgoing:'Verifies',incoming:'Verified by'},
   'depends-on':{outgoing:'Depends on',incoming:'Required by'},
   'blocks':{outgoing:'Blocks',incoming:'Blocked by'},
-  'documents':{outgoing:'Documents',incoming:'Documented by'}
+  'documents':{outgoing:'Documents',incoming:'Documented by'},
+  'contains':{outgoing:'Contains',incoming:'Part of'}
 };
 export function normalizeRelationship(link:Relationship):{kind:RelationshipKind;target:string}{
   return typeof link==='string'?{kind:'related-to',target:link}:link;
@@ -20,6 +21,7 @@ export function distinctRelationships(links:Relationship[]){
 export function relationshipIssue(kind:RelationshipKind,source:Editable['type'],target:Editable['type']):string|undefined{
   if(kind==='implements'&&(!['Feature','System','Task','Mechanic'].includes(source)||!['Requirement','Feature'].includes(target)))return 'Implements requires a feature, system, task or mechanic pointing to a requirement or feature.';
   if(kind==='verifies'&&(source!=='Test'||!['Requirement','Feature'].includes(target)))return 'Verifies requires a test pointing to a requirement or feature.';
+  if(kind==='contains'&&!((source==='Milestone'&&target==='Increment')||(source==='Increment'&&(target==='Task'||target==='Test'))))return 'Contains requires a milestone pointing to an increment, or an increment pointing to a task or test.';
   if(kind==='documents'&&source!=='Document')return 'Documents requires a document as its source.';
 }
 export function relationshipsFor(records:ProjectRecord[],id:string){

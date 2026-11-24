@@ -10,6 +10,7 @@ const dest=(id:string,label:string,description:string,group:string,mode:Destinat
 const common=[
   dest('overview','Overview','Current milestones, active work and what needs attention.','Workspace','Overview'),
   dest('work','Work','Plan tasks and review their status.','Management','Table','Task',['Table','Board']),
+  dest('increments','Increments','Manage explicit delivery scope, implementation and review evidence.','Management','Table','Increment',['Table','Board','Wiki']),
   dest('roadmap','Roadmap','Review development milestones in order.','Management','Table','Milestone',['Table','Board','Wiki']),
   dest('quality','Quality','Review test records and record integrity.','Management','Audit','Test',['Audit','Table','Wiki']),
   dest('documentation','Documentation','Read and navigate authored knowledge.','Knowledge','Wiki','Document',['Wiki','Table']),

@@ -1,11 +1,11 @@
 import { z } from 'zod';
-export const types = ['Idea', 'Mechanic', 'Asset', 'Character', 'Location', 'System', 'Task', 'Decision', 'Objective', 'Feature', 'Requirement', 'Milestone', 'Risk', 'Research', 'Document', 'Test'] as const;
+export const types = ['Idea', 'Mechanic', 'Asset', 'Character', 'Location', 'System', 'Task', 'Decision', 'Objective', 'Feature', 'Requirement', 'Milestone', 'Increment', 'Risk', 'Research', 'Document', 'Test'] as const;
 export const statuses = ['Concept', 'In progress', 'Ready'] as const;
 export const priorities = ['Low', 'Normal', 'High'] as const;
 export const accents = ['amber', 'violet', 'teal', 'blue', 'rose'] as const;
 export const idSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,95}$/);
 // Legacy string references remain valid and mean only "related to".
-export const relationshipKinds=['related-to','implements','verifies','depends-on','blocks','documents'] as const;
+export const relationshipKinds=['related-to','implements','verifies','depends-on','blocks','documents','contains'] as const;
 export const relationshipKindSchema=z.enum(relationshipKinds);
 export const relationshipSchema=z.union([idSchema,z.strictObject({kind:relationshipKindSchema,target:idSchema})]);
 export type Relationship=z.infer<typeof relationshipSchema>;
@@ -32,6 +32,9 @@ export const recordSchema = metadataSchema.extend({ body: z.string().max(500_000
 export const editableSchema = z.strictObject({title:metadataShape.title,type:metadataShape.type,status:metadataShape.status,priority:metadataShape.priority,accent:metadataShape.accent,tags:metadataShape.tags,relationships:metadataShape.relationships,body:z.string().max(500_000)});
 export const updateSchema = z.object({ expectedRevision: z.string().regex(/^[a-f0-9]{64}$/), changes: editableSchema }).strict();
 export const createSchema = z.object({title: z.string().trim().min(1).max(160), type:z.enum(types)}).strict();
+export const propertyChangesSchema=z.strictObject({status:metadataShape.status.optional(),priority:metadataShape.priority.optional()}).refine(v=>v.status!==undefined||v.priority!==undefined,'Choose a property to change');
+export const propertyUpdateSchema=z.strictObject({expectedRevision:updateSchema.shape.expectedRevision,changes:propertyChangesSchema});
+export type PropertyChanges=z.infer<typeof propertyChangesSchema>;
 export type Editable = z.infer<typeof editableSchema>;
 export type ProjectRecord = z.infer<typeof recordSchema> & { revision: string };
 // Trash preserves the original record and revision; no permanent deletion API.
