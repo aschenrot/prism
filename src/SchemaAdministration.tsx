@@ -5,6 +5,7 @@ import { types,type ProjectRecord, type Editable } from '../shared/records';
 import { projectPropertySchema,schemaTransitionIssue,type PropertyDefinition,type ProjectPropertySchema } from '../shared/customProperties';
 import { useProjectSchema } from './CustomProperties';
 import { api } from './api';
+import EntityAdministration from './EntityAdministration';
 type Session={revision:string;base:ProjectPropertySchema;original?:PropertyDefinition;draft:PropertyDefinition};
 const kinds=['text','number','date','boolean','enum','reference'] as const;
 const labelFor={text:'Text',number:'Number',date:'Date',boolean:'Yes / No',enum:'Choice',reference:'Record reference'};
@@ -18,13 +19,13 @@ function ScopePicker({label,value,onChange}:{label:string;value:Editable['type']
 export default function SchemaAdministration({projectId,records,incomplete,onBusyChange}:{projectId:string;records:ProjectRecord[];incomplete:boolean;onBusyChange:(busy:boolean)=>void}){
  const query=useProjectSchema(projectId),qc=useQueryClient();
  const schema=!query.isError&&query.data?.state==='available'?query.data:undefined;
- const [session,setSession]=useState<Session|null>(null),[message,setMessage]=useState(''),[error,setError]=useState('');
+ const [session,setSession]=useState<Session|null>(null),[message,setMessage]=useState(''),[error,setError]=useState(''),[entityBusy,setEntityBusy]=useState(false);
  const mutation=useMutation({mutationFn:({revision,definition}:{revision:string;definition:ProjectPropertySchema})=>api.updateSchema(projectId,revision,definition),onSuccess:async saved=>{
   if(saved.state!=='available'){setError(saved.message);return;}
   await qc.cancelQueries({queryKey:['project-schema',projectId]});
   qc.setQueryData(['project-schema',projectId],saved);setSession(null);setError('');setMessage('Schema saved. Record values were not rewritten.');void qc.invalidateQueries({queryKey:['project-schema',projectId]});
  },onError:err=>{setError(err.message);void query.refetch();}});
- const busy=!!session||mutation.isPending;
+ const busy=!!session||mutation.isPending||entityBusy;
  useLayoutEffect(()=>{onBusyChange(busy);},[busy,onBusyChange]);
  useLayoutEffect(()=>()=>onBusyChange(false),[onBusyChange]);
  useEffect(()=>{if(!busy)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[busy]);
@@ -63,6 +64,7 @@ export default function SchemaAdministration({projectId,records,incomplete,onBus
  <label>Property label<input value={draft.label} maxLength={100} onChange={e=>change({...draft,label:e.target.value})}/></label>
  <label>Value kind<select aria-label="Value kind" disabled={!!session.original} value={draft.kind} onChange={e=>change(changeKind(draft,e.target.value as PropertyDefinition['kind']))}>{kinds.map(kind=><option key={kind} value={kind}>{labelFor[kind]}</option>)}</select></label>
  {session.original?<p className="overview-note">Record types: {draft.appliesTo?.join(', ')??'All built-in types'}</p>:<ScopePicker label="Applies to" value={draft.appliesTo} onChange={appliesTo=>change({...draft,appliesTo})}/>}
+ {schema?.definition.entityTypes?.length?session.original?<p className="overview-note">Custom entity scope: {draft.appliesToEntities?.join(', ')??'All compatible entities'}</p>:<fieldset className="schema-scope"><legend>Custom entity scope</legend><label className="schema-check"><input type="checkbox" checked={draft.appliesToEntities===undefined} onChange={e=>change({...draft,appliesToEntities:e.target.checked?undefined:[]})}/> All compatible entities</label>{draft.appliesToEntities!==undefined&&<div className="schema-type-grid">{schema.definition.entityTypes.filter(e=>!e.retired&&(!draft.appliesTo||draft.appliesTo.includes(e.baseType))).map(entity=><label className="schema-check" key={entity.id}><input type="checkbox" checked={draft.appliesToEntities?.includes(entity.id)} onChange={e=>change({...draft,appliesToEntities:e.target.checked?[...(draft.appliesToEntities??[]),entity.id]:(draft.appliesToEntities??[]).filter(id=>id!==entity.id)})}/>{entity.label}</label>)}</div>}</fieldset>:null}
  {draft.kind==='reference'&&(session.original?<p className="overview-note">Reference targets: {draft.targetTypes?.join(', ')??'All built-in types'}</p>:<ScopePicker label="Reference targets" value={draft.targetTypes} onChange={targetTypes=>change({...draft,targetTypes})}/>)}
  {draft.kind==='enum'&&<div className="schema-options"><strong>Choices</strong>{draft.options.map((option,index)=>{
   const existing=session.original?.kind==='enum'&&session.original.options.some(o=>o.id===option.id);
@@ -76,8 +78,9 @@ export default function SchemaAdministration({projectId,records,incomplete,onBus
  </form>}
  {schema&&<div className="schema-definition-list">{schema.definition.fields.map(field=>{
   const count=records.filter(r=>Object.hasOwn(r.customProperties??{},field.id)).length;
-  return <article className="schema-definition-row" key={field.id}><div><strong>{field.label} {field.retired&&<span className="schema-retired"><Archive size={12}/> Retired</span>}</strong><small><code>{field.id}</code> · {labelFor[field.kind]} · {field.appliesTo?.join(', ')??'All built-in types'}</small><small>{count} loaded active records with a stored value{field.kind==='enum'?' · '+field.options.length+' choices':''}</small></div><button className="secondary" disabled={busy} aria-label={'Edit '+field.label} onClick={()=>start(field)}>Edit</button></article>;
+  return <article className="schema-definition-row" key={field.id}><div><strong>{field.label} {field.retired&&<span className="schema-retired"><Archive size={12}/> Retired</span>}</strong><small><code>{field.id}</code> · {labelFor[field.kind]} · {field.appliesTo?.join(', ')??'All built-in types'}{field.appliesToEntities?' · Entities: '+field.appliesToEntities.join(', '):''}</small><small>{count} loaded active records with a stored value{field.kind==='enum'?' · '+field.options.length+' choices':''}</small></div><button className="secondary" disabled={busy} aria-label={'Edit '+field.label} onClick={()=>start(field)}>Edit</button></article>;
  })}</div>}
  <p className="overview-note">Usage is a count of loaded active records, not a complete inventory of trash or history.{incomplete?' Some active records could not be read.':''} Retire rather than delete, even if the displayed usage is zero.</p>
+ <EntityAdministration projectId={projectId} records={records} disabled={!!session||mutation.isPending} onBusyChange={setEntityBusy}/>
  </section>;
 }
