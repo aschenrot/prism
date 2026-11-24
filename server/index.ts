@@ -14,7 +14,7 @@ import { searchRepository } from './search';
 import { gitHistory } from './git';
 import { readVerification,readBrowserVerification } from './verification';
 import { hostedRuns,hostedPull,hostedJobs } from './hostedVerification';
-import { githubIdSchema } from '../shared/hostedVerification';
+import { githubIdSchema,pullReferencesSchema } from '../shared/hostedVerification';
 import { z } from 'zod';
 import { viewInputSchema } from '../shared/views';
 import { captureSchema,inboxUpdateSchema } from '../shared/inbox';
@@ -104,6 +104,7 @@ app.put('/api/projects/:projectId/records/:id', async request => {
   return projectFor(request).store.update(id,input.expectedRevision,input.changes,input.expectedSchemaRevision);
 });
 const expectedRevision=z.string().regex(/^[a-f0-9]{64}$/);
+app.put('/api/projects/:projectId/records/:id/pull-references',async request=>{const p=projectFor(request),id=idSchema.parse((request.params as {id:string}).id),input=z.strictObject({expectedRevision,references:pullReferencesSchema}).parse(request.body);if(p.info.storage!=='repository')throw new ConflictError('Pull request associations require repository project storage.');return p.store.updatePullReferences(id,input.expectedRevision,input.references);});
 app.put('/api/projects/:projectId/records/:id/properties',async request=>{const id=idSchema.parse((request.params as {id:string}).id);const input=propertyUpdateSchema.parse(request.body);return projectFor(request).store.updateProperties(id,input.expectedRevision,input.changes);});
 app.post('/api/projects/:projectId/records/:id/duplicate',async(request,reply)=>{const id=idSchema.parse((request.params as {id:string}).id);const input=z.strictObject({expectedRevision}).parse(request.body);return reply.code(201).send(await projectFor(request).store.duplicate(id,input.expectedRevision));});
 app.get('/api/projects/:projectId/trash',async request=>projectFor(request).store.listTrash());

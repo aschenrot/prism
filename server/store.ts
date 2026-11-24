@@ -4,6 +4,7 @@ import { join, resolve, dirname } from 'node:path';
 import { parse, stringify } from 'yaml';
 import { readProjectSchema,writeProjectSchema } from './projectSchema';
 import type { TemplateStore } from './templates';
+import { pullReferencesSchema,type PullReference } from '../shared/hostedVerification';
 import { changedCustomKeys,customPropertyIssue,entityTypeIssue,type ProjectPropertySchema } from '../shared/customProperties';
 import { idSchema, metadataSchema, recordSchema, editableSchema, propertyChangesSchema, type PropertyChanges, type Editable, type ProjectRecord, type RecordList, type TrashList } from '../shared/records';
 
@@ -160,6 +161,12 @@ export class RecordStore {
       return this.persist({id:randomUUID(),title,type:source.type,status:'Concept',priority:source.priority,accent:source.accent,tags:source.tags.filter(t=>!['acceptance','current','blocker'].includes(t.toLowerCase())),relationships:[],body:source.body,...(source.customTypeId?{customTypeId:source.customTypeId}:{}),createdAt:now,updatedAt:now});
     });
   }
+  updatePullReferences(id:string,revision:string,references:PullReference[]){return this.serialize(async()=>{
+    const current=await this.get(id);if(current.revision!==revision)throw new ConflictError('Record changed on disk. Review before saving pull request references.');
+    if(current.type!=='Increment')throw new ConflictError('Pull request associations can only be authored for delivery increments.');
+    const next=pullReferencesSchema.parse(references);if(JSON.stringify(current.githubPullRequests??[])===JSON.stringify(next))return current;
+    const {revision:_,...previous}=current;return this.persist({...previous,githubPullRequests:next,updatedAt:new Date().toISOString()});
+  });}
   updateProperties(id:string,revision:string,changes:PropertyChanges){
     return this.serialize(async()=>{
       const current=await this.get(id);

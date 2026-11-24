@@ -22,3 +22,6 @@ Optional `githubPullRequests` metadata (maximum five unique repository-qualified
 
 ## Technical integration
 PR #15 merged at 34b8c2cc8c865ece6279ada09e8bd247ffbc1a36; required run 45391421549 passed all four jobs, 63 unit tests and 18 browser scenarios each, zero failed/flaky/skipped and both audits zero vulnerabilities. Checked-out synthetic revision 3a915503b73e1353aebbb9ec97f93941b808ff07 with identical tree. Post-merge main run 45391844584 passed all four jobs. Human milestone acceptance and live lookup remain pending; durable artifact verification and in-app authoring remain follow-up scope.
+
+
+Follow-up: hosted-reference-authoring provides explicit in-app association editing through a dedicated revision-checked command with recoverable form input; no network lookup during authoring. Durable artifact/checkout verification remains distinct.
