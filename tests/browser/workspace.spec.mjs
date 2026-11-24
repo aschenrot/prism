@@ -462,3 +462,28 @@ test('project search finds saved records and local file content with provenance 
   await expect(panel.getByRole('link',{name:'Other project secret',exact:true})).toBeVisible();await expect(panel.getByRole('link',{name:'Search target',exact:true})).toHaveCount(0);await expect(panel.getByRole('heading',{name:/Repository files/})).toHaveCount(0);
  }finally{await unlink(file).catch(()=>{});}
 });
+
+test('templates initialize independent records and retirement prevents new use',async({page,request})=>{
+ const otherPrefix='/api/projects/'+other;
+ await page.goto('/#/projects/'+other+'/templates');
+ const admin=page.getByRole('region',{name:'Project templates'});await admin.getByRole('button',{name:'New template',exact:true}).click();
+ const form=admin.getByRole('form',{name:'Template definition'});
+ await form.getByLabel('Template name',{exact:true}).fill('Review fixture template');
+ await form.getByLabel('Default title',{exact:true}).fill('Review from template');
+ await form.getByLabel('Default priority',{exact:true}).selectOption('High');
+ await form.getByLabel('Default body',{exact:true}).fill('Template body');
+ await form.getByRole('button',{name:'Save template',exact:true}).click();
+ await expect(admin.getByText('Template saved. Existing records were not changed.')).toBeVisible();
+ const t=(await (await request.get(otherPrefix+'/templates')).json()).templates.find(t=>t.name==='Review fixture template');
+ await page.getByRole('navigation',{name:'Project navigation'}).getByRole('link',{name:'Work',exact:true}).click();
+ await page.getByRole('button',{name:'New task',exact:true}).click();await page.getByLabel('Record template',{exact:true}).selectOption(t.id);
+ await expect(page.getByLabel('Record title',{exact:true})).toHaveValue('Review from template');
+ await page.getByRole('button',{name:'Create',exact:true}).click();
+ await expect(page.getByLabel('Title',{exact:true})).toHaveValue('Review from template');
+ await expect(page.locator('.editor textarea')).toHaveValue('Template body');
+ const r=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.title==='Review from template');
+ expect(r.status).toBe('Concept');expect(r.priority).toBe('High');expect(r.relationships).toEqual([]);
+ const {id,version,revision,...values}=t;const retired=await request.put(otherPrefix+'/templates/'+id,{data:{expectedRevision:revision,template:{...values,retired:true}}});expect(retired.ok()).toBeTruthy();
+ const retiredValue=await retired.json();const blocked=await request.post(otherPrefix+'/templates/'+id+'/instantiate',{data:{expectedRevision:retiredValue.revision,title:'Should not exist'}});expect(blocked.status()).toBe(409);
+ expect((await (await request.get(otherPrefix+'/records')).json()).records.find(v=>v.id===r.id).body).toBe('Template body');
+});
