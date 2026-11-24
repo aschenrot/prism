@@ -35,3 +35,8 @@ Generic legacy links remain directional references. Explicit typed edges state a
 
 ## Current limitations
 No custom schemas, custom relationship vocabularies, dependency-cycle analysis, date-based roadmaps, automated Git/CI ingestion, generated technical wiki, autosave or undo yet. Do not maintain parallel workarounds as another source of truth. Track the missing capability in Prism.
+
+## Reconcile work with implementation
+For substantial commits use a Git trailer, for example `Prism-Record: interaction-hit-areas`. Multiple trailers may refer to multiple tasks. This links explicit intent to a commit; do not derive completion from a commit message. In the same change, update the relevant task's implementation notes and acceptance state. Record actual checks and revision-specific evidence afterward. A narrow task can be accepted when its own criteria are met while a related integration requirement remains open. The completed lockfile configuration and outstanding cross-platform CI are an example.
+
+Future work: read these trailers from local Git, expose linked changes and missing evidence in Work/Overview, separate workflow stage from verification state, and calculate milestone progress from explicit scope. See .prism/records/delivery-evidence.md. The current application does not yet ingest Git or CI automatically.

@@ -17,3 +17,21 @@
 @media(max-width:720px){.workspace-shell{grid-template-columns:minmax(0,1fr)}.workspace-shell .sidebar{height:auto;position:static;padding:12px}.workspace-shell .purpose-nav{max-height:42vh;display:block;padding:0;overflow:auto}.workspace-shell .nav-group{margin-bottom:8px;display:flex;flex-wrap:wrap;gap:4px}.workspace-shell .nav-group .nav-label{display:block;width:100%;padding:4px}.workspace-shell .purpose-item{min-height:36px}.library-nav .saved-views{width:100%}.overview-intro,.overview-section{padding:16px}.overview-record{flex-wrap:wrap}.overview-record-title{min-width:100px}.record-expanded .expanded-inspector{grid-column:1;padding:18px;min-height:0}.workspace-shell .summary{display:none}}
 
 .workspace-shell .purpose-nav .saved-views .nav-item{display:flex;min-width:0}.workspace-shell .purpose-nav .saved-views .nav-item span{min-width:0}.workspace-shell .purpose-nav .saved-views .nav-item small{flex-shrink:0}.overview-intro .eyebrow{color:#aeb7a8}.overview-section .overview-record:focus-visible{outline-offset:-2px}
+
+/* Interactive surfaces match their full visual boundaries. Native select retains keyboard and platform picker behavior. */
+.workspace-shell .project-switcher{position:relative;min-height:64px;gap:9px;padding:12px;isolation:isolate;cursor:pointer;transition:background .14s,border-color .14s}
+.project-switcher-copy{min-width:0;flex:1}.project-switcher-copy strong{display:block;font-size:12px;font-weight:600;overflow-wrap:anywhere;line-height:1.35}
+.project-switcher-copy small{font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+.workspace-shell .project-switcher select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;padding:0;margin:0}
+.project-switcher-chevron{transform:rotate(90deg);color:var(--muted)}
+.project-switcher:not(.switch-blocked):hover{background:var(--raised);border-color:#555761}
+.project-switcher:focus-within{outline:2px solid var(--focus);outline-offset:3px}
+.project-switcher.switch-blocked,.workspace-shell .project-switcher.switch-blocked select{cursor:not-allowed}
+.project-switcher.switch-blocked small{color:#edc57d}
+.record-table-row{cursor:pointer}.record-table-row td{transition:background .14s}
+.record-table-row:not(.selected):hover td{background:var(--raised)}
+.record-table-row:focus-within td{background:#262a31}
+.record-table-row.selected td{background:#292d27}
+.record-table-row.selected td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.record-table-row td button{width:100%;min-height:24px;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.record-table-row td:first-child{white-space:normal;min-width:160px}

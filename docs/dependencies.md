@@ -42,3 +42,5 @@ The reported initial JS chunk was 660.96 kB minified (201.60 kB gzip). Presentat
 
 ## Lockfile baseline
 At bb3d0f0, the owner-provided npm lockfile was present and matched the manifest's root declarations. All resolved URLs inspected were from the public npm registry, with no embedded credentials. CI now uses npm ci unconditionally. Clean Windows/Linux verification remains outstanding; earlier CI run 45325390198 failed with inaccessible logs. See the lockfile and CI task records.
+
+Lockfile source-control/configuration scope is complete; clean cross-platform CI remains the owning validation gate. No fresh audit or passing CI is implied.

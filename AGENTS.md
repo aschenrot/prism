@@ -25,3 +25,9 @@
 - Link each substantial change to a feature/task and milestone, write acceptance criteria and record revision-specific verification evidence. Use the workflow in docs/development-workflow.md.
 - Treat the owner's edited records as real data. Inspect existing files before updating; do not reseed or overwrite the workspace. Never write automated tests against live workspace counts.
 - Emberfall and Starter workspace remain reference projects; automated tests use controlled fixtures and temporary directories. Do not commit personal paths, credentials, private game assets or unrelated local project edits.
+
+## Change-to-work traceability
+- Include one or more commit-message trailers `Prism-Record: <stable-record-id>` for substantial changes to Prism. Use existing task IDs or create the task in the same commit. This is explicit attribution, not a completion signal.
+- Update implementation notes and acceptance status in the same change. Do not leave a completed narrow task open solely because a separate integration gate remains; move that gate to its actual owning record with explicit links.
+- Record test/CI outcome, revision and environment separately from authored task status. A commit alone never establishes acceptance. Never fabricate a self-referential commit SHA inside the same commit; use commit trailers, then record observed revisions in follow-up evidence.
+- Interactive surfaces should have coherent hit areas, keyboard activation, hover/focus/selection and visible blocked-state reasons. Check actual pointer targets, not just the visual design.

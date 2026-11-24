@@ -1,13 +1,13 @@
 ---
 id: "lockfile"
 type: "Task"
-title: "Commit verified package-lock.json"
-status: "In progress"
+title: "Commit and review dependency lockfiles"
+status: "Ready"
 priority: "High"
 accent: "rose"
-tags: ["current","blocker","dependencies"]
+tags: ["dependencies","implementation"]
 relationships: ["quality-gates","dependency-policy","ci-verification"]
 ---
 The owner committed package-lock.json. Inspection at bb3d0f0 confirmed lockfile version 3, matching root dependency and devDependency declarations, and no credential-bearing or non-public-registry resolved URLs. CI now requires npm ci rather than falling back to npm install. Emberfall Cargo.lock is also committed.
 
-Acceptance still pending: clean npm ci, typecheck, tests and build on supported Windows/Linux environments; attach actual run evidence. Do not mark Ready merely because the lockfile exists.
+Scope completed: both lockfiles are present; npm manifest declarations match; CI requires the committed lockfile as of 637e659212512fbb811bf3d91b05eb3aaaa393b2. This closes the version-control and configuration task, not runtime verification. The original cross-platform clean-install acceptance requirement remains open under ci-verification and quality-gates. The current dependency audit has not been rerun.

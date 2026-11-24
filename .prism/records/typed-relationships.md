@@ -18,3 +18,5 @@ Add typed edges such as implements, verifies, depends-on and blocks, with explic
 - Test mixed persistence, invalid endpoints, backlinks and metadata preservation using isolated fixtures.
 
 Acceptance pending: run typecheck, tests and build; create a typed link in Prism, reload, inspect the inverse label and verify old projects still open. A verifies link is an authored claim, not proof of test execution. Custom relationship vocabularies, cycle analysis, traceability matrices and evidence integration remain later work.
+
+First slice is committed at 637e659212512fbb811bf3d91b05eb3aaaa393b2. The broader feature remains open for verification and subsequent traceability work.
