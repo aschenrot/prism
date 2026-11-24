@@ -95,7 +95,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
     setSession(next);setValidation('');persist(isDirty(next)?next:null);
   };
   const changeSession=(next:EditorDraft,group?:string)=>{
-    setDraftHistory(history=>recordDraftEdit(history,session,next,group,Date.now()));applySession(next);
+    const now=Date.now();setDraftHistory(history=>recordDraftEdit(history,session,next,group,now));applySession(next);
   };
   const replaceSession=(next:EditorDraft)=>{setDraftHistory(emptyDraftHistory());applySession(next);};
   const update=<K extends keyof Editable>(key:K,value:Editable[K])=>changeSession({...session,...(key==='type'&&draft.customTypeId&&schema&&!schemaStale?{schemaRevision:schema.revision}:{}),draft:{...draft,[key]:value},updatedAt:new Date().toISOString()},key==='title'||key==='body'||key==='tags'?key:undefined);
