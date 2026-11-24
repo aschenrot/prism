@@ -6,7 +6,7 @@ status: "In progress"
 priority: "High"
 accent: "teal"
 tags: ["roadmap","current","brief"]
-relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license","typed-link-slice","ux-navigation","interaction-hit-areas","delivery-evidence","git-evidence-slice","local-verification","development-workflow-decision"]
+relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license","typed-link-slice","ux-navigation","interaction-hit-areas","delivery-evidence","git-evidence-slice","local-verification","development-workflow-decision","navigation-stability"]
 ---
 Current milestone. Use Prism's own repository as the primary development workspace.
 
@@ -24,3 +24,5 @@ Owner feedback: prioritize usable information presentation and navigation before
 Lockfile source-control task is complete; CI validation remains open. The owner reports selection friction and stale project status. Prioritize interaction quality and evidence-linked work tracking before expanding capabilities.
 
 Hosted CI is deferred by owner decision. Local verification and focused PR review replace that gate. Complete foundation acceptance before merging PR #1 and moving to short-lived branches.
+
+Automated gate passed at 6064d82 on the owner's Windows environment; manual navigation issue remains open, and the fix must be reverified before foundation integration.

@@ -1,6 +1,6 @@
 import type { ProjectInfo } from './projects';
 import type { ProjectRecord } from './records';
-import { defaultFilters,selectRecords,type Filters,type ViewInput } from './views';
+import { defaultFilters,selectRecords,type Filters,type ViewInput,type SavedView } from './views';
 export type RecordMode=ViewInput['mode'];
 export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes';
 export type Destination={id:string;label:string;description:string;group:string;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
@@ -49,4 +49,19 @@ export function overviewFor(records:ProjectRecord[]){
     readyTasks:tasks.filter(r=>r.status==='Ready').length,
     totalTasks:tasks.length
   };
+}
+
+// A single navigation snapshot defines destination, view, filters and saved-view identity.
+export type NavigationState={destinationId:string;view:DestinationMode;filters:Filters;savedView:SavedView|null};
+export function navigationFor(destination:Destination):NavigationState{
+  return {destinationId:destination.id,view:destination.mode,filters:{...defaultFilters,type:destination.type,sort:destination.id==='work'?'Priority':'Title'},savedView:null};
+}
+export function navigationForSaved(savedView:SavedView):NavigationState{
+  return {destinationId:'library',view:savedView.mode,filters:{...savedView.filters},savedView};
+}
+export function navigationMode(state:NavigationState,destination:Destination,view:DestinationMode):NavigationState{
+  return state.destinationId===destination.id&&destination.modes.includes(view)?{...state,view}:state;
+}
+export function resetNavigationFilters(state:NavigationState,destination:Destination):NavigationState{
+  return {...state,filters:navigationFor(destination).filters,savedView:null};
 }

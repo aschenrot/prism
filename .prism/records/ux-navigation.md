@@ -26,3 +26,5 @@ Owner feedback: current information presentation and navigation are confusing. R
 Implementation: shared/navigation.ts, src/WorkspaceOverview.tsx, src/App.tsx and src/styles.css. Tests: tests/navigation.test.ts. No runtime screenshots or usability testing have yet been performed. Custom navigation configuration, dedicated entity editors, search palette and design-system refinement remain follow-up work.
 
 Implementation committed: b0bcb3fd03dc5817b002eecdffe2a95f49114932. Owner feedback after launch: the project selector and table records are difficult to select except on particular sub-elements. This is evidence of use and a specific usability issue, not full acceptance. See interaction-hit-areas. Verify the new implementation with keyboard and pointer before closing this feature.
+
+Owner reports brief flashes of another view during category changes after successful automated verification at 6064d82. Track the fix in navigation-stability; browser reproduction and acceptance remain required.

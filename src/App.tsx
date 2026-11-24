@@ -15,10 +15,10 @@ import { Changes,RecordEvidence } from './DeliveryEvidence';
 import LocalVerification from './LocalVerification';
 import { deliveryLabel,type GitHistory } from '../shared/delivery';
 import WorkspaceOverview from './WorkspaceOverview';
-import { destinationsFor,type DestinationMode } from '../shared/navigation';
-const Knowledge=lazy(()=>import('./Knowledge').then(module=>({default:module.Knowledge})));
+import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,type DestinationMode } from '../shared/navigation';
+import { Knowledge } from './Knowledge';
 const SlideView=lazy(()=>import('./SlideView'));
-import { defaultFilters,selectRecords,modes,type Filters,type SavedView,type ViewInput } from '../shared/views';
+import { selectRecords,modes,type Filters,type SavedView,type ViewInput } from '../shared/views';
 
 const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen}] as const;
 type View = DestinationMode;
@@ -80,8 +80,11 @@ export default function App(){
 function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;projects:ProjectInfo[];onProjectChange:(id:string)=>void}) {
   const projectId=project.id;
   const [busy,setBusy]=useState(false);
-  const [destinationId,setDestinationId]=useState('overview'),[expanded,setExpanded]=useState(false),[showSaved,setShowSaved]=useState(false);
   const destinations=destinationsFor(project);
+  const [navigation,setNavigation]=useState(()=>navigationFor(destinations[0]));
+  const {destinationId,view,filters,savedView}=navigation;
+  const {type:filter,search,status:statusFilter,priority:priorityFilter,sort}=filters;
+  const [expanded,setExpanded]=useState(false),[showSaved,setShowSaved]=useState(false);
   const destination=destinations.find(d=>d.id===destinationId)||destinations[0];
   const qc=useQueryClient();
   const query=useQuery({queryKey:['records',projectId],queryFn:()=>api.list(projectId),refetchInterval:2500});
@@ -89,21 +92,20 @@ function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;proje
   const historyQuery=useQuery({queryKey:['changes',projectId],queryFn:()=>api.changes(projectId),enabled:project.storage==='repository',refetchInterval:20000,staleTime:10000,retry:false});
   const history=historyQuery.data;
   const refreshHistory=()=>{void historyQuery.refetch();};
-  const [view,setView]=useState<View>('Overview'),[filter,setFilter]=useState<Filters['type']>('All records'),[search,setSearch]=useState(''),[selected,setSelected]=useState<string|null>(null),[slide,setSlide]=useState(0),[creating,setCreating]=useState(false),[newTitle,setNewTitle]=useState(''),[newType,setNewType]=useState<Editable['type']>('Idea');
-  const [statusFilter,setStatusFilter]=useState<Filters['status']>('Any status'),[priorityFilter,setPriorityFilter]=useState<Filters['priority']>('Any priority'),[sort,setSort]=useState<Filters['sort']>('Title'),[savedView,setSavedView]=useState<SavedView|null>(null);
-  const filters:Filters={type:filter,search,status:statusFilter,priority:priorityFilter,sort};
+  const [selected,setSelected]=useState<string|null>(null),[slide,setSlide]=useState(0),[creating,setCreating]=useState(false),[newTitle,setNewTitle]=useState(''),[newType,setNewType]=useState<Editable['type']>('Idea');
+  const changeFilter=<K extends keyof Filters>(key:K,value:Filters[K])=>{setNavigation(n=>({...n,filters:{...n.filters,[key]:value}}));setSlide(0);};
   const visible=selectRecords(records,filters);
   const currentView:Omit<ViewInput,'title'>|null=modes.includes(view as typeof modes[number])?{mode:view as typeof modes[number],filters}:null;
   const viewModified=!!savedView&&!!currentView&&(savedView.mode!==currentView.mode||Object.keys(filters).some(key=>filters[key as keyof Filters]!==savedView.filters[key as keyof Filters]));
-  const applySaved=(v:SavedView)=>{setExpanded(false);setDestinationId('library');setShowSaved(true);setSavedView(v);setView(v.mode);setFilter(v.filters.type);setSearch(v.filters.search);setStatusFilter(v.filters.status);setPriorityFilter(v.filters.priority);setSort(v.filters.sort);setSlide(0);};
-  const clearSaved=()=>{setSavedView(null);setFilter(destination.type);setSearch('');setStatusFilter(defaultFilters.status);setPriorityFilter(defaultFilters.priority);setSort(defaultFilters.sort);setSlide(0);};
-  const navigate=(id:string)=>{const next=destinations.find(d=>d.id===id);if(!next)return;setExpanded(false);setDestinationId(next.id);setSavedView(null);setView(next.mode);setFilter(next.type);setSearch('');setStatusFilter(defaultFilters.status);setPriorityFilter(defaultFilters.priority);setSort(next.id==='work'?'Priority':'Title');setSlide(0);setShowSaved(false);if(next.type!=='All records')setNewType(next.type);};
+  const applySaved=(v:SavedView)=>{setExpanded(false);setNavigation(navigationForSaved(v));setShowSaved(true);setSlide(0);};
+  const clearSaved=()=>{setNavigation(n=>resetNavigationFilters(n,destination));setSlide(0);};
+  const navigate=(id:string)=>{const next=destinations.find(d=>d.id===id);if(!next)return;setExpanded(false);setNavigation(navigationFor(next));setSlide(0);setShowSaved(false);if(next.type!=='All records')setNewType(next.type);};
   const record=records.find(r=>r.id===selected);
   const active=visible[Math.min(slide,Math.max(0,visible.length-1))];
   useEffect(()=>{setSlide(n=>Math.min(n,Math.max(0,visible.length-1)));},[visible.length]);
   const create=useMutation({mutationFn:()=>api.create(projectId,newTitle,newType),onSuccess:r=>{void qc.invalidateQueries({queryKey:['records',projectId]});setSelected(r.id);setCreating(false);setNewTitle('');}});
   const select=(id:string)=>{if(selected===id)return;if(busy){window.alert('Save or close the current record before switching.');return;}setSelected(id);};
-  const changeView=(v:View)=>{setView(v);setSlide(0);};
+  const changeView=(v:View)=>{setNavigation(n=>navigationMode(n,destination,v));setSlide(0);};
   const submit=(e:FormEvent)=>{e.preventDefault();if(!busy)create.mutate();};
   const findings=auditRecords(records);
   const projectSwitchBlocked=busy||create.isPending||creating;
@@ -122,14 +124,14 @@ function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;proje
     <main className="main"><header className="topbar"><div className="breadcrumb">Workspace <ChevronRight size={13}/> <strong>{destination.label}</strong></div><span className="disk-state"><span className="local-dot"/>{query.isError?'Offline / error':'Local project'}</span><button className="primary" disabled={busy} onClick={()=>{if(destination.type!=='All records')setNewType(destination.type);setCreating(v=>!v);}}><Plus size={16}/> {destination.type==='All records'?'New record':'New '+destination.type.toLowerCase()}</button></header>
       <div className="workspace-content"><div className="page-heading"><div><div className="eyebrow">{project.title} / {destination.group}</div><h1>{savedView?.title||destination.label}</h1><p>{viewModified?'Saved view modified — update to persist changes.':destination.description}</p></div>{currentView&&<div className="summary"><strong>{visible.length}</strong><span>RECORDS</span></div>}</div>
       {creating&&<form className="create-form" onSubmit={submit}><label>Record title<input autoFocus required maxLength={160} value={newTitle} onChange={e=>setNewTitle(e.target.value)}/></label><label>Type<select value={newType} onChange={e=>setNewType(e.target.value as Editable['type'])}>{types.map(t=><option key={t}>{t}</option>)}</select></label><button className="primary" disabled={create.isPending}>Create</button><button className="secondary" type="button" onClick={()=>setCreating(false)}>Cancel</button>{create.error&&<span role="alert">{create.error.message}</span>}</form>}
-      {(currentView||destinationId==='quality')&&<div className="toolbar"><div className="view-tabs" aria-label="View mode">{views.filter(v=>destination.modes.includes(v.name)).map(({name,icon:Icon})=><button key={name} className={view===name?'active':''} aria-pressed={view===name} onClick={()=>changeView(name)}><Icon size={16}/>{name}</button>)}</div>{currentView&&<label className="search"><Search size={16}/><input aria-label="Search records" placeholder="Find anything…" maxLength={300} value={search} onChange={e=>{setSearch(e.target.value);setSlide(0);}}/></label>}</div>}
-      {currentView&&<div className="filter-row">{destinationId==='library'&&<label>Collection<select value={filter} onChange={e=>{setFilter(e.target.value as Filters['type']);setSlide(0);}}>{['All records',...types].map(t=><option key={t}>{t}</option>)}</select></label>}<label>Status<select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value as Filters['status']);setSlide(0);}}>{['Any status',...statuses].map(s=><option key={s}>{s}</option>)}</select></label><label>Priority<select value={priorityFilter} onChange={e=>{setPriorityFilter(e.target.value as Filters['priority']);setSlide(0);}}>{['Any priority',...priorities].map(s=><option key={s}>{s}</option>)}</select></label><label>Sort<select value={sort} onChange={e=>{setSort(e.target.value as Filters['sort']);setSlide(0);}}>{['Title','Priority','Status'].map(s=><option key={s}>{s}</option>)}</select></label><button className="secondary" onClick={clearSaved}>Reset filters</button></div>}
+      {(currentView||destinationId==='quality')&&<div className="toolbar"><div className="view-tabs" aria-label="View mode">{destination.modes.flatMap(mode=>views.filter(v=>v.name===mode)).map(({name,icon:Icon})=><button key={name} className={view===name?'active':''} aria-pressed={view===name} onClick={()=>changeView(name)}><Icon size={16}/>{name}</button>)}</div>{currentView&&<label className="search"><Search size={16}/><input aria-label="Search records" placeholder="Find anything…" maxLength={300} value={search} onChange={e=>{changeFilter('search',e.target.value);}}/></label>}</div>}
+      {currentView&&<div className="filter-row">{destinationId==='library'&&<label>Collection<select value={filter} onChange={e=>{changeFilter('type',e.target.value as Filters['type']);}}>{['All records',...types].map(t=><option key={t}>{t}</option>)}</select></label>}<label>Status<select value={statusFilter} onChange={e=>{changeFilter('status',e.target.value as Filters['status']);}}>{['Any status',...statuses].map(s=><option key={s}>{s}</option>)}</select></label><label>Priority<select value={priorityFilter} onChange={e=>{changeFilter('priority',e.target.value as Filters['priority']);}}>{['Any priority',...priorities].map(s=><option key={s}>{s}</option>)}</select></label><label>Sort<select value={sort} onChange={e=>{changeFilter('sort',e.target.value as Filters['sort']);}}>{['Title','Priority','Status'].map(s=><option key={s}>{s}</option>)}</select></label><button className="secondary" onClick={clearSaved}>Reset filters</button></div>}
       {query.isPending&&<div className="empty">Opening your workspace…</div>}
       {query.error&&<div className="warning" role="alert"><AlertTriangle size={16}/> {query.error.message}</div>}
       {!!query.data?.errors.length&&<div className="warning" role="alert">{query.data.errors.map(e=><div key={e.file}>{e.file}: {e.message}</div>)}</div>}
       {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Changes','Wiki','Relationships'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
       {view==='Overview'&&!query.isPending&&<WorkspaceOverview project={project} records={records} findings={findings.length} incomplete={!!query.error||!!query.data?.errors.length} history={history} historyError={historyQuery.isError} onSelect={select} onNavigate={navigate}/>}
-      {(view==='Wiki'||view==='Relationships')&&<Suspense fallback={<div className="empty" role="status">Loading knowledge view…</div>}><Knowledge key={view} mode={view} visible={visible} records={records} onEdit={select}/></Suspense>}
+      {(view==='Wiki'||view==='Relationships')&&<Knowledge key={destinationId+':'+(savedView?.id||'default')+':'+view} mode={view} visible={visible} records={records} onEdit={select}/>}
       {view==='Changes'&&<Changes history={history} loading={historyQuery.isFetching} error={historyQuery.isError} onRefresh={refreshHistory} records={records} onSelect={select}/>}
       {view==='Repository'&&<Suspense fallback={<div className="empty" role="status">Loading repository view…</div>}><Repository projectId={projectId}/></Suspense>}
       {view==='Audit'&&project.storage==='repository'&&<LocalVerification projectId={projectId} history={historyQuery.isError?undefined:history}/>}

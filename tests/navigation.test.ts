@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { destinationsFor,overviewFor } from '../shared/navigation';
+import { destinationsFor,overviewFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters } from '../shared/navigation';
 import { recordSchema,type ProjectRecord,type Editable } from '../shared/records';
+import type { SavedView } from '../shared/views';
 import type { ProjectInfo } from '../shared/projects';
 const project:ProjectInfo={id:'test',title:'Test',profiles:['core','product','project'],storage:'repository'};
 test('navigation is profile-aware and destination modes are contextual',()=>{
@@ -28,4 +29,24 @@ test('overview derives actual status and open blocker tags without claiming comp
   assert.equal(result.readyTasks,1);
   assert.equal(result.totalTasks,4);
   assert.equal(overviewFor([]).totalTasks,0);
+});
+
+test('navigation changes destination, view and filters together without an intermediate table state',()=>{
+  const nav=destinationsFor(project);
+  const work=nav.find(d=>d.id==='work')!,requirements=nav.find(d=>d.id==='requirements')!,docs=nav.find(d=>d.id==='documentation')!;
+  const before=navigationFor(work);
+  assert.equal(before.view,'Table');assert.equal(before.filters.type,'Task');
+  const next=navigationFor(requirements);
+  assert.equal(next.destinationId,'requirements');assert.equal(next.view,'Relationships');assert.equal(next.filters.type,'Requirement');
+  assert.equal(requirements.modes[0],next.view);
+  assert.equal(navigationMode(next,requirements,'Board'),next);
+  assert.equal(navigationMode(next,requirements,'Table').view,'Table');
+  assert.equal(navigationFor(docs).view,'Wiki');
+  assert.equal(navigationFor(docs).filters.type,'Document');
+  const saved:SavedView={id:'custom',title:'Custom',version:1,mode:'Gallery',filters:{...before.filters,type:'Asset',search:'example'},revision:'a'.repeat(64)};
+  const opened=navigationForSaved(saved);
+  assert.equal(opened.destinationId,'library');assert.equal(opened.view,'Gallery');assert.equal(opened.filters.type,'Asset');
+  const reset=resetNavigationFilters(opened,nav.find(d=>d.id==='library')!);
+  assert.equal(reset.savedView,null);assert.equal(reset.filters.type,'All records');assert.equal(reset.filters.search,'');
+  assert.equal(reset.view,'Gallery');
 });
