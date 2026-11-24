@@ -1,12 +1,15 @@
 import { z } from 'zod';
 import { idSchema, priorities, statuses, types, type ProjectRecord } from './records';
 export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships'] as const;
+export const sortFields=['Title','Priority','Status','Type','ID'] as const;
+export const sortDirections=['Ascending','Descending'] as const;
 export const filtersSchema=z.object({
   type:z.enum(['All records',...types]),
   status:z.enum(['Any status',...statuses]),
   priority:z.enum(['Any priority',...priorities]),
   search:z.string().max(300),
-  sort:z.enum(['Title','Priority','Status'])
+  sort:z.enum(sortFields),
+  direction:z.enum(sortDirections).optional()
 }).strict();
 export const viewInputSchema=z.object({title:z.string().trim().min(1).max(80),mode:z.enum(modes),filters:filtersSchema}).strict();
 export const viewSchema=viewInputSchema.extend({id:idSchema,version:z.literal(1)}).strict();
@@ -16,15 +19,26 @@ export type ViewDefinition=z.infer<typeof viewSchema>;
 export type SavedView=ViewDefinition & {revision:string};
 export type ViewList={views:SavedView[];errors:{file:string;message:string}[]};
 export const defaultFilters:Filters={type:'All records',status:'Any status',priority:'Any priority',search:'',sort:'Title'};
+// Old version-1 views retain their original ordering when direction is absent.
+export function sortDirection(filters:Pick<Filters,'sort'|'direction'>){return filters.direction??(filters.sort==='Priority'?'Descending':'Ascending');}
+export function sortBy(filters:Filters,sort:Filters['sort']):Filters{return {...filters,sort,direction:sort===filters.sort?(sortDirection(filters)==='Ascending'?'Descending':'Ascending'):(sort==='Priority'?'Descending':'Ascending')};}
+function matchesSearch(record:ProjectRecord,terms:string[]){
+  if(!terms.length)return true;
+  const text=[record.id,record.title,record.type,record.body,...record.tags].join(' ').toLowerCase();
+  return terms.every(term=>text.includes(term));
+}
 export function selectRecords(records:ProjectRecord[],filters:Filters){
-  const query=filters.search.trim().toLowerCase();
-  const rank={High:0,Normal:1,Low:2};
+  const query=filters.search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const direction=sortDirection(filters)==='Ascending'?1:-1;
   return records.filter(r=>
     (filters.type==='All records'||r.type===filters.type)&&
     (filters.status==='Any status'||r.status===filters.status)&&
     (filters.priority==='Any priority'||r.priority===filters.priority)&&
-    (!query||[r.id,r.title,r.type,r.body,...r.tags].join(' ').toLowerCase().includes(query))
-  ).sort((a,b)=>(filters.sort==='Priority'?rank[a.priority]-rank[b.priority]:filters.sort==='Status'?statuses.indexOf(a.status)-statuses.indexOf(b.status):0)||a.title.localeCompare(b.title)||a.id.localeCompare(b.id));
+    matchesSearch(r,query)
+  ).sort((a,b)=>{
+    const primary=filters.sort==='Priority'?priorities.indexOf(a.priority)-priorities.indexOf(b.priority):filters.sort==='Status'?statuses.indexOf(a.status)-statuses.indexOf(b.status):filters.sort==='Type'?a.type.localeCompare(b.type):filters.sort==='ID'?a.id.localeCompare(b.id):a.title.localeCompare(b.title);
+    return direction*primary||a.title.localeCompare(b.title)||a.id.localeCompare(b.id);
+  });
 }
 // Keep the existing projection import path available.
 export { relationshipsFor } from './relationships';

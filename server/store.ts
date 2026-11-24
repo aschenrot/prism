@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readdir, readFile, lstat, realpath, rename, unlink, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { mkdir, readdir, readFile, lstat, realpath, rename, unlink, writeFile, link, rmdir } from 'node:fs/promises';
+import { join, resolve, dirname } from 'node:path';
 import { parse, stringify } from 'yaml';
-import { idSchema, metadataSchema, recordSchema, editableSchema, type Editable, type ProjectRecord, type RecordList } from '../shared/records';
+import { idSchema, metadataSchema, recordSchema, editableSchema, type Editable, type ProjectRecord, type RecordList, type TrashList } from '../shared/records';
 
 export class ConflictError extends Error {}
 export class MissingError extends Error {}
@@ -21,8 +21,8 @@ export class RecordStore {
     this.queue = task.then(() => undefined, () => undefined);
     return task;
   }
-  async get(id: string): Promise<ProjectRecord> {
-    const path = this.path(id);
+  async get(id: string): Promise<ProjectRecord> {return this.readAt(id,this.path(id));}
+  private async readAt(id:string,path:string):Promise<ProjectRecord>{
     let raw: string;
     try {
       if (!(await lstat(path)).isFile()) throw new Error('Record must be a regular file');
@@ -46,6 +46,63 @@ export class RecordStore {
       catch (e) { errors.push({file, message: e instanceof Error ? e.message : 'Invalid record'}); }
     }
     return { records, errors };
+  }
+  private async trashDirectory(create=false){
+    const dir=join(dirname(this.dir),'trash');
+    if(create)await mkdir(dir).catch(e=>{if((e as NodeJS.ErrnoException).code!=='EEXIST')throw e;});
+    try{if(!(await lstat(dir)).isDirectory())throw new Error('Trash must be a real directory');}
+    catch(e){if(!create&&(e as NodeJS.ErrnoException).code==='ENOENT')return null;throw e;}
+    return dir;
+  }
+  private async trashEntry(id:string){
+    const dir=await this.trashDirectory();
+    if(!dir)throw new MissingError('Trash entry not found');
+    const entry=join(dir,idSchema.parse(id));
+    try{if(!(await lstat(entry)).isDirectory())throw new Error('Trash entry must be a real directory');}
+    catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')throw new MissingError('Trash entry not found');throw e;}
+    return {entry,path:join(entry,id+'.md')};
+  }
+  async listTrash():Promise<TrashList>{
+    const records:ProjectRecord[]=[],errors:TrashList['errors']=[];
+    const dir=await this.trashDirectory();
+    if(!dir)return {records,errors};
+    for(const id of (await readdir(dir)).sort()){
+      try{const {path}=await this.trashEntry(id);records.push(await this.readAt(id,path));}
+      catch(e){errors.push({file:id,message:e instanceof Error?e.message:'Invalid trash entry'});}
+    }
+    return {records,errors};
+  }
+  moveToTrash(id:string,revision:string){
+    return this.serialize(async()=>{
+      const current=await this.get(id);
+      if(current.revision!==revision)throw new ConflictError('Record changed on disk. Reopen it before moving to trash.');
+      const dir=await this.trashDirectory(true);
+      if(!dir)throw new Error('Trash directory unavailable');
+      const entry=join(dir,idSchema.parse(id)),target=join(entry,id+'.md');
+      // Exclusive directory creation prevents overwriting an earlier trashed record.
+      try{await mkdir(entry);}catch(e){if((e as NodeJS.ErrnoException).code==='EEXIST')throw new ConflictError('A trash entry already exists for this ID; resolve it before deleting.');throw e;}
+      try{await rename(this.path(id),target);}
+      catch(e){await rmdir(entry).catch(()=>undefined);throw e;}
+      const moved=await this.readAt(id,target);
+      // External processes cannot be locked by the server queue. Even if they raced the
+      // move, the original bytes remain in trash; do not claim the expected revision moved.
+      if(moved.revision!==revision)throw new ConflictError('The record changed during the move. Its bytes are preserved in Trash; inspect or restore it.');
+      return moved;
+    });
+  }
+  restoreTrash(id:string,revision:string){
+    return this.serialize(async()=>{
+      const {entry,path}=await this.trashEntry(id),record=await this.readAt(id,path);
+      if(record.revision!==revision)throw new ConflictError('Trash entry changed. Refresh before restoring.');
+      // Hard link creation is exclusive: an existing canonical file is never replaced.
+      // If the filesystem lacks hard-link support, fail safely and retain trash.
+      try{await link(path,this.path(id));}
+      catch(e){if((e as NodeJS.ErrnoException).code==='EEXIST')throw new ConflictError('A record with this ID already exists. Restore would overwrite it.');throw e;}
+      // If cleanup fails, both names remain; the data is still recoverable.
+      try{await unlink(path);await rmdir(entry);}
+      catch{throw new ConflictError('Record restored but trash cleanup did not complete. Inspect the record and Trash; no data was discarded.');}
+      return this.get(id);
+    });
   }
   private async persist(record: unknown) {
     const {body, ...metadata} = recordSchema.parse(record);

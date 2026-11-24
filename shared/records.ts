@@ -30,4 +30,6 @@ export const updateSchema = z.object({ expectedRevision: z.string().regex(/^[a-f
 export const createSchema = z.object({title: z.string().trim().min(1).max(160), type:z.enum(types)}).strict();
 export type Editable = z.infer<typeof editableSchema>;
 export type ProjectRecord = z.infer<typeof recordSchema> & { revision: string };
+// Trash preserves the original record and revision; no permanent deletion API.
+export type TrashList = { records: ProjectRecord[]; errors: { file: string; message: string }[] };
 export type RecordList = { records: ProjectRecord[]; errors: { file: string; message: string }[] };

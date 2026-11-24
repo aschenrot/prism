@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join,resolve } from 'node:path';
 import { ViewStore } from '../server/views';
 import { RecordStore,ConflictError } from '../server/store';
-import { defaultFilters,selectRecords,relationshipsFor } from '../shared/views';
+import { defaultFilters,filtersSchema,selectRecords,sortBy,sortDirection,relationshipsFor } from '../shared/views';
 test('saved view persistence, revision conflict, deletion and malformed file reporting',async()=>{
   const root=await mkdtemp(join(tmpdir(),'prism-view-'));
   try{
@@ -36,4 +36,8 @@ test('Emberfall view definitions and relationship projections',async()=>{
   assert.ok(links.outgoing.some(r=>r.record?.id==='collection-test'));
   const sorted=selectRecords(records,{...defaultFilters,priority:'High',sort:'Priority'});
   assert.ok(sorted.length>0&&sorted.every(r=>r.priority==='High'));
+});
+
+test('legacy priority sorts remain high first; direction and column toggles are deterministic',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'prism-sort-'));try{const store=await RecordStore.open(root);const a=await store.create('Alpha','Task'),b=await store.create('Beta','Task');const records=[{...a,priority:'Low' as const},{...b,priority:'High' as const}];const legacy=filtersSchema.parse({...defaultFilters,sort:'Priority'});assert.equal(sortDirection(legacy),'Descending');assert.deepEqual(selectRecords(records,legacy).map(r=>r.title),['Beta','Alpha']);const ascending=sortBy(legacy,'Priority');assert.equal(ascending.direction,'Ascending');assert.deepEqual(selectRecords(records,ascending).map(r=>r.title),['Alpha','Beta']);assert.deepEqual(selectRecords(records,{...defaultFilters,sort:'Title',direction:'Descending'}).map(r=>r.title),['Beta','Alpha']);assert.equal(filtersSchema.safeParse({...legacy,direction:'wrong'}).success,false);const views=await ViewStore.open(root);const saved=await views.create({title:'Ascending priority',mode:'Table',filters:ascending});assert.equal((await views.get(saved.id)).filters.direction,'Ascending');}finally{await rm(root,{recursive:true,force:true});}
 });

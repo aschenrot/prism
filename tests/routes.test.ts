@@ -9,7 +9,7 @@ const project:ProjectInfo={id:'prism',title:'Prism',storage:'repository',profile
 const nav=destinationsFor(project);
 const work=nav.find(d=>d.id==='work')!,library=nav.find(d=>d.id==='library')!,requirements=nav.find(d=>d.id==='requirements')!;
 test('stable collection, record and saved-view routes round trip; malformed addresses are rejected',()=>{
-  for(const route of [collectionRoute('prism'),collectionRoute('prism','work'),recordRoute('prism','draft-recovery'),savedRoute('prism','10-acceptance')])assert.deepEqual(parseRoute(routeHash(route)),route);
+  for(const route of [collectionRoute('prism'),collectionRoute('prism','work'),collectionRoute('prism','trash'),recordRoute('prism','draft-recovery'),savedRoute('prism','10-acceptance')])assert.deepEqual(parseRoute(routeHash(route)),route);
   for(const invalid of ['','#/projects/prism','#/projects/prism/records','#/projects/prism/records/a%2Fb','#/projects/prism/records/..','#/projects/%ZZ/work','#/projects/prism/saved/a/extra','#/projects/PRISM/work'])assert.equal(parseRoute(invalid),null);
 });
 test('record breadcrumbs derive the available category without changing record identity',()=>{
@@ -22,9 +22,9 @@ test('record breadcrumbs derive the available category without changing record i
 });
 test('history restores validated view and filters independently of new preferences',()=>{
   const original=navigationFor(requirements,'Wiki');
-  const context={...contextFor(original),filters:{...original.filters,search:'recovery',priority:'High' as const},focus:'one',slide:2};
+  const context={...contextFor(original),filters:{...original.filters,search:'recovery',priority:'High' as const,direction:'Descending' as const},focus:'one',slide:2};
   const restored=restoreCollection(requirements,'Table',context);
-  assert.equal(restored.view,'Wiki');assert.equal(restored.filters.search,'recovery');assert.equal(restored.filters.priority,'High');
+  assert.equal(restored.view,'Wiki');assert.equal(restored.filters.search,'recovery');assert.equal(restored.filters.priority,'High');assert.equal(restored.filters.direction,'Descending');
   assert.equal(restoreCollection(requirements,'Table',{...context,mode:'Board'}).view,'Table');
   assert.equal(restoreCollection(requirements,'Table',{...context,filters:{...context.filters,type:'Task'}}).filters.type,'Requirement');
   assert.equal(restoreCollection(work,'Board',null).view,'Board');

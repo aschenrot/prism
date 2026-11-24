@@ -12,10 +12,12 @@ Dogfood requirements before extending the generic engine. Support custom entity 
 
 Active milestone after foundation acceptance. First priority: safe draft recovery and explicit conflict resolution.
 
-Current acceptance gate: editor-acceptance (PR #9). Complete verification and owner review before merging the draft recovery slice.
+PR #9 accepted and merged. Current increment: collection-interaction; review via collection-acceptance after local verification.
 
 Owner feedback prioritizes full record pages, functional breadcrumbs and native history before further editor features. See record-navigation; acceptance is integrated into the current PR because the existing editor review depends on this workflow.
 
 The acceptance-workspace task separates test definition from revision-bound local execution; native review and motion are now part of the current PR's acceptance scope.
 
-Owner feedback prioritizes Cancel, non-blocking notifications, local browser regression and evidence handoff. Browser-verification is the immediate blocker; collection-interaction is the next planned increment. Manual UX review is now separate from the technical regression specification.
+Owner feedback prioritizes Cancel, non-blocking notifications, local browser regression and evidence handoff. Browser-verification initial slice is accepted. Collection-interaction is active. Manual UX review is now separate from the technical regression specification.
+
+Accepted PR #9: exact tested head 0c4d03ace85ded796fb981168727e1bf7891557c; owner reported clean npm and browser gates passed, uploaded review run 60e72b29-6c93-4d5f-9533-8cf5d6504301 with U01–U05 Passed, and explicitly approved final acceptance and regular merge in chat on 2026-11-24. Merge a06c1cf662775dccdab394379d84ec3d1f215aab has the same tree as tested head. The uploaded run itself had decision open; final approval was separately recorded in PR #9. This is historical evidence of the accepted slice, not verification of subsequent changes. Remaining technical coverage gaps remain in editor-regression-spec.

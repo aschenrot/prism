@@ -59,3 +59,7 @@
 ## Reduce review burden
 - Developer-owned technical regressions belong in automated tests and a linked regression specification; keep owner acceptance focused on usability, visual quality and judgment. Never replace an unexecuted or uncovered check with a fabricated pass. Browser runs use isolated fixture registries and must refuse an existing live workspace. Require exact locked browser tooling and revision-specific execution evidence before claiming browser verification.
 - Cancel editing restores the recovery state at session entry, distinct from retaining or discarding the entire draft. Guard feedback uses non-blocking notifications; never hide failed saves or override conflicting recovery data. Copy/share only saved review evidence with an explicit owner action.
+
+## Collection operations
+- Place search and contextual creation in shared collection controls, not global navigation. Sort direction is explicit and persisted, with backward-compatible legacy defaults; stable tie-breaks. Reader focus must respect filters. Use the same revision-checked editor for direct edit actions and guard asynchronous navigation against stale entry identity.
+- Removal is reversible trash, never permanent deletion. Preserve original bytes, IDs, inbound relationships and evidence. Warn about affected links, reject unresolved local drafts, validate expected revisions and never overwrite a destination on restore. Use only disposable isolated records for destructive regression tests.
