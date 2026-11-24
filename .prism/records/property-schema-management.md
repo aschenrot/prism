@@ -18,3 +18,6 @@ Provide project-scoped schema editing with explicit revision checks, usage aware
 
 ## Administration slice
 Schemas workspace for each project: create stable-ID typed fields, edit labels, append or relabel choice options, retire/reactivate without removing stored values, and show loaded active usage counts. Existing IDs, kinds, type scopes, target scopes and choice IDs are immutable through in-app commands. No destructive deletion even at zero visible usage. Revision-bound schema writes serialized with record edits; exclusive creation and pre-publication recheck. Malformed external schema must be repaired without overwrite. Unsaved form input stays mounted on conflict and navigation is guarded; no claim of schema form reload recovery. Custom entity kinds remain a subsequent slice. Verification pending.
+
+## First hosted attempt
+Run 45454524759: unit/build/audit gates passed; new browser scenario observed successful schema creation and record property save, but could not navigate back because sidebar hard-coded group list omitted Configuration. Define canonical typed navigationGroups in shared navigation and render it in App. Preserve browser navigation assertion. Main run 45454428447 passed all four jobs after PR #16. Fresh matrix required.
