@@ -345,6 +345,9 @@ test('schema administration creates, renames and retires fields without rewritin
   await form.getByLabel('Property ID',{exact:true}).fill('budget');
   await form.getByLabel('Property label',{exact:true}).fill('Budget');
   await form.getByLabel('Value kind',{exact:true}).selectOption('number');
+  await page.getByRole('link',{name:'Work',exact:true}).click();
+  await expect(form.getByLabel('Property label',{exact:true})).toHaveValue('Budget');
+  await expect(page.getByText('Save or cancel the schema definition before navigating.',{exact:true})).toBeVisible();
   await form.getByRole('button',{name:'Save property'}).click();
   await expect(panel.getByText('Schema saved. Record values were not rewritten.')).toBeVisible();
   const schema=await (await request.get(otherPrefix+'/schema')).json();expect(schema.definition.fields[0].id).toBe('budget');

@@ -38,7 +38,7 @@ export default function SchemaAdministration({projectId,records,incomplete,onBus
  const safeReapply=!!session&&!!schema&&(session.original?JSON.stringify(schema.definition.fields.find(f=>f.id===session.original?.id))===JSON.stringify(session.original):!schema.definition.fields.some(f=>f.id===session.draft.id));
  const cancel=()=>{
   if(mutation.isPending)return;
-  if(session&&(session.original?JSON.stringify(session.draft)!==JSON.stringify(session.original):!!(session.draft.id||session.draft.label))&&!window.confirm('Discard unsaved schema changes? Record values will not change.'))return;
+  if(session&&(session.original?JSON.stringify(session.draft)!==JSON.stringify(session.original):JSON.stringify(session.draft)!==JSON.stringify({id:'',label:'',kind:'text'}))&&!window.confirm('Discard unsaved schema changes? Record values will not change.'))return;
   setSession(null);setError('');mutation.reset();
  };
  const save=(event:FormEvent)=>{
