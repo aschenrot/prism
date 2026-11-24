@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { idSchema, priorities, statuses, types, type ProjectRecord } from './records';
 import { schemaId } from './customProperties';
 import { tableColumnsSchema } from './tableColumns';
-export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships','Plan'] as const;
+import { timelineConfigSchema } from './timeline';
+export const modes = ['Board','Table','Gallery','Slides','Wiki','Relationships','Plan','Timeline'] as const;
 export const sortFields=['Title','Priority','Status','Type','ID','Created','Last edited'] as const;
 export const sortDirections=['Ascending','Descending'] as const;
 export const filtersSchema=z.object({
@@ -14,7 +15,7 @@ export const filtersSchema=z.object({
   direction:z.enum(sortDirections).optional(),
   entityType:schemaId.optional()
 }).strict();
-export const viewInputSchema=z.object({title:z.string().trim().min(1).max(80),mode:z.enum(modes),filters:filtersSchema,tableColumns:tableColumnsSchema.optional()}).strict();
+export const viewInputSchema=z.object({title:z.string().trim().min(1).max(80),mode:z.enum(modes),filters:filtersSchema,tableColumns:tableColumnsSchema.optional(),timeline:timelineConfigSchema.optional()}).strict();
 export const viewSchema=viewInputSchema.extend({id:idSchema,version:z.literal(1)}).strict();
 export type Filters=z.infer<typeof filtersSchema>;
 export type ViewInput=z.infer<typeof viewInputSchema>;

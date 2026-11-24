@@ -1,10 +1,11 @@
 import type { ProjectInfo } from './projects';
 import type { ProjectRecord } from './records';
+import type { TimelineConfig } from './timeline';
 import { defaultFilters,selectRecords,type Filters,type ViewInput,type SavedView } from './views';
 export type RecordMode=ViewInput['mode'];
 export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes'|'Trash'|'Schemas'|'Search'|'Templates'|'Inbox';
 // Global visual order is independent of each destination's recommended mode.
-export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Plan','Slides','Audit','Repository','Changes','Overview','Trash','Schemas','Search','Templates','Inbox'] as const satisfies readonly DestinationMode[];
+export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Plan','Timeline','Slides','Audit','Repository','Changes','Overview','Trash','Schemas','Search','Templates','Inbox'] as const satisfies readonly DestinationMode[];
 export const navigationGroups=['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio','Configuration'] as const;
 export type NavigationGroup=typeof navigationGroups[number];
 export type Destination={id:string;label:string;description:string;group:NavigationGroup;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
@@ -12,15 +13,15 @@ const dest=(id:string,label:string,description:string,group:NavigationGroup,mode
 const common=[
   dest('overview','Overview','Current milestones, active work and what needs attention.','Workspace','Overview'),
   dest('inbox','Inbox','Capture ideas and triage records without changing their identity.','Workspace','Inbox'),
-  dest('work','Work','Plan tasks and review their status.','Management','Table','Task',['Table','Board','Plan']),
-  dest('increments','Increments','Manage explicit delivery scope, implementation and review evidence.','Management','Table','Increment',['Table','Board','Wiki','Plan']),
-  dest('roadmap','Roadmap','Review development milestones in order.','Management','Table','Milestone',['Table','Board','Wiki','Plan']),
+  dest('work','Work','Plan tasks and review their status.','Management','Table','Task',['Table','Board','Plan','Timeline']),
+  dest('increments','Increments','Manage explicit delivery scope, implementation and review evidence.','Management','Table','Increment',['Table','Board','Wiki','Plan','Timeline']),
+  dest('roadmap','Roadmap','Review development milestones in order.','Management','Table','Milestone',['Table','Board','Wiki','Plan','Timeline']),
   dest('quality','Quality','Review test records and record integrity.','Management','Audit','Test',['Audit','Table','Wiki']),
   dest('documentation','Documentation','Read and navigate authored knowledge.','Knowledge','Wiki','Document',['Wiki','Table']),
   dest('decisions','Decisions','Review why choices were made.','Knowledge','Wiki','Decision',['Wiki','Table']),
   dest('architecture','Architecture','Explore systems and their connections.','Knowledge','Relationships','System',['Relationships','Wiki','Table']),
   dest('presentations','Presentations','Present live project information.','Studio','Slides','All records',['Slides']),
-  dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Plan','Slides','Search']),
+  dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Plan','Timeline','Slides','Search']),
   dest('trash','Trash','Restore records that were moved out of active collections.','Workspace','Trash'),
   dest('schemas','Schemas','Configure project properties without rewriting record values.','Configuration','Schemas'),
   dest('templates','Templates','Manage reusable initial record content.','Configuration','Templates')
@@ -61,7 +62,7 @@ export function overviewFor(records:ProjectRecord[]){
 }
 
 // A single navigation snapshot defines destination, view, filters and saved-view identity.
-export type NavigationState={destinationId:string;view:DestinationMode;filters:Filters;tableColumns?:string[];savedView:SavedView|null};
+export type NavigationState={destinationId:string;view:DestinationMode;filters:Filters;tableColumns?:string[];timeline?:TimelineConfig;savedView:SavedView|null};
 export function orderedModes(destination:Destination):DestinationMode[]{
   return modeOrder.filter(mode=>destination.modes.includes(mode));
 }
@@ -70,7 +71,7 @@ export function navigationFor(destination:Destination,preferred?:unknown):Naviga
   return {destinationId:destination.id,view,filters:{...defaultFilters,type:destination.type,sort:destination.id==='work'?'Priority':'Title'},savedView:null};
 }
 export function navigationForSaved(savedView:SavedView):NavigationState{
-  return {destinationId:'library',view:savedView.mode,filters:{...savedView.filters},...(savedView.tableColumns!==undefined?{tableColumns:[...savedView.tableColumns]}:{}),savedView};
+  return {destinationId:'library',view:savedView.mode,filters:{...savedView.filters},...(savedView.tableColumns!==undefined?{tableColumns:[...savedView.tableColumns]}:{}),...(savedView.timeline?{timeline:{...savedView.timeline}}:{}),savedView};
 }
 export function navigationMode(state:NavigationState,destination:Destination,view:DestinationMode):NavigationState{
   return state.destinationId===destination.id&&destination.modes.includes(view)?{...state,view}:state;

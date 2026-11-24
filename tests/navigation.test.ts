@@ -9,7 +9,7 @@ test('navigation is profile-aware and destination modes are contextual',()=>{
   const nav=destinationsFor(project);
   assert.equal(nav[0].id,'overview');
   assert.equal(nav.find(d=>d.id==='work')?.type,'Task');
-  assert.deepEqual(nav.find(d=>d.id==='roadmap')?.modes,['Table','Board','Wiki','Plan']);
+  assert.deepEqual(nav.find(d=>d.id==='roadmap')?.modes,['Table','Board','Wiki','Plan','Timeline']);
   assert.ok(nav.some(d=>d.id==='requirements'));
   assert.ok(nav.some(d=>d.id==='repository'));
   assert.ok(!nav.some(d=>d.id==='gameplay'));

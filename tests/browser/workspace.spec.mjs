@@ -548,3 +548,21 @@ test('planning uses explicit dependency directions, shows filtered prerequisites
  await expect(panel).toBeVisible();await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Plan fixture');
  expect((await recordOnDisk(request,b.id)).status).toBe('Concept');
 });
+
+test('authored timeline maps stable date fields, persists saved mapping and exposes unplotted values',async({page,request})=>{
+ const schemaPath=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'other','schema.yaml'),otherPrefix='/api/projects/'+other;
+ const definition={version:1,fields:[{id:'start-date',label:'Start date',kind:'date'},{id:'end-date',label:'End date',kind:'date'}]};
+ try{
+ await writeFile(schemaPath,JSON.stringify(definition));const schema=await (await request.get(otherPrefix+'/schema')).json();
+ const a=await create(request,'Timeline fixture range','Task',other),b=await create(request,'Timeline fixture undated','Task',other);
+ const saved=await request.put(otherPrefix+'/records/'+a.id,{data:{expectedRevision:a.revision,expectedSchemaRevision:schema.revision,changes:{...editable(a),customProperties:{'start-date':'2026-12-01','end-date':'2026-12-08'}}}});expect(saved.ok()).toBeTruthy();
+ await page.goto('/#/projects/'+other+'/work');await page.getByRole('button',{name:'Timeline',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Timeline fixture');
+ const panel=page.getByRole('region',{name:'Authored timeline'});await panel.getByLabel('Date or start field',{exact:true}).selectOption('start-date');await panel.getByLabel('End field (optional)',{exact:true}).selectOption('end-date');
+ await expect(panel.getByText('2026-12-01 – 2026-12-08',{exact:true})).toBeVisible();await expect(panel.getByRole('region',{name:'Unplotted records'}).getByRole('link',{name:b.title,exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Saved views',exact:true}).click();await page.getByRole('button',{name:'Save current view',exact:true}).click();await page.getByLabel('View name',{exact:true}).fill('Timeline fixture view');await page.getByRole('button',{name:'Save new view',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Timeline fixture view',exact:true})).toBeVisible();await page.reload();await expect(panel.getByLabel('Date or start field',{exact:true})).toHaveValue('start-date');await expect(panel.getByLabel('End field (optional)',{exact:true})).toHaveValue('end-date');
+ await writeFile(schemaPath,JSON.stringify({...definition,fields:definition.fields.map(f=>f.id==='start-date'?{...f,retired:true}:f)}));
+ await expect(panel.getByText('A selected date field is unavailable or retired. Review the mapping.',{exact:true})).toBeVisible({timeout:12000});
+ const latest=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.id===a.id);expect(latest.customProperties['start-date']).toBe('2026-12-01');
+ }finally{await unlink(schemaPath).catch(()=>{});}
+});
