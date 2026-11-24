@@ -17,7 +17,7 @@ import BrowserVerification from './BrowserVerification';
 import HostedVerification from './HostedVerification';
 import { deliveryLabel,type GitHistory } from '../shared/delivery';
 import WorkspaceOverview from './WorkspaceOverview';
-import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,type DestinationMode } from '../shared/navigation';
+import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNavigationFilters,orderedModes,navigationGroups,type DestinationMode } from '../shared/navigation';
 import { Knowledge } from './Knowledge';
 import { viewPreferences } from './viewPreferences';
 import { draftStorage } from './draftStorage';
@@ -337,7 +337,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   return <RecordCommandContext.Provider value={{duplicate:duplicateRecord,copy:target=>{void copyRecordLink(target);}}}><div className="shell workspace-shell routed-shell">
     <aside className="sidebar"><div className="brand"><div className="brand-mark"><Layers3 size={22}/></div><div>prism<span>PROJECT WORKSPACE</span></div></div>
       <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>switchProject(e.target.value)}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select></div>
-      <nav className="purpose-nav" aria-label="Project navigation">{['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio'].map(group=>{
+      <nav className="purpose-nav" aria-label="Project navigation">{navigationGroups.map(group=>{
         const items=destinations.filter(d=>d.group===group&&d.id!=='library'&&d.id!=='trash');if(!items.length)return null;
         return <div className="nav-group" key={group}>{group!=='Workspace'&&<div className="nav-label">{group}</div>}{items.map(d=>{const Icon=destinationIcons[d.id]||Database;return <RouteLink key={d.id} className={'nav-item purpose-item '+(destinationId===d.id?'active':'')} aria-current={destinationId===d.id?(route.kind==='record'?'location':'page'):undefined} href={categoryHref(d.id)} onNavigate={()=>navigate(d.id)}><Icon size={16}/><span>{d.label}</span></RouteLink>;})}</div>;
       })}<div className="nav-group library-nav"><RouteLink className={'nav-item purpose-item '+(destinationId==='library'?'active':'')} aria-current={destinationId==='library'?(route.kind==='collection'?'page':'location'):undefined} href={categoryHref('library')} onNavigate={()=>navigate('library')}><Database size={16}/><span>Data library</span></RouteLink><button className="nav-item purpose-item" aria-expanded={showSaved} onClick={()=>setShowSaved(v=>!v)}><ChevronRight size={15} className={showSaved?'expanded-chevron':''}/><span>Saved views</span></button>{showSaved&&<SavedViews projectId={projectId} current={currentView} active={savedView} onApply={applySaved} onClear={clearSaved} scope={router.entryKey} disabled={busy||creating||workPending||!!bulkTargets}/>}</div></nav>
