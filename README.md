@@ -67,3 +67,7 @@ Filter by type, status, priority and text; choose title, priority or status sort
 This is a development preview, not production-ready. There is no live multi-user collaboration, undo history, asset upload, drag-and-drop, custom schema editor, native desktop packaging or advanced motion timeline yet. Gallery artwork is generated from record metadata, not an asset browser. Git synchronization and backups are managed outside the app. Do not expose the local server to a network.
 
 Read [architecture](docs/architecture.md), [roadmap](docs/roadmap.md) and [AGENTS.md](AGENTS.md). A project license is pending owner selection.
+
+## Workspace navigation
+
+Open the project Overview for current direction, milestones, blockers and work. Use purpose-oriented sections for product, management, knowledge, engineering and game design. Data library exposes all record types and flexible visualization modes; Saved views remain available as a collapsible navigation section. Expand an opened record using the editor's expand control. These built-in navigation profiles do not yet support custom navigation definitions.

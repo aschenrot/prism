@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Layers3, LayoutGrid, Columns3, Table2, Presentation, Search, Plus, ChevronRight, ArrowUpRight, X, Sparkles, FolderOpen, Command, AlertTriangle, BookOpen, ShieldCheck, Network, FileText } from 'lucide-react';
+import { Layers3, LayoutGrid, Columns3, Table2, Presentation, Search, Plus, ChevronRight, ArrowUpRight, X, FolderOpen, Command, AlertTriangle, BookOpen, ShieldCheck, Network, FileText, Home, Target, Flag, ListChecks, Database, GitBranch, Gamepad2, MapPin, Users, Image, Maximize2, Minimize2 } from 'lucide-react';
 import { accents, editableSchema, priorities, statuses, types, type Editable, type ProjectRecord } from '../shared/records';
 import { api } from './api';
 import type { ProjectInfo } from '../shared/projects';
@@ -11,12 +11,15 @@ import { RecordLinks } from './RecordLinks';
 import RelationshipEditor from './RelationshipEditor';
 import Artwork from './Artwork';
 import Status from './Status';
+import WorkspaceOverview from './WorkspaceOverview';
+import { destinationsFor,type DestinationMode } from '../shared/navigation';
 const Knowledge=lazy(()=>import('./Knowledge').then(module=>({default:module.Knowledge})));
 const SlideView=lazy(()=>import('./SlideView'));
 import { defaultFilters,selectRecords,modes,type Filters,type SavedView,type ViewInput } from '../shared/views';
 
 const views = [{name:'Board',icon:Columns3},{name:'Table',icon:Table2},{name:'Gallery',icon:LayoutGrid},{name:'Slides',icon:Presentation},{name:'Wiki',icon:FileText},{name:'Relationships',icon:Network},{name:'Audit',icon:ShieldCheck},{name:'Repository',icon:BookOpen}] as const;
-type View = typeof views[number]['name'];
+type View = DestinationMode;
+const destinationIcons:Record<string,typeof Home>={overview:Home,strategy:Target,features:Layers3,requirements:Network,work:ListChecks,roadmap:Flag,quality:ShieldCheck,documentation:BookOpen,decisions:GitBranch,architecture:Network,repository:FileText,presentations:Presentation,library:Database,gameplay:Gamepad2,world:MapPin,characters:Users,assets:Image};
 const excerpt = (body:string) => body.trim().split('\n').find(line => line.trim() && !line.startsWith('#')) || 'No description yet.';
 function RecordCard({record,selected,onSelect,gallery=false}:{record:ProjectRecord;selected:boolean;onSelect:()=>void;gallery?:boolean}) {
   return <button className={'record-card '+(selected?'selected ':'')+(gallery?'gallery-card':'')} onClick={onSelect} aria-pressed={selected}>
@@ -24,7 +27,7 @@ function RecordCard({record,selected,onSelect,gallery=false}:{record:ProjectReco
     <h3>{record.title}</h3><p>{excerpt(record.body)}</p><div className="card-footer"><span>{record.tags[0] || record.priority+' priority'}</span>{gallery ? <Status value={record.status}/> : <span>{record.priority}</span>}</div></div>
   </button>;
 }
-function Inspector({projectId,record,records,onSelect,onClose,onBusyChange}:{projectId:string;record:ProjectRecord;records:ProjectRecord[];onSelect:(id:string)=>void;onClose:()=>void;onBusyChange:(value:boolean)=>void}) {
+function Inspector({projectId,record,records,onSelect,onClose,onBusyChange,expanded,onExpand}:{projectId:string;record:ProjectRecord;records:ProjectRecord[];onSelect:(id:string)=>void;onClose:()=>void;onBusyChange:(value:boolean)=>void;expanded:boolean;onExpand:()=>void}) {
   const qc=useQueryClient();
   const [draft,setDraft]=useState<Editable>(()=>editableSchema.parse(recordToEdit(record)));
   const [revision,setRevision]=useState(record.revision);
@@ -42,7 +45,7 @@ function Inspector({projectId,record,records,onSelect,onClose,onBusyChange}:{pro
   useEffect(()=>{onBusyChange(dirty||mutation.isPending);return()=>onBusyChange(false);},[dirty,mutation.isPending,onBusyChange]);
   useEffect(()=>{if(!dirty&&!mutation.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[dirty,mutation.isPending]);
   const close=()=>{if(!mutation.isPending&&(!dirty||window.confirm('Discard unsaved edits?')))onClose();};
-  return <aside className="inspector"><div className="inspector-top"><span>RECORD DETAILS</span><button className="icon-button" title="Close inspector" disabled={mutation.isPending} onClick={close}><X size={17}/></button></div>
+  return <aside className={"inspector"+(expanded?" expanded-inspector":"")} aria-label="Record editor"><div className="inspector-top"><span>{record.type.toUpperCase()} / RECORD DETAILS</span><div className="inspector-tools"><button type="button" className="icon-button" aria-label={expanded?"Collapse record editor":"Expand record editor"} onClick={onExpand}>{expanded?<Minimize2 size={17}/>:<Maximize2 size={17}/>}</button><button className="icon-button" title="Close inspector" disabled={mutation.isPending} aria-label="Close record editor" onClick={close}><X size={17}/></button></div></div>
     <form onSubmit={e=>{e.preventDefault();mutation.mutate();}} className="editor">
       <fieldset disabled={mutation.isPending}>
       <label>Title<input value={draft.title} maxLength={160} required onChange={e=>update('title',e.target.value)}/></label>
@@ -74,43 +77,50 @@ export default function App(){
 function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;projects:ProjectInfo[];onProjectChange:(id:string)=>void}) {
   const projectId=project.id;
   const [busy,setBusy]=useState(false);
+  const [destinationId,setDestinationId]=useState('overview'),[expanded,setExpanded]=useState(false),[showSaved,setShowSaved]=useState(false);
+  const destinations=destinationsFor(project);
+  const destination=destinations.find(d=>d.id===destinationId)||destinations[0];
   const qc=useQueryClient();
   const query=useQuery({queryKey:['records',projectId],queryFn:()=>api.list(projectId),refetchInterval:2500});
   const records=query.data?.records||[];
-  const [view,setView]=useState<View>('Board'),[filter,setFilter]=useState<Filters['type']>('All records'),[search,setSearch]=useState(''),[selected,setSelected]=useState<string|null>(null),[slide,setSlide]=useState(0),[creating,setCreating]=useState(false),[newTitle,setNewTitle]=useState(''),[newType,setNewType]=useState<Editable['type']>('Idea');
+  const [view,setView]=useState<View>('Overview'),[filter,setFilter]=useState<Filters['type']>('All records'),[search,setSearch]=useState(''),[selected,setSelected]=useState<string|null>(null),[slide,setSlide]=useState(0),[creating,setCreating]=useState(false),[newTitle,setNewTitle]=useState(''),[newType,setNewType]=useState<Editable['type']>('Idea');
   const [statusFilter,setStatusFilter]=useState<Filters['status']>('Any status'),[priorityFilter,setPriorityFilter]=useState<Filters['priority']>('Any priority'),[sort,setSort]=useState<Filters['sort']>('Title'),[savedView,setSavedView]=useState<SavedView|null>(null);
   const filters:Filters={type:filter,search,status:statusFilter,priority:priorityFilter,sort};
   const visible=selectRecords(records,filters);
   const currentView:Omit<ViewInput,'title'>|null=modes.includes(view as typeof modes[number])?{mode:view as typeof modes[number],filters}:null;
-  const viewModified=!!savedView&&!!currentView&&(savedView.mode!==currentView.mode||JSON.stringify(savedView.filters)!==JSON.stringify(filters));
-  const applySaved=(v:SavedView)=>{setSavedView(v);setView(v.mode);setFilter(v.filters.type);setSearch(v.filters.search);setStatusFilter(v.filters.status);setPriorityFilter(v.filters.priority);setSort(v.filters.sort);setSlide(0);};
-  const clearSaved=()=>{setSavedView(null);setFilter(defaultFilters.type);setSearch('');setStatusFilter(defaultFilters.status);setPriorityFilter(defaultFilters.priority);setSort(defaultFilters.sort);setSlide(0);};
+  const viewModified=!!savedView&&!!currentView&&(savedView.mode!==currentView.mode||Object.keys(filters).some(key=>filters[key as keyof Filters]!==savedView.filters[key as keyof Filters]));
+  const applySaved=(v:SavedView)=>{setExpanded(false);setDestinationId('library');setShowSaved(true);setSavedView(v);setView(v.mode);setFilter(v.filters.type);setSearch(v.filters.search);setStatusFilter(v.filters.status);setPriorityFilter(v.filters.priority);setSort(v.filters.sort);setSlide(0);};
+  const clearSaved=()=>{setSavedView(null);setFilter(destination.type);setSearch('');setStatusFilter(defaultFilters.status);setPriorityFilter(defaultFilters.priority);setSort(defaultFilters.sort);setSlide(0);};
+  const navigate=(id:string)=>{const next=destinations.find(d=>d.id===id);if(!next)return;setExpanded(false);setDestinationId(next.id);setSavedView(null);setView(next.mode);setFilter(next.type);setSearch('');setStatusFilter(defaultFilters.status);setPriorityFilter(defaultFilters.priority);setSort(next.id==='work'?'Priority':'Title');setSlide(0);setShowSaved(false);if(next.type!=='All records')setNewType(next.type);};
   const record=records.find(r=>r.id===selected);
   const active=visible[Math.min(slide,Math.max(0,visible.length-1))];
   useEffect(()=>{setSlide(n=>Math.min(n,Math.max(0,visible.length-1)));},[visible.length]);
-  const create=useMutation({mutationFn:()=>api.create(projectId,newTitle,newType),onSuccess:r=>{void qc.invalidateQueries({queryKey:['records',projectId]});setSelected(r.id);clearSaved();setCreating(false);setNewTitle('');}});
+  const create=useMutation({mutationFn:()=>api.create(projectId,newTitle,newType),onSuccess:r=>{void qc.invalidateQueries({queryKey:['records',projectId]});setSelected(r.id);setCreating(false);setNewTitle('');}});
   const select=(id:string)=>{if(selected===id)return;if(busy){window.alert('Save or close the current record before switching.');return;}setSelected(id);};
   const changeView=(v:View)=>{setView(v);setSlide(0);};
   const submit=(e:FormEvent)=>{e.preventDefault();if(!busy)create.mutate();};
   const findings=auditRecords(records);
   const switchProject=(id:string)=>{if(!busy&&!create.isPending&&!creating)onProjectChange(id);};
   useEffect(()=>{const handler=(e:KeyboardEvent)=>{if(view!=='Slides'||['INPUT','TEXTAREA','SELECT'].includes((e.target as HTMLElement)?.tagName))return;if(e.key==='ArrowRight')setSlide(n=>Math.min(n+1,Math.max(0,visible.length-1)));if(e.key==='ArrowLeft')setSlide(n=>Math.max(0,n-1));};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);},[view,visible.length]);
-  return <div className="shell">
-    <aside className="sidebar"><div className="brand"><div className="brand-mark"><Layers3 size={22}/></div><div>prism<span>WORKSPACE / 01</span></div></div>
+  return <div className={'shell workspace-shell'+(expanded&&record?' record-expanded':'')}>
+    <aside className="sidebar"><div className="brand"><div className="brand-mark"><Layers3 size={22}/></div><div>prism<span>PROJECT WORKSPACE</span></div></div>
       <label className="project-label"><FolderOpen size={17}/><div><select aria-label="Active project" value={projectId} onChange={e=>switchProject(e.target.value)} disabled={busy||create.isPending||creating}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select><small>{project.storage==='repository'?'Connected repository':'Local workspace'}</small></div></label>
-      <SavedViews projectId={projectId} current={currentView} active={savedView} onApply={applySaved} onClear={clearSaved}/>
-      <div className="nav-label">COLLECTIONS</div><nav aria-label="Collections">{(['All records',...types] as const).map(t=><button key={t} className={'nav-item '+(filter===t?'active':'')} aria-pressed={filter===t} onClick={()=>{setSavedView(null);setFilter(t);setSlide(0);}}><span>{t}</span><small>{t==='All records'?records.length:records.filter(r=>r.type===t).length}</small></button>)}</nav>
+      <nav className="purpose-nav" aria-label="Project navigation">{['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio'].map(group=>{
+        const items=destinations.filter(d=>d.group===group&&d.id!=='library');if(!items.length)return null;
+        return <div className="nav-group" key={group}>{group!=='Workspace'&&<div className="nav-label">{group}</div>}{items.map(d=>{const Icon=destinationIcons[d.id]||Database;return <button key={d.id} className={'nav-item purpose-item '+(destinationId===d.id?'active':'')} aria-current={destinationId===d.id?'page':undefined} onClick={()=>navigate(d.id)}><Icon size={16}/><span>{d.label}</span></button>;})}</div>;
+      })}<div className="nav-group library-nav"><button className={'nav-item purpose-item '+(destinationId==='library'?'active':'')} aria-current={destinationId==='library'?'page':undefined} onClick={()=>navigate('library')}><Database size={16}/><span>Data library</span></button><button className="nav-item purpose-item" aria-expanded={showSaved} onClick={()=>setShowSaved(v=>!v)}><ChevronRight size={15} className={showSaved?'expanded-chevron':''}/><span>Saved views</span></button>{showSaved&&<SavedViews projectId={projectId} current={currentView} active={savedView} onApply={applySaved} onClear={clearSaved}/>}</div></nav>
       <div className="sidebar-bottom"><span className="local-dot"/> Local-first <span>v0.1</span></div>
     </aside>
-    <main className="main"><header className="topbar"><div className="breadcrumb">Workspace <ChevronRight size={13}/> <strong>{filter}</strong></div><span className="disk-state"><span className="local-dot"/>{query.isError?'Offline / error':'Local project'}</span><button className="primary" disabled={busy} onClick={()=>setCreating(v=>!v)}><Plus size={16}/> New record</button></header>
-      <div className="workspace-content"><div className="page-heading"><div><div className="eyebrow"><Sparkles size={13}/> PROJECT KNOWLEDGE</div><h1>{savedView?.title||(filter==='All records'?'Creative overview':filter)}</h1><p>{viewModified?'Saved view modified — update to persist changes.':'One collection. Every perspective.'}</p></div><div className="summary"><strong>{String(visible.length).padStart(2,'0')}</strong><span>RECORDS</span></div></div>
+    <main className="main"><header className="topbar"><div className="breadcrumb">Workspace <ChevronRight size={13}/> <strong>{destination.label}</strong></div><span className="disk-state"><span className="local-dot"/>{query.isError?'Offline / error':'Local project'}</span><button className="primary" disabled={busy} onClick={()=>{if(destination.type!=='All records')setNewType(destination.type);setCreating(v=>!v);}}><Plus size={16}/> {destination.type==='All records'?'New record':'New '+destination.type.toLowerCase()}</button></header>
+      <div className="workspace-content"><div className="page-heading"><div><div className="eyebrow">{project.title} / {destination.group}</div><h1>{savedView?.title||destination.label}</h1><p>{viewModified?'Saved view modified — update to persist changes.':destination.description}</p></div>{currentView&&<div className="summary"><strong>{visible.length}</strong><span>RECORDS</span></div>}</div>
       {creating&&<form className="create-form" onSubmit={submit}><label>Record title<input autoFocus required maxLength={160} value={newTitle} onChange={e=>setNewTitle(e.target.value)}/></label><label>Type<select value={newType} onChange={e=>setNewType(e.target.value as Editable['type'])}>{types.map(t=><option key={t}>{t}</option>)}</select></label><button className="primary" disabled={create.isPending}>Create</button><button className="secondary" type="button" onClick={()=>setCreating(false)}>Cancel</button>{create.error&&<span role="alert">{create.error.message}</span>}</form>}
-      <div className="toolbar"><div className="view-tabs" aria-label="View mode">{views.filter(v=>v.name!=='Repository'||project.storage==='repository').map(({name,icon:Icon})=><button key={name} className={view===name?'active':''} aria-pressed={view===name} onClick={()=>changeView(name)}><Icon size={16}/>{name}</button>)}</div><label className="search"><Search size={16}/><input aria-label="Search records" placeholder="Find anything…" maxLength={300} value={search} onChange={e=>{setSearch(e.target.value);setSlide(0);}}/></label></div>
-      {currentView&&<div className="filter-row"><label>Status<select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value as Filters['status']);setSlide(0);}}>{['Any status',...statuses].map(s=><option key={s}>{s}</option>)}</select></label><label>Priority<select value={priorityFilter} onChange={e=>{setPriorityFilter(e.target.value as Filters['priority']);setSlide(0);}}>{['Any priority',...priorities].map(s=><option key={s}>{s}</option>)}</select></label><label>Sort<select value={sort} onChange={e=>{setSort(e.target.value as Filters['sort']);setSlide(0);}}>{['Title','Priority','Status'].map(s=><option key={s}>{s}</option>)}</select></label><button className="secondary" onClick={clearSaved}>Reset filters</button></div>}
+      {(currentView||destinationId==='quality')&&<div className="toolbar"><div className="view-tabs" aria-label="View mode">{views.filter(v=>destination.modes.includes(v.name)).map(({name,icon:Icon})=><button key={name} className={view===name?'active':''} aria-pressed={view===name} onClick={()=>changeView(name)}><Icon size={16}/>{name}</button>)}</div>{currentView&&<label className="search"><Search size={16}/><input aria-label="Search records" placeholder="Find anything…" maxLength={300} value={search} onChange={e=>{setSearch(e.target.value);setSlide(0);}}/></label>}</div>}
+      {currentView&&<div className="filter-row">{destinationId==='library'&&<label>Collection<select value={filter} onChange={e=>{setFilter(e.target.value as Filters['type']);setSlide(0);}}>{['All records',...types].map(t=><option key={t}>{t}</option>)}</select></label>}<label>Status<select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value as Filters['status']);setSlide(0);}}>{['Any status',...statuses].map(s=><option key={s}>{s}</option>)}</select></label><label>Priority<select value={priorityFilter} onChange={e=>{setPriorityFilter(e.target.value as Filters['priority']);setSlide(0);}}>{['Any priority',...priorities].map(s=><option key={s}>{s}</option>)}</select></label><label>Sort<select value={sort} onChange={e=>{setSort(e.target.value as Filters['sort']);setSlide(0);}}>{['Title','Priority','Status'].map(s=><option key={s}>{s}</option>)}</select></label><button className="secondary" onClick={clearSaved}>Reset filters</button></div>}
       {query.isPending&&<div className="empty">Opening your workspace…</div>}
       {query.error&&<div className="warning" role="alert"><AlertTriangle size={16}/> {query.error.message}</div>}
       {!!query.data?.errors.length&&<div className="warning" role="alert">{query.data.errors.map(e=><div key={e.file}>{e.file}: {e.message}</div>)}</div>}
-      {!query.isPending&&!visible.length&&!['Audit','Repository','Wiki','Relationships'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
+      {!query.isPending&&!visible.length&&!['Overview','Audit','Repository','Wiki','Relationships'].includes(view)&&<div className="empty"><LayoutGrid size={30}/><h2>No matching records</h2><p>Create a record or change your filters.</p></div>}
+      {view==='Overview'&&!query.isPending&&<WorkspaceOverview project={project} records={records} findings={findings.length} incomplete={!!query.error||!!query.data?.errors.length} onSelect={select} onNavigate={navigate}/>}
       {(view==='Wiki'||view==='Relationships')&&<Suspense fallback={<div className="empty" role="status">Loading knowledge view…</div>}><Knowledge key={view} mode={view} visible={visible} records={records} onEdit={select}/></Suspense>}
       {view==='Repository'&&<Suspense fallback={<div className="empty" role="status">Loading repository view…</div>}><Repository projectId={projectId}/></Suspense>}
       {view==='Audit'&&<section className="audit-panel"><div className="audit-summary"><div><span className="eyebrow">RECORDS CHECKED</span><strong>{records.length}</strong></div><div><span className="eyebrow">REVIEW FINDINGS</span><strong>{findings.length}</strong></div></div><p className="audit-description">Deterministic checks of descriptions and record links. These findings are not a code quality or release readiness score.</p>{!findings.length&&!query.isPending&&!query.error&&<p>No record-level findings.</p>}{findings.map(f=><button key={f.id} className="audit-finding" onClick={()=>select(f.recordId)}><AlertTriangle size={17}/><span><strong>{f.title}</strong><small>{f.detail}</small></span><ArrowUpRight size={14}/></button>)}</section>}
@@ -119,6 +129,6 @@ function Workspace({project,projects,onProjectChange}:{project:ProjectInfo;proje
       {!!visible.length&&view==='Table'&&<div className="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Priority</th></tr></thead><tbody>{visible.map(r=><tr key={r.id} className={selected===r.id?'selected':''}><td><button onClick={()=>select(r.id)}><span className={'dot '+r.accent}/>{r.title}</button></td><td>{r.type}</td><td><Status value={r.status}/></td><td>{r.priority}</td></tr>)}</tbody></table></div>}
       {view==='Slides'&&active&&<Suspense fallback={<div className="empty" role="status">Loading presentation…</div>}><SlideView active={active} slide={slide} count={visible.length} onPrevious={()=>setSlide(n=>Math.max(0,n-1))} onNext={()=>setSlide(n=>Math.min(n+1,visible.length-1))} onEdit={()=>select(active.id)}/></Suspense>}
       </div><footer className="footer"><span>PRISM / DEVELOPMENT PREVIEW</span><span><Command size={12}/> Records are stored as Markdown</span></footer>
-    </main>{record&&<Inspector key={record.id} projectId={projectId} record={record} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>setSelected(null)}/>}
+    </main>{record&&<Inspector key={record.id} projectId={projectId} record={record} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>{setSelected(null);setExpanded(false);}} expanded={expanded} onExpand={()=>setExpanded(v=>!v)}/>}
   </div>;
 }

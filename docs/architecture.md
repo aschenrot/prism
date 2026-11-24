@@ -40,3 +40,6 @@ View definitions are separate, versioned YAML files under the same project data 
 
 ## Self-management workspace
 The tracked .prism/projects.yaml is a portable registry with Prism's repository root as its first entry. Its records and saved views are real product knowledge, not frozen fixtures. A machine-local registry takes precedence. The read-only repository inventory supports src/, server/, shared/ and conventional documentation and test folders. Because Prism contains the examples, source browsing can include their tracked code, while their hidden data stores remain excluded and independently scoped. See docs/development-workflow.md for ownership and change conventions.
+
+## Purpose-driven interface
+The shared navigation module maps project profiles to purpose destinations with a default record filter and allowed view modes. This is a built-in configuration, not yet a user-editable navigation schema. Overview projections are derived directly from canonical records: active milestones, open tasks explicitly tagged blocker, task status counts and ordered milestone titles. Ready is an authored status, not proof of verification. Raw collections remain in Data library and saved view definitions remain independent. The same inspector supports expanded editing without remounting its draft state. No additional project data or dependencies are required.

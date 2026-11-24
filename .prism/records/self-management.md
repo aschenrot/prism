@@ -6,7 +6,7 @@ status: "In progress"
 priority: "High"
 accent: "teal"
 tags: ["roadmap","current","brief"]
-relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license","typed-link-slice"]
+relationships: ["vision","self-workspace","working-agreement","lockfile","ci-verification","acceptance-baseline","release-license","typed-link-slice","ux-navigation"]
 ---
 Current milestone. Use Prism's own repository as the primary development workspace.
 
@@ -18,3 +18,5 @@ Current milestone. Use Prism's own repository as the primary development workspa
 - Future implementation changes update their corresponding records in the same reviewed change.
 
 No release date is committed.
+
+Owner feedback: prioritize usable information presentation and navigation before expanding the feature set. See ux-navigation.
