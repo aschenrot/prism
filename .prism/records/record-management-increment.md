@@ -6,6 +6,7 @@ status: Ready
 priority: High
 accent: teal
 tags: [delivery, management]
+githubPullRequests: [{repository: aschenrot/prism, number: 11}]
 relationships:
   - kind: contains
     target: record-actions
