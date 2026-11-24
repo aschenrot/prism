@@ -2,10 +2,10 @@
 id: browser-verification
 type: Task
 title: Automate local browser regression and simplify owner acceptance
-status: In progress
+status: Ready
 priority: High
 accent: teal
-tags: [current, quality, automation, blocker]
+tags: [quality, automation]
 relationships:
   - kind: implements
     target: quality-gates
@@ -27,3 +27,6 @@ Evidence handoff: Copy review summary generates a PR-ready Markdown snapshot of 
 
 ## First browser execution and diagnostic verification
 Owner-reported diagnostic run, 2026-11-24, Git HEAD d03af8ed2e2a6c5d4a1e79a2a06d70ec06aa493d, Windows x64 Node v26.13.1, Playwright 1.65.1 Chromium: all seven browser scenarios passed in 19.4 seconds; zero failed, flaky or skipped. Build and browser exit codes 0; cleanAtStart and cleanAtEnd both false; eligible false. Report directory 9b8e2d6d-b7b2-4630-9037-7183e1ec7669. npm verification: 234 packages installed, typecheck and production build passed, 44 tests (42 passed, one failed, one expected Windows file-symlink permission skip), both audits zero vulnerabilities. Failed assertion in review-summary escaping caused by escaping the # of an already generated numeric entity. Corrected with a single-pass transformation and added regression coverage. The dirty-tree results do not establish a passing clean-revision gate. No manual UX approval supplied.
+
+## Accepted implementation scope
+Accepted PR #9: exact tested head 0c4d03ace85ded796fb981168727e1bf7891557c; owner reported clean npm and browser gates passed, uploaded review run 60e72b29-6c93-4d5f-9533-8cf5d6504301 with U01–U05 Passed, and explicitly approved final acceptance and regular merge in chat on 2026-11-24. Merge a06c1cf662775dccdab394379d84ec3d1f215aab has the same tree as tested head. The uploaded run itself had decision open; final approval was separately recorded in PR #9. This is historical evidence of the accepted slice, not verification of subsequent changes. Remaining technical coverage gaps remain in editor-regression-spec.

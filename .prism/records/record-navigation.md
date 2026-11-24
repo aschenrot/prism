@@ -2,10 +2,10 @@
 id: record-navigation
 type: Task
 title: Addressable record pages and reliable workspace navigation
-status: In progress
+status: Ready
 priority: High
 accent: teal
-tags: [current, design, usability, implementation]
+tags: [design, usability, implementation]
 relationships:
   - kind: implements
     target: ux-navigation
@@ -23,3 +23,6 @@ Acceptance: see editor-acceptance for UX review and section E of editor-regressi
 Follow-up motion: route visits use a short 160ms entrance transition, reverse direction on Back, no animation on polling/filter changes, reduced-motion support. No browser visual validation yet.
 
 Navigation guard feedback uses a dismissible floating toast instead of shifting the workspace or putting warnings in the project switcher. Back/Forward and project selection attempts use the same guard. Cancel editing restores the session-entry draft, rather than clearing previously retained work.
+
+## Accepted implementation scope
+Accepted PR #9: exact tested head 0c4d03ace85ded796fb981168727e1bf7891557c; owner reported clean npm and browser gates passed, uploaded review run 60e72b29-6c93-4d5f-9533-8cf5d6504301 with U01–U05 Passed, and explicitly approved final acceptance and regular merge in chat on 2026-11-24. Merge a06c1cf662775dccdab394379d84ec3d1f215aab has the same tree as tested head. The uploaded run itself had decision open; final approval was separately recorded in PR #9. This is historical evidence of the accepted slice, not verification of subsequent changes. Remaining technical coverage gaps remain in editor-regression-spec.

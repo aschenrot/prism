@@ -53,6 +53,9 @@ app.put('/api/projects/:projectId/records/:id', async request => {
   return projectFor(request).store.update(id,input.expectedRevision,input.changes);
 });
 const expectedRevision=z.string().regex(/^[a-f0-9]{64}$/);
+app.get('/api/projects/:projectId/trash',async request=>projectFor(request).store.listTrash());
+app.post('/api/projects/:projectId/records/:id/trash',async request=>{const id=idSchema.parse((request.params as {id:string}).id);const input=z.strictObject({expectedRevision}).parse(request.body);return projectFor(request).store.moveToTrash(id,input.expectedRevision);});
+app.post('/api/projects/:projectId/trash/:id/restore',async request=>{const id=idSchema.parse((request.params as {id:string}).id);const input=z.strictObject({expectedRevision}).parse(request.body);return projectFor(request).store.restoreTrash(id,input.expectedRevision);});
 const viewId=(request:{params:unknown})=>idSchema.parse((request.params as {id:string}).id);
 app.get('/api/projects/:projectId/views',async request=>projectFor(request).views.list());
 app.post('/api/projects/:projectId/views',async (request,reply)=>reply.code(201).send(await projectFor(request).views.create(viewInputSchema.parse(request.body))));

@@ -144,3 +144,43 @@ test('review saves and advances, restores progress and requires observations and
   const response=await request.get(prefix+'/acceptance/'+record.id);expect(response.ok()).toBeTruthy();
   const runs=(await response.json()).runs;expect(runs).toHaveLength(1);expect(runs[0].decision).toBe('changes-requested');
 });
+
+test('collection toolbar sorts both directions and opens the editor directly while retaining context',async({page,request})=>{
+  const a=await create(request,'Sort sample Alpha'),b=await create(request,'Sort sample Beta');await update(request,a,{priority:'Low'});await update(request,b,{priority:'High'});
+  await page.goto('/#/projects/'+project+'/work');
+  const search=page.getByRole('textbox',{name:'Search records'});await search.fill('Sort sample');
+  const rows=page.locator('.record-table-title');await expect(rows).toHaveText([b.title,a.title]);
+  await page.getByRole('combobox',{name:'Sort direction'}).selectOption('Ascending');await expect(rows).toHaveText([a.title,b.title]);
+  await page.getByRole('button',{name:'Title',exact:true}).click();await expect(rows).toHaveText([a.title,b.title]);await page.getByRole('button',{name:'Title',exact:true}).click();await expect(rows).toHaveText([b.title,a.title]);
+  await expect(page.locator('th[aria-sort="descending"]')).toHaveText('Title');
+  await page.getByRole('button',{name:'Edit '+a.title,exact:true}).click();await expect(title(page)).toHaveValue(a.title);
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.getByRole('button',{name:'Back',exact:true}).click();
+  await expect(search).toHaveValue('Sort sample');await expect(rows).toHaveText([b.title,a.title]);
+  await expect(page.locator('.topbar').getByRole('button',{name:'New task'})).toHaveCount(0);
+  await page.getByRole('button',{name:'New task',exact:true}).click();await expect(page.locator('.create-form select')).toBeDisabled();await expect(page.locator('.create-form select')).toHaveValue('Task');
+  await page.getByLabel('Record title').fill('Sort sample Created');await page.getByRole('button',{name:'Create',exact:true}).click();await expect(title(page)).toHaveValue('Sort sample Created');
+});
+test('wiki reader follows filters and board cards have direct edit actions',async({page,request})=>{
+  const a=await create(request,'Reader Alpha','Document'),b=await create(request,'Reader Beta','Document');
+  await page.goto('/#/projects/'+project+'/documentation');await page.getByRole('button',{name:'Wiki',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Reader');const index=page.getByRole('navigation',{name:'Knowledge index',exact:true});await index.getByRole('button',{name:/^Reader Beta\s*Document$/}).click();await expect(page.locator('.knowledge-heading h2')).toHaveText(b.title);await index.getByRole('button',{name:/^Reader Alpha\s*Document$/}).click();
+  await expect(page.locator('.knowledge-heading h2')).toHaveText(a.title);await page.getByRole('textbox',{name:'Search records'}).fill('Reader Beta');await expect(page.locator('.knowledge-heading h2')).toHaveText(b.title);
+  await page.getByRole('textbox',{name:'Search records'}).fill('No matches here');await expect(page.locator('.knowledge-heading h2')).toHaveCount(0);
+  const task=await create(request,'Board edit fixture');await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Board',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill(task.title);await page.getByRole('button',{name:'Edit '+task.title,exact:true}).click();await expect(title(page)).toHaveValue(task.title);
+});
+
+test('move to trash is reversible, keeps links and protects an existing recovery draft',async({page,request})=>{
+  const record=await create(request,'Trash browser fixture'),source=await create(request,'Linked trash source');await update(request,source,{relationships:[record.id]});
+  await open(page,record);await edit(page);await title(page).fill('Unsaved trash draft');await keep(page).click();
+  await page.getByRole('button',{name:'Move to trash',exact:true}).click();const blocked=page.getByRole('dialog',{name:'Cannot move record'});await expect(blocked).toBeVisible();await blocked.getByRole('button',{name:'Close',exact:true}).click();await expect(page.getByRole('button',{name:'Resume draft'})).toBeVisible();
+  await page.getByRole('button',{name:'Resume draft'}).click();acceptDialog(page);await page.getByRole('button',{name:'Discard draft',exact:true}).click();
+  await page.getByRole('button',{name:'Return to record',exact:true}).click();
+  await page.getByRole('button',{name:'Move to trash',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Move record to trash?'});await expect(dialog.getByText('1 linked record',{exact:true})).toBeVisible();await expect(dialog.getByText(source.title,{exact:true})).toBeVisible();await expect(dialog.getByRole('button',{name:'Cancel',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);expect(await recordOnDisk(request,record.id)).toBeTruthy();await page.getByRole('button',{name:'Move to trash',exact:true}).click();await dialog.getByRole('button',{name:'Move to trash',exact:true}).click();await expect(page).toHaveURL(/\/trash$/);
+  await expect(page.getByRole('button',{name:'Restore '+record.title})).toBeVisible();
+  expect(await recordOnDisk(request,record.id)).toBeUndefined();expect((await recordOnDisk(request,source.id)).relationships).toContain(record.id);
+  await page.getByRole('button',{name:'Restore '+record.title}).click();await expect(page.getByText('Restored '+record.title+'.',{exact:true})).toBeVisible();
+  expect((await recordOnDisk(request,record.id)).revision).toBe(record.revision);await open(page,record);
+});
+
+test('sort headers reserve their width and date sorting orders authored records',async({page,request})=>{
+ const a=await create(request,'Dates Alpha'),b=await create(request,'Dates Beta');await update(request,a,{title:'Dates Alpha edited'});await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Dates');const rows=page.locator('.record-table-title');await expect(rows).toHaveCount(2);const headers=page.locator('.table-wrap thead th');const widths=()=>headers.evaluateAll(nodes=>nodes.map(n=>{const rect=n.getBoundingClientRect();return [Math.round(rect.x*10),Math.round(rect.width*10)];}));const before=await widths();await page.getByRole('button',{name:'Title',exact:true}).click();expect(await widths()).toEqual(before);await page.getByRole('button',{name:'Title',exact:true}).click();expect(await widths()).toEqual(before);await page.getByRole('combobox',{name:'Sort by',exact:true}).selectOption('Created');await expect(page.getByRole('combobox',{name:'Sort direction'})).toHaveValue('Descending');const first=Date.parse(a.createdAt)<Date.parse(b.createdAt)?b.title:'Dates Alpha edited';await expect(rows.first()).toHaveText(first);await page.getByRole('combobox',{name:'Sort by',exact:true}).selectOption('Last edited');await expect(rows.first()).toHaveText('Dates Alpha edited');
+});

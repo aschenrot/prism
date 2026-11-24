@@ -2,9 +2,9 @@ import type { ProjectInfo } from './projects';
 import type { ProjectRecord } from './records';
 import { defaultFilters,selectRecords,type Filters,type ViewInput,type SavedView } from './views';
 export type RecordMode=ViewInput['mode'];
-export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes';
+export type DestinationMode=RecordMode|'Overview'|'Audit'|'Repository'|'Changes'|'Trash';
 // Global visual order is independent of each destination's recommended mode.
-export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Slides','Audit','Repository','Changes','Overview'] as const satisfies readonly DestinationMode[];
+export const modeOrder=['Table','Board','Gallery','Wiki','Relationships','Slides','Audit','Repository','Changes','Overview','Trash'] as const satisfies readonly DestinationMode[];
 export type Destination={id:string;label:string;description:string;group:string;mode:DestinationMode;type:Filters['type'];modes:DestinationMode[]};
 const dest=(id:string,label:string,description:string,group:string,mode:DestinationMode,type:Filters['type']='All records',modes:DestinationMode[]=[mode]):Destination=>({id,label,description,group,mode,type,modes});
 const common=[
@@ -16,7 +16,8 @@ const common=[
   dest('decisions','Decisions','Review why choices were made.','Knowledge','Wiki','Decision',['Wiki','Table']),
   dest('architecture','Architecture','Explore systems and their connections.','Knowledge','Relationships','System',['Relationships','Wiki','Table']),
   dest('presentations','Presentations','Present live project information.','Studio','Slides','All records',['Slides']),
-  dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Slides'])
+  dest('library','Data library','Explore all records and create custom views.','Workspace','Table','All records',['Table','Board','Gallery','Wiki','Relationships','Slides']),
+  dest('trash','Trash','Restore records that were moved out of active collections.','Workspace','Trash')
 ];
 export function destinationsFor(project:ProjectInfo):Destination[]{
   const result=[...common];

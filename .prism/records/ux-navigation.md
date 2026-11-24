@@ -2,10 +2,10 @@
 id: ux-navigation
 type: Feature
 title: Purpose-driven workspace navigation and overview
-status: In progress
+status: Ready
 priority: High
 accent: teal
-tags: [current, design, usability]
+tags: [design, usability]
 relationships:
   - kind: implements
     target: visual-quality
@@ -35,3 +35,6 @@ Owner requested consistent visualization tab ordering. Implement canonical relat
 Owner explicitly accepted foundation PR #1. Local verification passed at 859efb773d22544fed85567e01f4623d35f788d0 on Windows, Node 26.13.1: locked install, typecheck, 27 tests passed / one expected file-symlink permission skip, production build and both audits (zero vulnerabilities). Regular merge commit 156700abada6ec691e5fb0e7e4225cc2fffe9af0 has the same tree as the tested head. This is evidence of the accepted baseline, not verification of later editor changes.
 
 Post-foundation owner feedback identified a new navigation scope: record activation should open the main content, not a narrow editor; back/forward and breadcrumb traversal must be functional. The accepted M0 scope remains historical, while the broader feature is reopened for record-navigation in M1. No new manual acceptance claimed.
+
+## Accepted implementation scope
+Accepted PR #9: exact tested head 0c4d03ace85ded796fb981168727e1bf7891557c; owner reported clean npm and browser gates passed, uploaded review run 60e72b29-6c93-4d5f-9533-8cf5d6504301 with U01–U05 Passed, and explicitly approved final acceptance and regular merge in chat on 2026-11-24. Merge a06c1cf662775dccdab394379d84ec3d1f215aab has the same tree as tested head. The uploaded run itself had decision open; final approval was separately recorded in PR #9. This is historical evidence of the accepted slice, not verification of subsequent changes. Remaining technical coverage gaps remain in editor-regression-spec.

@@ -2,10 +2,10 @@
 id: draft-recovery
 type: Task
 title: Recover unsaved drafts and review external conflicts
-status: In progress
+status: Ready
 priority: High
 accent: teal
-tags: [current, quality, implementation]
+tags: [quality, implementation]
 relationships:
   - kind: implements
     target: editing-reliability
@@ -33,3 +33,6 @@ Current review: implementation at 742f7846e049c13dc63f026a37bd12d56ccb48e5 is in
 Navigation follow-up: canonical records now open read-only in the main workspace. Edit record or Resume draft explicitly opens the recoverable editor, and close returns to reading. Review record-navigation and the expanded editor-acceptance checklist together.
 
 Cancellation now restores the session-entry recovery checkpoint (or removes newly created recovery if none existed). Explicit Discard draft remains distinct. Failed recovery restoration leaves the current editor available unless the owner explicitly confirms leaving without changing the stored recovery. Navigation warning is a floating dismissible toast; editor data stays mounted. See browser-verification for prepared regression coverage.
+
+## Accepted implementation scope
+Accepted PR #9: exact tested head 0c4d03ace85ded796fb981168727e1bf7891557c; owner reported clean npm and browser gates passed, uploaded review run 60e72b29-6c93-4d5f-9533-8cf5d6504301 with U01–U05 Passed, and explicitly approved final acceptance and regular merge in chat on 2026-11-24. Merge a06c1cf662775dccdab394379d84ec3d1f215aab has the same tree as tested head. The uploaded run itself had decision open; final approval was separately recorded in PR #9. This is historical evidence of the accepted slice, not verification of subsequent changes. Remaining technical coverage gaps remain in editor-regression-spec.
