@@ -20,6 +20,7 @@ relationships:
   - inbox-capture
   - board-status-movement
   - dependency-planning
+  - authored-timelines
   - quality-gates
 ---
 ## Review instructions
@@ -56,3 +57,5 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] K10 — **Move board records safely** — Move a disposable task between status columns using a drag handle and the keyboard-operable Move to control. Attempt movement with a retained draft or externally changed revision. Expected: confirmed status, stable identity, no silent overwrite, clear blocking feedback, predictable focus and retained filters.
 
 - [ ] K11 — **Inspect dependencies without changing work** — Create explicit depends-on and blocks relationships, including a duplicate assertion, unresolved target and cycle. Open Plan in Work, filter and follow a prerequisite outside the collection. Expected: consistent direction, no duplicate edge, clear missing/cyclic state and unchanged authored status, with return context.
+
+- [ ] K12 — **Review authored timeline dates** — Define two date fields, author a valid range and an undated task, select the field mapping in Timeline and save/reopen the view. Retire one mapped field. Expected: accurate calendar range, explicit unplotted records, stable mapping and preserved values, no inferred schedule or automatic status changes.

@@ -15,3 +15,6 @@ First board movement slice: board-status-movement. Cross-column status commands 
 
 
 Dependency planning: see dependency-planning. A derived projection of explicit links, with direct prerequisite status and exact cycle membership. Timeline dates will use configured authored date fields rather than inferred schedules.
+
+
+Authored timelines: see authored-timelines. Explicit date property mapping, reusable saved views and no inferred schedule; automatic dependency scheduling remains outside this slice.

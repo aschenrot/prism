@@ -58,3 +58,11 @@ test('table presentation survives history and saved-view reopening without enter
  assert.deepEqual(restoreCollection(library,'Table',{...context,tableColumns:[]},saved).tableColumns,[]);
  assert.deepEqual(restoreCollection(library,'Table',{...context,tableColumns:['status','status']},saved).tableColumns,columns);
 });
+
+test('timeline mappings persist in saved views and validated history',()=>{
+ const saved:SavedView={id:'dates',title:'Dates',version:1,mode:'Timeline',filters:navigationFor(library).filters,timeline:{start:'start-date',end:'target-date'},revision:'a'.repeat(64)};
+ const state=navigationForSaved(saved),context=contextFor(state);
+ assert.deepEqual(restoreCollection(library,'Table',context,saved).timeline,saved.timeline);
+ assert.deepEqual(restoreCollection(library,'Table',{...context,timeline:{start:'bad/path'}},saved).timeline,saved.timeline);
+ assert.equal(restoreCollection(library,'Table',{...context,timeline:undefined},saved).timeline,undefined);
+});
