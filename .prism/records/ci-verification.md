@@ -42,3 +42,6 @@ PR #15 merged preserving the verified tree at 34b8c2cc8c865ece6279ada09e8bd247ff
 PR #16 integrated at 5a09cfa376e31d82350de225bb7a18efa895ee39 after full required matrix 45453922493 passed (67 unit / 19 browser each; tested checkout 92a7bdb658c28e4c34355cd24235842b693c1e11, identical tree). First run cancelled after observed accessible label regression; corrected without weakening tests. Main verification separate.
 
 Main run 45454428447 passed after PR #16. PR #17 integrated 007d4ede8d6f38185e8e07a0fa5074e33caa21f7 after full required run 45455067554 (69 unit / 20 browser each; checkout 3731e6585caad579b697969a93a3aec2e0f77279, identical tree). First run superseded after missing configuration navigation; corrected shared group contract and retained browser coverage. Main verification separate.
+
+
+Technical integration: PR #18 merged at 0bde5bbe1d183e6e8a902a917ef1fcdf60b14fe6; run 45456348459 passed all four hosted configurations, 72 unit and 21 browser scenarios per job at checkout df2540420c14fff4902519d061416829e77b085f, identical tree to proposed head 99a4fe4d672af4c0a84e5d3b2b8da5c15721da53. No failed, flaky or skipped tests; clean start/end, eligible evidence, zero reported audit vulnerabilities. Initial run 45455789198 failed an ambiguous navigation locator; fixed by selecting the intended sidebar. Human K05 acceptance remains pending.
