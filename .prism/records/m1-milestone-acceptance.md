@@ -11,6 +11,7 @@ relationships:
   - hosted-delivery-increment
   - hosted-workflow-metadata
   - hosted-pr-association
+  - hosted-reference-authoring
   - project-property-increment
   - property-schema-foundation
   - custom-entity-types
@@ -39,6 +40,8 @@ Owner-approved consolidated M1 product review. Do not execute as final until the
 - [ ] H02 — **Keep remote evidence separate** — Switch to a repository project without GitHub configuration, return to Prism, and inspect local evidence alongside hosted results. Expected: no accidental lookup or project leakage, clear unavailable state, independent local evidence and authored planning status, no automatic completion.
 
 - [ ] H03 — **Inspect scoped pull requests and jobs** — Open an increment with an authored repository-qualified PR reference, request PR metadata and associated runs, load one selected run's job details, and compare reported head and attempt. Expected: only explicit associations, independently observed status, clear partial/unavailable states, no suggestion that provider-reported head is the actual checkout or that a green job establishes record acceptance.
+
+- [ ] H04 — **Author pull request references explicitly** — Open a disposable repository Increment, add an explicit repository-qualified PR reference, save, and inspect its authored association. Change the saved references externally while the form is open. Expected: no remote lookup on save, preserved canonical metadata, stale form retained, no automatic acceptance.
 
 ## R. Record management and reliability
 - [ ] R01 — **Navigate and sort consistently** — Open record menus from Table, Board and record pages; navigate between collection and record, scroll and use keyboard controls. Sort the table in both directions. Expected: usable focus and pointer targets, menu remains anchored while visible, stable column geometry, predictable dismissal and preserved context.

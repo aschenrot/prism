@@ -5,7 +5,7 @@ import type { ProjectSchemaResult,ProjectPropertySchema } from '../shared/custom
 import type { GitHistory } from '../shared/delivery';
 import type { VerificationResult } from '../shared/verification';
 import type { BrowserVerificationResult } from '../shared/browserVerification';
-import type { HostedVerificationResult,HostedPullResult,HostedJobsResult } from '../shared/hostedVerification';
+import type { HostedVerificationResult,HostedPullResult,HostedJobsResult,PullReference } from '../shared/hostedVerification';
 import type { TemplateInput,RecordTemplate,TemplateList } from '../shared/templates';
 import type { SavedView, ViewInput, ViewList } from '../shared/views';
 import type { AcceptanceList,AcceptanceRun,StartAcceptance,UpdateAcceptance } from '../shared/acceptance';
@@ -45,6 +45,7 @@ export const api = {
   search:(project:string,query:string)=>request<ProjectSearchResult>(base(project)+'/search',json('POST',{query})),
   list:(project:string)=>request<RecordList>(base(project)+'/records'),
   capture:(project:string,title:string,body:string)=>request<ProjectRecord>(base(project)+'/inbox',json('POST',{title,body})),
+  updatePullReferences:(project:string,id:string,expectedRevision:string,references:PullReference[])=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/pull-references',json('PUT',{expectedRevision,references})),
   setInbox:(project:string,id:string,expectedRevision:string,inbox:boolean)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/inbox',json('PUT',{expectedRevision,inbox})),
   create:(project:string,title:string,type:Editable['type'],customTypeId?:string,expectedSchemaRevision?:string)=>request<ProjectRecord>(base(project)+'/records',json('POST',{title,type,customTypeId,expectedSchemaRevision})),
   duplicate:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/duplicate',json('POST',{expectedRevision})),

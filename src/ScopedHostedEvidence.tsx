@@ -3,6 +3,7 @@ import { api } from './api';
 import type { ProjectRecord } from '../shared/records';
 import { matchingPullRuns,pullRequestUrl,hostedRunUrl,type PullReference,type HostedVerificationResult } from '../shared/hostedVerification';
 import HostedJobDetails from './HostedJobDetails';
+import PullReferenceEditor from './PullReferenceEditor';
 function PullEvidence({projectId,recordId,repository,reference,observed,unavailable}:{projectId:string;recordId:string;repository?:string;reference:PullReference;observed:HostedVerificationResult|undefined;unavailable:boolean}){
  const matches=repository?.toLowerCase()===reference.repository.toLowerCase();
  const query=useQuery({queryKey:['hosted-pull',projectId,recordId,reference.repository,reference.number],queryFn:()=>api.hostedPull(projectId,recordId,reference.number),enabled:false,retry:false});
@@ -17,13 +18,14 @@ function PullEvidence({projectId,recordId,repository,reference,observed,unavaila
  {matches&&observed?.state==='available'&&<div>{runs.length?runs.map(run=><div key={run.id} className="hosted-run"><div className="hosted-run-heading"><a href={hostedRunUrl(observed.repository,run.id)} target="_blank" rel="noopener noreferrer">{run.name} · #{run.id}</a><strong>{run.status==='completed'?(run.conclusion??'No conclusion'):run.status}</strong></div><p className="overview-note">Reported head <code>{run.head.slice(0,12)}</code> · {data?.state==='available'&&data.pull.head===run.head?'Matches observed PR head':'Current PR head not established or differs'}</p><HostedJobDetails projectId={projectId} repository={observed.repository} run={run}/></div>):<p className="overview-note">No explicitly associated PR runs in this recent page. Older or unassociated runs may exist.</p>}</div>}
  </article>;
 }
-export default function ScopedHostedEvidence({projectId,repository,increment,unavailable}:{projectId:string;repository?:string;increment:ProjectRecord;unavailable:boolean}){
+export default function ScopedHostedEvidence({projectId,repository,increment,unavailable,busy,onBusyChange}:{projectId:string;repository?:string;increment:ProjectRecord;unavailable:boolean;busy:boolean;onBusyChange:(busy:boolean)=>void}){
  const refs=increment.githubPullRequests??[];
  const query=useQuery({queryKey:['hosted-verification',projectId,repository],queryFn:()=>api.hostedVerification(projectId),enabled:false,retry:false});
  const observed=!unavailable&&!query.isError&&!query.isFetching?query.data:undefined;
  const canLoad=!unavailable&&refs.some(ref=>ref.repository.toLowerCase()===repository?.toLowerCase());
  return <section className="record-reading increment-panel" aria-label="Hosted delivery evidence"><div className="overview-section-head"><div><span className="eyebrow">HOSTED DELIVERY</span><h2>Pull requests and checks</h2></div>{canLoad&&<button className="secondary" type="button" disabled={query.isFetching} onClick={()=>{void query.refetch();}}>{observed?'Refresh associated runs':'Load associated runs'}</button>}</div>
- {!refs.length?<p className="overview-note">No authored pull request references. Add repository-qualified githubPullRequests metadata to this increment's Markdown frontmatter.</p>:<>
+ <PullReferenceEditor projectId={projectId} repository={repository} increment={increment} unavailable={unavailable} busy={busy} onBusyChange={onBusyChange}/>
+ {!refs.length?<p className="overview-note">No authored pull request references. Use Edit pull request associations to add explicit repository-qualified references.</p>:<>
  {query.isFetching?<p role="status">Reading recent workflow runs…</p>:query.isError?<p role="alert">Could not load recent workflow runs.</p>:observed&&observed.state!=='available'?<p role="status">{observed.message}</p>:observed?.state==='available'?<p className="overview-note">Recent page: {observed.runs.length} of {observed.total} reported runs · Observed {new Date(observed.observedAt).toLocaleString()}</p>:null}
  {refs.map(reference=><PullEvidence key={reference.repository+':'+reference.number} projectId={projectId} recordId={increment.id} repository={repository} reference={reference} observed={observed} unavailable={unavailable}/>)}
  </>}
