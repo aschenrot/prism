@@ -1,5 +1,6 @@
 import type { Editable, ProjectRecord, RecordList } from '../shared/records';
 import type { ProjectInfo, RepositoryIndex } from '../shared/projects';
+import type { SavedView, ViewInput, ViewList } from '../shared/views';
 async function request<T>(path:string, init?:RequestInit):Promise<T> {
   const response = await fetch(path,init);
   if (!response.ok) {
@@ -11,6 +12,10 @@ async function request<T>(path:string, init?:RequestInit):Promise<T> {
 const json = (method:string, body:unknown):RequestInit => ({method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 const base=(id:string)=>'/api/projects/'+encodeURIComponent(id);
 export const api = {
+  views:(project:string)=>request<ViewList>(base(project)+'/views'),
+  createView:(project:string,view:ViewInput)=>request<SavedView>(base(project)+'/views',json('POST',view)),
+  updateView:(project:string,id:string,expectedRevision:string,view:ViewInput)=>request<SavedView>(base(project)+'/views/'+encodeURIComponent(id),json('PUT',{expectedRevision,view})),
+  removeView:(project:string,id:string,expectedRevision:string)=>request<{ok:boolean}>(base(project)+'/views/'+encodeURIComponent(id),json('DELETE',{expectedRevision})),
   projects:()=>request<ProjectInfo[]>('/api/projects'),
   list:(project:string)=>request<RecordList>(base(project)+'/records'),
   create:(project:string,title:string,type:Editable['type'])=>request<ProjectRecord>(base(project)+'/records',json('POST',{title,type})),

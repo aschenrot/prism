@@ -1,0 +1,10 @@
+version: 1
+id: release-review
+title: Release review
+mode: Table
+filters:
+  type: "All records"
+  status: "In progress"
+  priority: "Any priority"
+  search: ""
+  sort: "Priority"

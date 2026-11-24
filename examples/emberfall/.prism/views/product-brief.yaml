@@ -1,0 +1,10 @@
+version: 1
+id: product-brief
+title: Product brief
+mode: Slides
+filters:
+  type: "Feature"
+  status: "Any status"
+  priority: "Any priority"
+  search: ""
+  sort: "Title"

@@ -40,6 +40,10 @@ The project picker selects configured projects. Repository-mode records live in 
 
 Repository view previews original documentation, source and manifest files in conventional folders. It does not execute scripts or generate Rust API documentation. Audit view checks missing descriptions and unresolved/self-referential record IDs. Source previews are read-only.
 
+## Saved views and knowledge
+
+Filter by type, status, priority and text; choose title, priority or status sorting. Save the configuration to a project-scoped YAML view, reopen it, update it or delete it without deleting any records. Emberfall includes four ready-made views. Wiki renders record Markdown; Relationships exposes direct links and backlinks. Repository Markdown can be toggled between rendered and source modes. No AI or compiler is used to generate these pages.
+
 ### Implemented in this first slice
 
 - Four synchronized record views: board, table, gallery and slides; plus repository browser and record audit.

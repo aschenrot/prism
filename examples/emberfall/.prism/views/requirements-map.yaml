@@ -1,0 +1,10 @@
+version: 1
+id: requirements-map
+title: Requirements map
+mode: Relationships
+filters:
+  type: "Requirement"
+  status: "Any status"
+  priority: "Any priority"
+  search: ""
+  sort: "Title"

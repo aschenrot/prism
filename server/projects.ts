@@ -3,7 +3,8 @@ import { resolve, join } from 'node:path';
 import { parse } from 'yaml';
 import { registrySchema, type ProjectConfig, type ProjectInfo } from '../shared/projects';
 import { MissingError, RecordStore } from './store';
-export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore };
+import { ViewStore } from './views';
+export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; views:ViewStore };
 export class Projects {
   private constructor(private projects:Map<string,OpenProject>) {}
   static async open(configs:ProjectConfig[]) {
@@ -20,7 +21,7 @@ export class Projects {
         if(!(await lstat(data)).isDirectory())throw new Error('Project data directory must be a real directory');
       }
       const {root:_,...info}=config;
-      result.set(info.id,{info,root,store:await RecordStore.open(data)});
+      result.set(info.id,{info,root,store:await RecordStore.open(data),views:await ViewStore.open(data)});
     }
     return new Projects(result);
   }

@@ -20,6 +20,10 @@ npm run dev
 
 Select Emberfall and explore Board, Table, Gallery, Slides, Repository and Audit. The example includes a second standalone project to test switching and isolation.
 
+### Saved views and knowledge evaluation
+
+Emberfall includes Release review, Product brief, Design wiki and Requirements map. Open each preset, change filters, save a new named view and restart Prism to check persistence. Update or delete a disposable view and confirm records are unchanged. In Requirements map, follow a link and a backlink; edit a relationship in the inspector and confirm both directions refresh. In Repository, toggle a Markdown file between rendered and source preview.
+
 ### Suggested evaluation
 1. Open the Feature record "Recover the lost embers" in Board; change its status and save.
 2. Switch to Table and Slides and confirm the same record has the new status.

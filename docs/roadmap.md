@@ -12,8 +12,9 @@ Prism is a local-first repository-native knowledge and project workspace. One au
 - [ ] Native project picker/registration with explicit filesystem grants.
 
 ## P1 — Knowledge and management
-- Configurable JSON Schema entities and typed relationships, backlinks, cross-record integrity.
-- Universal inbox, templates, saved views, global search and rebuildable SQLite/FTS5 index.
+- [x] Saved views with status/priority/type filters, sorting, editable links and computed backlinks; record Wiki and Relationships views.
+- Configurable JSON Schema entities and typed relationships, cross-record integrity.
+- Universal inbox, templates, global search and rebuildable SQLite/FTS5 index.
 - Product vision, research, objectives, requirements, features, milestones, risks and decisions.
 - Dependency-aware tasks, roadmap/timeline, prioritization, traceability matrix, GitHub issues ownership policy.
 - Acceptance: a requirement linked to an objective and task is editable once and changes all views.
