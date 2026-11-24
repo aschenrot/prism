@@ -21,6 +21,11 @@ export function freshDraft(r:ProjectRecord):EditorDraft{
 }
 function equal(a:unknown,b:unknown):boolean{return JSON.stringify(a)===JSON.stringify(b);}
 export function isDirty(d:EditorDraft){return editableFields.some(key=>!equal(d.base[key],d.draft[key]));}
+// Cancel rolls back this editing session, not a draft that existed before it began.
+// Ignore timestamps; the original base matters if a conflict was resolved in this session.
+export function changedSinceCheckpoint(session:EditorDraft,checkpoint:EditorDraft|null){
+  return checkpoint?session.baseRevision!==checkpoint.baseRevision||editableFields.some(key=>!equal(session.base[key],checkpoint.base[key])||!equal(session.draft[key],checkpoint.draft[key])):isDirty(session);
+}
 export type ConflictChoice='local'|'disk';
 export type ConflictChoices=Partial<Record<EditableField,ConflictChoice>>;
 export function compareDraft(session:EditorDraft,current:ProjectRecord){

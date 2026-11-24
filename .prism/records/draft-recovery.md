@@ -31,3 +31,5 @@ Limitations: browser storage is not a backup or cross-machine sync; no atomic br
 Current review: implementation at 742f7846e049c13dc63f026a37bd12d56ccb48e5 is in draft PR #9. Follow editor-acceptance for the canonical actionable checklist and actual outcomes. Implementation remains In progress until accepted; no test is pre-marked passed.
 
 Navigation follow-up: canonical records now open read-only in the main workspace. Edit record or Resume draft explicitly opens the recoverable editor, and close returns to reading. Review record-navigation and the expanded editor-acceptance checklist together.
+
+Cancellation now restores the session-entry recovery checkpoint (or removes newly created recovery if none existed). Explicit Discard draft remains distinct. Failed recovery restoration leaves the current editor available unless the owner explicitly confirms leaving without changing the stored recovery. Navigation warning is a floating dismissible toast; editor data stays mounted. See browser-verification for prepared regression coverage.

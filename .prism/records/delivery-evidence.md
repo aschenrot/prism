@@ -25,3 +25,5 @@ Local Git adapter reads bounded HEAD history and explicit Prism-Record trailers.
 Local verification is the mandatory gate after owner feedback; hosted CI is optional. Quality now reads the latest revision-specific local report. See local-verification. A project-wide result does not satisfy individual task acceptance automatically.
 
 Process follow-up: use a dedicated Test record per substantial PR, with case IDs and unchecked acceptance steps, and a saved Acceptance queue. Native acceptance workspace records manual outcomes in separate revision-bound local executions. See acceptance-workspace. Cross-record rollups, shared evidence import and workflow transitions remain future product work.
+
+Review handoff now copies saved manual acceptance and matching npm verification as PR-ready Markdown. Explicit paste or JSON export provides remote review evidence without committing local execution files. Browser reports remain separate; direct GitHub publishing and automatic rollups are future work.

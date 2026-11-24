@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { freshDraft,isDirty,compareDraft,reconcileDraft,editorDraftSchema } from '../shared/editor';
+import { freshDraft,isDirty,changedSinceCheckpoint,compareDraft,reconcileDraft,editorDraftSchema } from '../shared/editor';
 import { createDraftStorage } from '../src/draftStorage';
 import { recordSchema,type ProjectRecord } from '../shared/records';
 function record(overrides:Partial<ProjectRecord>={}):ProjectRecord{return {...recordSchema.parse({id:'task-a',title:'Original',type:'Task',status:'Concept',priority:'Normal',accent:'teal',tags:['one'],relationships:[],body:'Original body'}),revision:'a'.repeat(64),...overrides};}
@@ -56,4 +56,19 @@ test('invalid and inaccessible recovery storage is reported, not a successful sa
   const unavailable=createDraftStorage(()=>{throw Error('quota');});
   assert.equal(unavailable.read('prism','task-a').state,'unavailable');assert.equal(unavailable.write('prism','task-a',null,base).state,'unavailable');
   assert.equal(editorDraftSchema.safeParse({...base,baseRevision:'invalid'}).success,false);
+});
+
+test('session cancel retains the draft present on entry and distinguishes a clean edit',()=>{
+  const base=freshDraft(record()),previous={...base,draft:{...base.draft,title:'Earlier draft'}};
+  assert.equal(changedSinceCheckpoint(base,null),false);
+  assert.equal(changedSinceCheckpoint(previous,null),true);
+  assert.equal(changedSinceCheckpoint({...previous,updatedAt:'2026-11-24T00:00:00Z'},previous),false);
+  assert.equal(changedSinceCheckpoint(base,previous),true);
+  const updated={...previous,draft:{...previous.draft,body:'New edit'}};
+  assert.equal(changedSinceCheckpoint(updated,previous),true);
+  const store=createDraftStorage(()=>storage),storage=memory();
+  const first=store.write('prism','task-a',null,previous);assert.equal(first.state,'stored');if(first.state!=='stored')throw Error('Write failed');
+  const later=store.write('prism','task-a',first.token,updated);assert.equal(later.state,'stored');if(later.state!=='stored')throw Error('Write failed');
+  assert.equal(store.write('prism','task-a',later.token,previous).state,'stored');
+  const restored=store.read('prism','task-a');assert.equal(restored.state,'available');if(restored.state==='available')assert.deepEqual(restored.draft,previous);
 });

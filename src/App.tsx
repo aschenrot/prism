@@ -19,8 +19,9 @@ import { destinationsFor,navigationFor,navigationForSaved,navigationMode,resetNa
 import { Knowledge } from './Knowledge';
 import { viewPreferences } from './viewPreferences';
 import { draftStorage } from './draftStorage';
-import { freshDraft,isDirty,type EditorDraft } from '../shared/editor';
+import { freshDraft,isDirty,changedSinceCheckpoint,type EditorDraft } from '../shared/editor';
 import DraftConflict from './DraftConflict';
+import NavigationToast from './NavigationToast';
 import RecordPage from './RecordPage';
 import RouteLink from './RouteLink';
 import { collectionRoute,recordRoute,savedRoute,routeHash,parentDestination,restoreCollection,contextFor } from '../shared/routes';
@@ -43,6 +44,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   const [initial]=useState(()=>draftStorage.read(projectId,record.id));
   const [session,setSession]=useState<EditorDraft>(()=>initial.state==='available'?initial.draft:freshDraft(record));
   const token=useRef(initial.token);
+  const checkpoint=useRef<EditorDraft|null>(initial.state==='available'?initial.draft:null);
   const [recovery,setRecovery]=useState<'stored'|'none'|'unavailable'|'conflict'|'invalid'>(initial.state==='available'?'stored':initial.state==='empty'?'none':initial.state);
   const [recoveryMessage,setRecoveryMessage]=useState(initial.state==='invalid'?'Existing recovery data is unreadable. It will not be overwritten automatically.':initial.state==='unavailable'?'Browser recovery storage is unavailable.':'');
   const [recovered,setRecovered]=useState(initial.state==='available');
@@ -50,6 +52,8 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   const [validation,setValidation]=useState('');
   const draft=session.draft;
   const dirty=isDirty(session);
+  const sessionChanged=changedSinceCheckpoint(session,checkpoint.current);
+  const protectedEdit=dirty||sessionChanged;
   const stale=record.revision!==session.baseRevision;
   const persist=(next:EditorDraft|null,allowInvalid=false)=>{
     if(recovery==='invalid'&&!allowInvalid)return false;
@@ -67,7 +71,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   const discard=()=>{
     if(!window.confirm(recordUnavailable?'Discard this draft? The canonical record is unavailable.':'Discard this draft and use the current disk record?'))return;
     if(!persist(null,true)&&!window.confirm('Recovery storage could not be cleared. Discard the in-memory edits anyway? Other stored recovery data will remain.'))return;
-    setSession(freshDraft(record));setRecovered(false);setConflictResponse(false);setValidation('');
+    checkpoint.current=null;setSession(freshDraft(record));setRecovered(false);setConflictResponse(false);setValidation('');
   };
   const exportDraft=()=>{
     const blob=new Blob([JSON.stringify({projectId,recordId:record.id,...session},null,2)],{type:'application/json'});
@@ -78,16 +82,28 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
   const mutation=useMutation({mutationFn:(changes:Editable)=>api.update(projectId,record.id,session.baseRevision,changes),onSuccess:async next=>{
     await qc.cancelQueries({queryKey:['records',projectId]});
     // Never delete a newer draft written in another window.
-    persist(null);setSession(freshDraft(next));setRecovered(false);setConflictResponse(false);setValidation('');
+    persist(null);checkpoint.current=null;setSession(freshDraft(next));setRecovered(false);setConflictResponse(false);setValidation('');
     qc.setQueryData(['records',projectId],(old:Awaited<ReturnType<typeof api.list>>|undefined)=>old?{...old,records:old.records.map(r=>r.id===next.id?next:r)}:old);
     void qc.invalidateQueries({queryKey:['records',projectId]});
   },onError:error=>{
     if(error instanceof ApiError&&error.status===409){setConflictResponse(true);void qc.invalidateQueries({queryKey:['records',projectId]});}
   }});
   useEffect(()=>{if(!recordUnavailable&&stale&&!dirty&&!mutation.isPending){setSession(freshDraft(record));setConflictResponse(false);}},[record.revision,dirty,session.baseRevision,mutation.isPending,recordUnavailable]);
-  useLayoutEffect(()=>{onBusyChange(dirty||mutation.isPending);},[dirty,mutation.isPending,onBusyChange]);
+  useLayoutEffect(()=>{onBusyChange(protectedEdit||mutation.isPending);},[protectedEdit,mutation.isPending,onBusyChange]);
   useLayoutEffect(()=>()=>onBusyChange(false),[onBusyChange]);
-  useEffect(()=>{if(!dirty&&!mutation.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[dirty,mutation.isPending]);
+  useEffect(()=>{if(!protectedEdit&&!mutation.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[protectedEdit,mutation.isPending]);
+  const cancel=()=>{
+    if(mutation.isPending)return;
+    if(!sessionChanged){onClose();return;}
+    const previous=checkpoint.current;
+    if(!window.confirm(previous?'Cancel changes made since opening this draft? The earlier draft will be retained.':'Cancel this edit and discard its unsaved changes?'))return;
+    if(!persist(previous)){
+      setValidation('Could not restore the earlier recovery state. Your current input is still available. Export it or resolve storage before leaving.');
+      // A competing recovery copy must never be overwritten. The user may leave explicitly.
+      if(!window.confirm('Recovery could not be restored. Close this editor anyway? Existing stored recovery data will remain unchanged.'))return;
+    }
+    onClose();
+  };
   const close=()=>{
     if(mutation.isPending)return;
     if(!dirty){onClose();return;}
@@ -122,7 +138,7 @@ function Inspector({projectId,record,recordUnavailable,records,onSelect,onClose,
       {validation&&<p className="warning" role="alert">{validation}</p>}
       {dirty&&<div className="draft-actions"><button type="button" className="secondary" disabled={mutation.isPending} onClick={close}>Keep draft &amp; close</button><button type="button" className="secondary" disabled={mutation.isPending} onClick={exportDraft}>Export draft</button><button type="button" className="secondary" disabled={mutation.isPending} onClick={()=>{discard();mutation.reset();}}>Discard draft</button></div>}
       {mutation.error&&<p className="warning" role="alert">{mutation.error.message}</p>}
-      <div className="save-row"><span>{dirty?'Unsaved changes':recordUnavailable?'Record unavailable':'Saved to disk'}</span><button className="primary" type="submit" disabled={recordUnavailable||!dirty||stale||conflictResponse||mutation.isPending}>{mutation.isPending?'Saving…':'Save'}</button></div>
+      <div className="save-row"><span>{dirty?'Unsaved changes':sessionChanged?'Editing session changed':recordUnavailable?'Record unavailable':'Saved to disk'}</span><div className="editor-save-actions"><button type="button" className="secondary" disabled={mutation.isPending} onClick={cancel}>Cancel</button><button className="primary" type="submit" disabled={recordUnavailable||!dirty||stale||conflictResponse||mutation.isPending}>{mutation.isPending?'Saving…':'Save'}</button></div></div>
     </form>{historySupported&&<RecordEvidence record={record} history={history} loading={historyLoading} error={historyError} onRefresh={onRefreshHistory}/>}<RecordLinks records={records} id={record.id} onSelect={onSelect} hrefFor={id=>routeHash(recordRoute(projectId,id))}/><div className="record-id">ID / {record.id}</div>
   </aside>;
 }
@@ -191,12 +207,12 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   const changeView=(v:View)=>{if(busy||creating)return;viewPreferences.remember(projectId,navigation,destination,v);router.replaceContext(contextFor(navigationMode(navigation,destination,v)));};
   const submit=(e:FormEvent)=>{e.preventDefault();if(!busy&&!create.isPending)create.mutate();};
   const findings=auditRecords(records);
-  const projectSwitchBlocked=busy||create.isPending||creating;
-  const projectSwitchHint=busy?(editing?'Save or keep the recovery draft and close to switch':'Save or discard your review changes before navigating'):create.isPending?'Creating a record…':creating?'Finish or cancel record creation':project.storage==='repository'?'Connected repository':'Local workspace';
+  const projectSwitchHint=project.storage==='repository'?'Connected repository':'Local workspace';
+  const navigationGuard=busy?(editing?'Save, keep your draft, or cancel editing before leaving.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
   // The same guard covers sidebar, related links, breadcrumbs and browser history.
-  useLayoutEffect(()=>{router.setGuard(projectSwitchBlocked?projectSwitchHint:'');return()=>router.setGuard('');},[projectSwitchBlocked,projectSwitchHint]);
+  useLayoutEffect(()=>{router.setGuard(navigationGuard);if(!navigationGuard)router.clearNotice();return()=>router.setGuard('');},[navigationGuard]);
   useEffect(()=>{if(!creating&&!create.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[creating,create.isPending]);
-  const switchProject=(id:string)=>{if(!projectSwitchBlocked&&projects.some(p=>p.id===id))router.go(collectionRoute(id));};
+  const switchProject=(id:string)=>{if(id!==projectId&&projects.some(p=>p.id===id))router.go(collectionRoute(id));};
   const ready=!query.isPending&&(route.kind!=='saved'||!savedQuery.isPending);
   useLayoutEffect(()=>{
     if(!ready)return;
@@ -212,7 +228,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   useEffect(()=>{const handler=(e:KeyboardEvent)=>{if(route.kind==='record'||view!=='Slides'||e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT','BUTTON'].includes((e.target as HTMLElement)?.tagName))return;if(e.key==='ArrowRight')setSlide(slide+1);if(e.key==='ArrowLeft')setSlide(slide-1);};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);},[route.kind,view,slide,visible.length,router.entryKey,router.entry.context]);
   return <div className="shell workspace-shell routed-shell">
     <aside className="sidebar"><div className="brand"><div className="brand-mark"><Layers3 size={22}/></div><div>prism<span>PROJECT WORKSPACE</span></div></div>
-      <div className={'project-label project-switcher'+(projectSwitchBlocked?' switch-blocked':'')}><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>switchProject(e.target.value)} disabled={projectSwitchBlocked}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select></div>
+      <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>switchProject(e.target.value)}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select></div>
       <nav className="purpose-nav" aria-label="Project navigation">{['Workspace','Product','Game design','Management','Knowledge','Engineering','Studio'].map(group=>{
         const items=destinations.filter(d=>d.group===group&&d.id!=='library');if(!items.length)return null;
         return <div className="nav-group" key={group}>{group!=='Workspace'&&<div className="nav-label">{group}</div>}{items.map(d=>{const Icon=destinationIcons[d.id]||Database;return <RouteLink key={d.id} className={'nav-item purpose-item '+(destinationId===d.id?'active':'')} aria-current={destinationId===d.id?(route.kind==='record'?'location':'page'):undefined} href={categoryHref(d.id)} onNavigate={()=>navigate(d.id)}><Icon size={16}/><span>{d.label}</span></RouteLink>;})}</div>;
@@ -220,11 +236,11 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
       <div className="sidebar-bottom"><span className="local-dot"/> Local-first <span>v0.1</span></div>
     </aside>
     <main className="main"><header className="topbar routed-topbar">
-      <div className="history-controls" aria-label="Navigation history"><button className="icon-button" type="button" aria-label="Back" title="Back" disabled={!router.canBack||projectSwitchBlocked} onClick={router.back}><ArrowLeft size={18}/></button><button className="icon-button" type="button" aria-label="Forward" title="Forward" disabled={!router.canForward||projectSwitchBlocked} onClick={router.forward}><ArrowRight size={18}/></button></div>
+      <div className="history-controls" aria-label="Navigation history"><button className="icon-button" type="button" aria-label="Back" title="Back" disabled={!router.canBack} onClick={router.back}><ArrowLeft size={18}/></button><button className="icon-button" type="button" aria-label="Forward" title="Forward" disabled={!router.canForward} onClick={router.forward}><ArrowRight size={18}/></button></div>
       <nav className="breadcrumb" aria-label="Breadcrumb">{route.kind==='collection'&&destinationId==='overview'?<strong aria-current="page">{project.title}</strong>:<RouteLink href={categoryHref('overview')} onNavigate={()=>navigate('overview')}>{project.title}</RouteLink>}{!(route.kind==='collection'&&destinationId==='overview')&&<><ChevronRight size={13}/>{route.kind==='collection'?<strong aria-current="page">{destination.label}</strong>:<><RouteLink href={categoryHref(destination.id)} onNavigate={()=>navigate(destination.id)}>{destination.label}</RouteLink><ChevronRight size={13}/><strong aria-current="page" title={record?.title||savedView?.title}>{record?.title||savedView?.title||(route.kind==='record'?'Record':'Saved view')}</strong></>}</>}</nav>
       <span className="disk-state"><span className="local-dot"/>{query.isError?'Offline / error':'Local project'}</span>{route.kind!=='record'&&!routeMissing&&!savedMissing&&(route.kind!=='saved'||!!activeSaved)&&<button className="primary" disabled={busy||create.isPending} onClick={()=>{setNewType(destination.type==='All records'?'Idea':destination.type);setCreating(v=>!v);}}><Plus size={16}/> {destination.type==='All records'?'New record':'New '+destination.type.toLowerCase()}</button>}
     </header>
-    {router.notice&&<div role="alert" className="navigation-warning warning"><span>{router.notice}</span><button className="secondary" onClick={router.clearNotice}>Dismiss</button></div>}
+    <NavigationToast message={router.notice} onDismiss={router.clearNotice}/>
       <div className="workspace-content" ref={pageRef} tabIndex={-1} aria-label={record?.title||savedView?.title||destination.label}>
       {route.kind==='record'&&query.error&&<p className="warning" role="alert">Could not refresh the record: {query.error.message}</p>}
       {route.kind==='record'?(query.isPending?<div className="empty" role="status">Opening record…</div>:record?<>{editing?<Inspector key={record.id} projectId={projectId} record={record} recordUnavailable={!liveRecord} records={records} onSelect={select} onBusyChange={setBusy} onClose={()=>{setEditEntry(null);setExpanded(false);router.clearNotice();window.scrollTo(0,0);requestAnimationFrame(()=>pageRef.current?.focus({preventScroll:true}));}} expanded={expanded} onExpand={()=>setExpanded(v=>!v)} history={history} historySupported={project.storage==='repository'} historyLoading={historyQuery.isFetching} historyError={historyQuery.isError} onRefreshHistory={refreshHistory}/>:<RecordPage key={record.id} projectId={projectId} record={record} records={records} unavailable={!liveRecord} onOpen={select} hrefFor={hrefFor} onBusyChange={setBusy} busy={busy} onEdit={()=>{if(busy)return;setEditEntry(router.entryKey);window.scrollTo(0,0);requestAnimationFrame(()=>pageRef.current?.focus({preventScroll:true}));}} repository={project.storage==='repository'} history={history} historyLoading={historyQuery.isFetching} historyError={historyQuery.isError} onRefresh={refreshHistory}/>}</>:<div className="empty"><h1>Record unavailable</h1><p>The record could not be found or read in this project.</p><button className="secondary" onClick={()=>navigate('library')}>Open Data library</button></div>):routeMissing||savedMissing?<div className="empty"><h1>{routeMissing?'Category unavailable':'Saved view unavailable'}</h1><p>{route.kind==='saved'&&savedQuery.error?savedQuery.error.message:'The address no longer matches an available destination.'}</p><button className="secondary" onClick={()=>navigate('overview')}>Return to Overview</button></div>:route.kind==='saved'&&!activeSaved?<div className="empty" role="status">Opening saved view…</div>:<>

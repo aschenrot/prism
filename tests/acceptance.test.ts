@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { acceptanceDefinition,acceptanceProgress,acceptanceRunSchema,currentAcceptance,applyAcceptanceUpdate,type AcceptanceRunData } from '../shared/acceptance';
 import { recordSchema,type ProjectRecord } from '../shared/records';
 import { AcceptanceStore } from '../server/acceptance';
+import { reviewSummary } from '../shared/reviewSummary';
 import { ConflictError } from '../server/store';
 const head='a'.repeat(40),definitionRevision='b'.repeat(64),date='2026-11-24T00:00:00Z';
 const body='## Review instructions\nUse a disposable record.\n\n## A. Recovery\nGroup setup.\n- [x] A01 — **Close and recover** — Edit and reopen. Expected: Exact draft restored.\n- [ ] A02 — **Save the draft** — Save changes. Expected: Saved values appear.\n\n## Results\nHistorical notes are not outcomes.\n';
@@ -84,4 +85,9 @@ test('a finalized run cannot be edited or accidentally replace a previous review
     const next=await store.create(record.id,input);
     assert.equal(next.results.length,0);assert.deepEqual(await store.get(record.id,run.id),closed);
   }finally{await rm(root,{recursive:true,force:true});}
+});
+
+test('review handoff identifies exact revision and pending cases without claiming unrecorded success',()=>{
+  const one=applyAcceptanceUpdate(data,{action:'case',expectedRevision:expected,caseId:'A01',outcome:'Failed',notes:'<b>Mismatch</b> @someone'},date);
+  const summary=reviewSummary(one);assert.ok(summary.includes(head));assert.ok(summary.includes(definitionRevision));assert.ok(summary.includes('**Failed**'));assert.ok(summary.includes('**Pending**'));assert.ok(summary.includes('Local npm verification: not recorded'));assert.ok(summary.includes('&lt;b&gt;Mismatch&lt;/b&gt; &#64;someone'));assert.ok(!summary.includes('@someone'));
 });

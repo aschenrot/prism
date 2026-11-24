@@ -15,7 +15,8 @@
     "verify": "node scripts/verify.mjs",
     "deps:outdated": "npm outdated",
     "deps:audit": "npm audit",
-    "deps:audit:prod": "npm audit --omit=dev"
+    "deps:audit:prod": "npm audit --omit=dev",
+    "test:browser": "node scripts/verify-browser.mjs"
   },
   "dependencies": {
     "@fastify/static": "10.1.12",
