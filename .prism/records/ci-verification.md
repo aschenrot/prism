@@ -63,3 +63,15 @@ PR #25 integrated at bb9824746bb1c0f5e4f24ec24169f6fac1c3b1aa. Run 45466999001: 
 
 
 PR #26 integrated at fd60ee5bf3b0f54a9985d5ffdb367ce7b708ccff. Run 45478227153: 85 unit + 29 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero audit vulnerabilities. Checkout 0ccf2b646a3da51f9eed17da34966157bf23ab2d, identical tree to proposed head. K13 human review pending.
+
+
+PR #27 integrated at 66f975d9fd3e703bb7bceff16a011d47f739144b. Run 45479027177: 86 unit + 30 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout 33f16cb774c9d85943443e74766574f1a132178a, identical tree to proposed head. K14 human review pending.
+
+
+PR #28 integrated at 7fef8371dc50f2c22bd63893b57d7ede26365971. Run 45479915600: 91 unit + 30 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout c5a1771e6c942c7b4c84b5271a704ee8a10700ef, identical tree to proposed head. Backup safety regressions observed. K15 human review pending.
+
+
+PR #29 integrated at 1e23237ada57af271b73720ab96ce651ab92f7a3. Run 45480891681: 94 unit + 30 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout 8e87dc02015f354b96ef416fd4ce2a9a4ef6a2d4, identical tree to proposed head. K16 human review pending. Startup enforcement of disjoint stores is a follow-up.
+
+
+PR #30 integrated at a90cb758cfe3f4dcd2759f653325a2f06b471297. Run 45481688645: 95 unit + 31 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout 0004c0ddd8acc84a323216d94bc8f70b2a82a769, identical tree to proposed head. K17 human review pending.
