@@ -55,3 +55,8 @@ Technical integration: PR #21 merged at 0aaa7827c55a5392cf8116aa4967acf48c04ec8f
 Technical integration: PR #22 merged at f6194915ce54d4eaf5bc10414f6241d85d545c87. Run 45459464209 passed all four hosted configurations at checkout be8b212b153b2d610a4e7e35f3b15e05e7da040a, identical tree cebfafc062df8aa24c3cf8380ac0b0848829ecb0 to head f03de993eababe3aa1d704a042e5a8266b4dccc1. 79 unit and 25 browser scenarios per job; no failed/flaky/skipped, clean eligible evidence, both audits zero vulnerabilities. Human K09 pending.
 
 Technical integration: PR #23 merged at b64eec96a0de8443e2e89c12ebeb42706eb1aab8. Final run 45464611149 passed all four configurations, 79 unit and 26 browser scenarios each, zero failed/flaky/skipped, clean eligible evidence and zero reported audit vulnerabilities. Checkout dc1f39ecf5ee53c6d27ce67133755294696a2245, identical tree to 1fe4875cf5f0095eeeffb3f93db30d0c2e5ef3b7. Initial locator failure corrected without dropping assertions. Owner K10 pending.
+
+PR #24 integrated at `c561623a8e09831d9012e95c2ed85d081e5b403f`. Corrected full matrix [45466176701](https://github.com/aschenrot/prism/actions/runs/45466176701): 81 unit + 27 browser tests passed on each of four configurations, both legacy regression tests restored, zero reported audit vulnerabilities. Verified checkout `b511da2928f54eb903f924224e5d354afdadb695` had identical tree to PR head. K11 human review pending.
+
+
+PR #25 integrated at bb9824746bb1c0f5e4f24ec24169f6fac1c3b1aa. Run 45466999001: 83 unit + 28 browser scenarios per configuration, four configurations, zero failed/flaky/skipped, clean eligible evidence and zero audit vulnerabilities. Checkout b752f1ae3a6e651ac56347b6c886a8aa5cb41041, identical tree to proposed head. K12 human review pending.
