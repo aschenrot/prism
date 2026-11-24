@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export const types = ['Idea', 'Mechanic', 'Asset', 'Character', 'Location', 'System', 'Task', 'Decision'] as const;
+export const types = ['Idea', 'Mechanic', 'Asset', 'Character', 'Location', 'System', 'Task', 'Decision', 'Objective', 'Feature', 'Requirement', 'Milestone', 'Risk', 'Research', 'Document', 'Test'] as const;
 export const statuses = ['Concept', 'In progress', 'Ready'] as const;
 export const priorities = ['Low', 'Normal', 'High'] as const;
 export const accents = ['amber', 'violet', 'teal', 'blue', 'rose'] as const;

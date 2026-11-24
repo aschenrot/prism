@@ -4,9 +4,12 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ZodError } from 'zod';
 import { createSchema, idSchema, updateSchema } from '../shared/records';
-import { RecordStore, ConflictError, MissingError } from './store';
+import { ConflictError, MissingError } from './store';
+import { loadProjects } from './projects';
+import { indexRepository, readRepositoryFile } from './repository';
+import { z } from 'zod';
 
-const store = await RecordStore.open(process.env.PRISM_PROJECT || resolve('workspace'));
+const projects = await loadProjects();
 const app = Fastify({ logger:true, bodyLimit: 1_000_000 });
 const localHosts = new Set(['127.0.0.1:4174','localhost:4174','127.0.0.1:5173','localhost:5173']);
 app.addHook('onRequest', async (request, reply) => {
@@ -24,15 +27,19 @@ app.setErrorHandler((err, request, reply) => {
   if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({error:'Invalid request'});
   request.log.error(err); return reply.code(500).send({error:'Storage operation failed'});
 });
-app.get('/api/records', async () => store.list());
-app.post('/api/records', async (request, reply) => {
+const projectFor = (request:{params:unknown}) => projects.get(idSchema.parse((request.params as {projectId:string}).projectId));
+app.get('/api/projects', async () => projects.list());
+app.get('/api/projects/:projectId/records', async request => projectFor(request).store.list());
+app.get('/api/projects/:projectId/repository', async request => {const p=projectFor(request);return p.info.storage==='repository'?indexRepository(p.root):{files:[],truncated:false};});
+app.get('/api/projects/:projectId/file', async request => {const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readRepositoryFile(p.root,z.object({path:z.string().min(1).max(500)}).parse(request.query).path);});
+app.post('/api/projects/:projectId/records', async (request, reply) => {
   const input = createSchema.parse(request.body);
-  return reply.code(201).send(await store.create(input.title,input.type));
+  return reply.code(201).send(await projectFor(request).store.create(input.title,input.type));
 });
-app.put('/api/records/:id', async request => {
+app.put('/api/projects/:projectId/records/:id', async request => {
   const id = idSchema.parse((request.params as {id:string}).id);
   const input = updateSchema.parse(request.body);
-  return store.update(id,input.expectedRevision,input.changes);
+  return projectFor(request).store.update(id,input.expectedRevision,input.changes);
 });
 const dist = resolve('dist');
 if (existsSync(dist)) await app.register(fastifyStatic,{root:dist});

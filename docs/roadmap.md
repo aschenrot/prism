@@ -1,32 +1,60 @@
-# Roadmap
+# Prism product roadmap
 
-## 0 — Vertical slice (current proposal)
-- Persistent records, shared inspector, search and four synchronized projections.
-- Visual design tokens, keyboard-accessible navigation and motion-aware slides.
-- Revision conflicts, validation, atomic replacement and storage tests.
+Prism is a local-first repository-native knowledge and project workspace. One authoritative source for each fact; many synchronized perspectives.
 
-## 1 — Editing and reliability
-- Undo/redo, autosave with recovery, delete/archive, bulk edits, keyboard commands.
-- External file watcher, incremental updates, independent backup/restore, schema migrations.
-- JSON Schema entity definitions, relationship integrity, backlinks, saved view definitions.
-- Real Markdown editor and safe rich-text preview; visible invalid-file recovery.
+## P0 — Foundation and multi-project
+- [x] Initial Markdown/YAML storage, shared inspector and board/table/gallery/slides code.
+- [x] Configured project registry, per-project routes and caches, repository-mode storage.
+- [x] Read-only repository file browser, basic record audit, product/project entity types.
+- [ ] Pass CI and local visual/interaction review; resolve verification failures.
+- [ ] Persistent drafts, autosave/recovery, undo/redo, delete/archive and atomic batch edits.
+- [ ] File watcher, backups, migration format, conflict UI and accessibility tests.
+- [ ] Native project picker/registration with explicit filesystem grants.
 
-## 2 — Creative tools
-- Asset import, media references, thumbnails, provenance and licensing.
-- Kanban drag-and-drop with keyboard alternative, custom table columns and filters.
-- React Flow + ELK for connected systems; evaluate Konva for freeform canvas.
-- Timeline, moodboards, relationship graphs, custom dashboards.
+## P1 — Knowledge and management
+- Configurable JSON Schema entities and typed relationships, backlinks, cross-record integrity.
+- Universal inbox, templates, saved views, global search and rebuildable SQLite/FTS5 index.
+- Product vision, research, objectives, requirements, features, milestones, risks and decisions.
+- Dependency-aware tasks, roadmap/timeline, prioritization, traceability matrix, GitHub issues ownership policy.
+- Acceptance: a requirement linked to an objective and task is editable once and changes all views.
 
-## 3 — Presentation design
-- Declarative slide layouts bound to records and saved queries; editable sequence.
-- Speaker notes, full-screen navigation, motion presets and timeline controls.
-- PDF/image export and animated video export; exports are immutable snapshots.
-- Evaluate Reveal.js against the integrated renderer only when needed.
+## P2 — Repository intelligence and wiki
+- Read-only Git adapter with commit provenance, diffs and historical snapshots.
+- Rust cargo metadata, rustdoc extraction, semantic symbol index via rust-analyzer/SCIP or Tree-sitter.
+- Bevy adapter for plugins, ECS components/resources/systems, explicit unknowns for dynamic registration.
+- Generated wiki separated from human writing; source links, revision, freshness, reproducible extraction.
+- Import CI test/coverage/licensing/security results (nextest, Clippy, cargo-deny, llvm-cov).
+- Optional AI proposals, reviewable patches; no automatic execution of untrusted repository scripts.
 
-## 4 — Professional workflow
-- Storybook, visual regression snapshots, Playwright and axe accessibility gates.
-- CLI for validated batch edits and dry runs, optional MCP bridge.
-- Optional 3D previews with Three.js, desktop shell, authenticated collaboration.
+## P3 — Creative workspace and visual quality
+- Asset ingestion/references, thumbnails, provenance, licensing, duplicate detection.
+- Moodboards, accessible drag-and-drop, relationship graphs, canvas and automatic layout.
+- Reusable components and declarative visualization definitions: Gantt, matrix, Sankey, treemap, state diagrams, progression tree.
+- Design tokens, Storybook, Playwright visual baselines, reduced motion and axe accessibility checks.
+
+## P4 — Presentations and publishing
+- Data-bound slide layouts, sequence, speaker notes, fullscreen, transitions and motion controls.
+- Reports, game design docs, static wiki, HTML, PDF and video export as revisioned snapshots.
+- Reuse React components; evaluate Reveal.js only if needed.
+
+## P5 — Audits and automation
+- Configurable rules for traceability, missing assets, stale docs, dependencies and release readiness.
+- Evidence and severity per finding, transparent criteria; no ungrounded aggregate scores.
+- Trigger/condition/action workflows; approval for writes, dry-run previews and job history.
+- Git time machine and impact analysis.
+
+## P6 — Game-specific tools
+- Data-driven combat/economy/progression/loot simulations with verified game formulas.
+- Crafting, skill trees, dialogue, state graphs and balancing tables; RON/TOML/JSON adapters.
+- Optional Bevy Remote Protocol integration, development-only and read-only by default.
+- Three.js model previews, audio waveforms, profiling imports.
+
+## P7 — Extensibility and optional collaboration
+- Internal adapter/analyzer/editor/view/export contracts, then versioned SDK and explicit permissions.
+- Validated CLI and optional MCP bridge; optional local or remote AI.
+- Desktop packaging, authenticated remote access and collaborative conflict handling only after storage guarantees.
 
 ## Release gates
-No data loss on ordinary saves; conflict errors are actionable; all projections update after mutation; keyboard and reduced-motion flows work; approved screenshots across viewport sizes; tests and builds pass.
+Passing build/tests; no ordinary-save data loss; project isolation; clear conflicts and recovery; keyboard access and reduced motion; approved screenshots; generated content reproducible and distinguishable from canonical source.
+
+Checked items mean code committed, not verified production readiness.

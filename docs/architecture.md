@@ -25,3 +25,11 @@ The current client polls the local API. A future file watcher plus server events
 ## Security boundary
 
 Single local user. Server binds to loopback, validates Host and Origin, accepts JSON writes, and never executes record content. Record identifiers cannot contain path separators; symbolic-link record files are rejected. Remote access requires a separate authentication, authorization and deployment design. Do not expose this server through a reverse proxy.
+
+## Multi-project boundary
+
+The local registry is a YAML file containing explicitly configured absolute paths; the browser only sends validated project IDs. Each project has its own RecordStore, API URL namespace, and query cache namespace. Standalone projects keep records/; repository-mode projects use .prism/records/. A registry is machine-local; project records should remain Git-tracked. The browser cannot specify arbitrary root directories.
+
+The initial repository reader is a bounded, read-only inventory of recognized source, documentation and manifest files in conventional directories. It rejects traversal and symlinks and never invokes compilers or project scripts. It is not a semantic parser or a sandbox for hostile local processes. Future adapters should emit normalized derived records with provenance (source, revision, timestamp, extraction method), kept separate from authored content. Runtime tools must be explicitly approved and disabled by default.
+
+Audit findings are computed from canonical records, not stored as independent facts. Current checks cover missing descriptions and unresolved/self references; they do not imply implementation or verification coverage.

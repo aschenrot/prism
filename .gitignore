@@ -5,4 +5,6 @@ coverage/
 *.local
 *.tmp
 .DS_Store
-.prism/
+.prism/cache/
+.prism/projects.local.yaml
+.prism/*.local.json

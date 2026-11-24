@@ -1,0 +1,4 @@
+# Keep authored .prism/records and future project definitions tracked.
+.prism/cache/
+.prism/projects.local.yaml
+.prism/*.local.json
