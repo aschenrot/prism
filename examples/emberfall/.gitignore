@@ -2,3 +2,4 @@
 .prism/cache/
 .prism/projects.local.yaml
 .prism/*.local.json
+.prism/acceptance.local/

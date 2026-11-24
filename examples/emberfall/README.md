@@ -22,3 +22,5 @@ Open this project through the included registry at `examples/bevy.projects.yaml`
 Use the Board for workflow, Table for records, Gallery for metadata-based visual cards, Slides for live record-based presentations, Repository for original file previews, and Audit for missing descriptions/broken links. The current Gallery cannot render the supplied asset files and the Repository view is not a generated wiki.
 
 All records and plans are fictional. Implementation references are inspectable; status Ready denotes an example planning state, not independent test evidence.
+
+For standalone copies of this reference project, preserve the repository's applicable LICENSE and third-party notices (Bevy and dependencies retain their own terms).

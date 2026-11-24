@@ -33,7 +33,7 @@
 - Interactive surfaces should have coherent hit areas, keyboard activation, hover/focus/selection and visible blocked-state reasons. Check actual pointer targets, not just the visual design.
 
 ## Integration policy
-- Hosted GitHub Actions is optional and manual-only; local automated verification and human acceptance are the merge gate. Use npm run verify on a clean committed revision; do not claim a dirty or historical report as current evidence. Keep local reports under ignored .prism/cache, and record reviewed outcomes in PRs.
+- Public-preview preparation: automatic hosted checks are configured for public PRs and main; private automatic jobs stay disabled. Local automated verification and human acceptance remain the merge gate until successful hosted runs are observed and required checks are explicitly adopted. Use npm run verify on a clean committed revision; do not claim a dirty or historical report as current evidence. Keep local reports under ignored .prism/cache, and record reviewed outcomes in PRs.
 - After foundation PR #1 is locally verified and accepted, use short-lived topic branches from main, focused PRs and regular history-preserving merge commits. Do not squash or rebase already attributed commits. Never merge without explicit owner approval. Prism owns the internal backlog; GitHub Issues are optional intake, not duplicate tasks.
 
 ## Interaction consistency
@@ -63,3 +63,7 @@
 ## Collection operations
 - Place search and contextual creation in shared collection controls, not global navigation. Sort direction is explicit and persisted, with backward-compatible legacy defaults; stable tie-breaks. Reader focus must respect filters. Use the same revision-checked editor for direct edit actions and guard asynchronous navigation against stale entry identity.
 - Removal is reversible trash, never permanent deletion. Preserve original bytes, IDs, inbound relationships and evidence. Warn about affected links, reject unresolved local drafts, validate expected revisions and never overwrite a destination on restore. Use only disposable isolated records for destructive regression tests.
+
+## Public preview and licensing
+- Prism's own source uses AGPL-3.0-only. Keep the license verbatim and preserve third-party terms and notices. Never commit private project data or secret values. Review public visibility against complete reachable history and GitHub metadata, not only the current tree. Do not change repository visibility until the owner approves after the readiness review in docs/publication.md.
+- Public CI uses standard hosted runners, pinned actions, read-only contents permission, no persisted checkout credentials or privileged execution of fork code. Upload only isolated verification evidence, not authored or private project files. Distinguish PR merge revision, topic head and main integration revision.

@@ -6,10 +6,12 @@ Prism is a local-first repository-native creative, product and project managemen
 
 ## Development preview
 
+Prism is under active development, not a production release. The project's own source is licensed under [AGPL-3.0-only](LICENSE). Third-party components retain their respective licenses; users' independently authored project data is not licensed merely by using Prism. See [publication and verification policy](docs/publication.md).
+
 Requires Node.js 22.12+ and npm.
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
@@ -23,7 +25,7 @@ npm run typecheck
 npm run build
 ```
 
-Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. Hosted CI is optional. Local verification and manual acceptance are required for merges; platform support claims need evidence from those platforms.
+Tests use a separate frozen Emberfall fixture; edits to the example project do not affect test counts. Windows does not need Administrator privileges: file-symlink tests skip only when Windows refuses permission, while directory-junction tests still check linked-directory exclusion. Automatic hosted verification is configured for public PRs and main; private automatic runs remain disabled to avoid spending the private allowance. Until hosted checks are demonstrated and required, local verification remains the automated merge gate. Manual acceptance remains required independently; platform support claims require actual platform evidence.
 
 Dependency policy: latest compatible stable releases, verified migrations and reproducible installs. See [dependency maintenance](docs/dependencies.md). For dependency review run `npm audit --json` and `npm audit --omit=dev --json`. Review advisory paths and proposed upgrades before using `npm audit fix`; do not force breaking upgrades indiscriminately. The committed npm lockfile is required by the local verifier; use npm ci for clean reproducible installs.
 

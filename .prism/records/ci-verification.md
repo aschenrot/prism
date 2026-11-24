@@ -1,11 +1,11 @@
 ---
 id: "ci-verification"
 type: "Task"
-title: "Optional hosted verification (deferred)"
-status: "Concept"
-priority: "Low"
+title: "Automatic hosted verification for public preview"
+status: "In progress"
+priority: "High"
 accent: "rose"
-tags: ["deferred","quality"]
+tags: ["current","quality"]
 relationships: ["quality-gates","lockfile","acceptance-baseline"]
 ---
 Inspect the actual GitHub Actions runs and logs; earlier runs failed. Local success does not establish CI success. Require typecheck, unit/integration tests, build and security audit on supported Windows/Linux Node combinations. Use npm ci after lockfile baseline. Record check URLs and the tested revision.
@@ -20,3 +20,6 @@ Observed run 45329516315 at bdfa7d32989b313b7fcf23bb294610527262c43c reports fai
 
 ## Policy superseded
 Owner reports exhausted hosted CI allowance for the private repository. Hosted CI is optional, deferred and not a release blocker. Automatic push and PR triggers are removed; manual workflow dispatch remains available if allowance returns. Previous observations above are historical, not a required gate. See local-verification and development-workflow-decision for the replacement policy.
+
+## Public preview follow-up
+Owner wants to make source public to reduce manual verification burden. Automatic public PR/main triggers are configured; private automatic jobs remain skipped, with manual dispatch available. Matrix uses Ubuntu/Windows Node 22/26 and existing npm and isolated Chromium verification. Pinned actions, read-only token and seven-day fixture artifacts. Actual hosted run and required-check adoption remain pending. Historical private CI failures above are not superseded by a workflow edit. See docs/publication.md and public-preview-readiness.
