@@ -3,7 +3,7 @@ import type { ProjectInfo, RepositoryIndex } from '../shared/projects';
 import type { GitHistory } from '../shared/delivery';
 import type { VerificationResult } from '../shared/verification';
 import type { BrowserVerificationResult } from '../shared/browserVerification';
-import type { HostedVerificationResult } from '../shared/hostedVerification';
+import type { HostedVerificationResult,HostedPullResult,HostedJobsResult } from '../shared/hostedVerification';
 import type { SavedView, ViewInput, ViewList } from '../shared/views';
 import type { AcceptanceList,AcceptanceRun,StartAcceptance,UpdateAcceptance } from '../shared/acceptance';
 export class ApiError extends Error {
@@ -38,6 +38,8 @@ export const api = {
   duplicate:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/duplicate',json('POST',{expectedRevision})),
   updateProperties:(project:string,id:string,expectedRevision:string,changes:PropertyChanges)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/properties',json('PUT',{expectedRevision,changes})),
   update:(project:string,id:string,expectedRevision:string,changes:Editable)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id),json('PUT',{expectedRevision,changes})),
+  hostedPull:(project:string,id:string,number:number)=>request<HostedPullResult>(base(project)+'/records/'+encodeURIComponent(id)+'/hosted-pull',json('POST',{number})),
+  hostedJobs:(project:string,runId:number,attempt:number)=>request<HostedJobsResult>(base(project)+'/hosted-jobs',json('POST',{runId,attempt})),
   hostedVerification:(project:string)=>request<HostedVerificationResult>(base(project)+'/hosted-verification',json('POST',{})),
   browserVerification:(project:string)=>request<BrowserVerificationResult>(base(project)+'/browser-verification'),
   verification:(project:string)=>request<VerificationResult>(base(project)+'/verification'),

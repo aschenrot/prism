@@ -9,7 +9,8 @@ import { loadProjects } from './projects';
 import { indexRepository, readRepositoryFile } from './repository';
 import { gitHistory } from './git';
 import { readVerification,readBrowserVerification } from './verification';
-import { hostedRuns } from './hostedVerification';
+import { hostedRuns,hostedPull,hostedJobs } from './hostedVerification';
+import { githubIdSchema } from '../shared/hostedVerification';
 import { z } from 'zod';
 import { viewInputSchema } from '../shared/views';
 import { startAcceptanceSchema,updateAcceptanceSchema } from '../shared/acceptance';
@@ -50,6 +51,24 @@ app.post('/api/projects/:projectId/hosted-verification',async(request,reply)=>{
   reply.header('Cache-Control','no-store');
   if(p.info.storage!=='repository'||!p.info.githubRepository)return {state:'unavailable',message:'No public GitHub repository configured.'};
   return hostedRuns(p.info.githubRepository);
+});
+app.post('/api/projects/:projectId/records/:id/hosted-pull',async(request,reply)=>{
+ const p=projectFor(request),input=z.strictObject({number:githubIdSchema}).parse(request.body),id=idSchema.parse((request.params as {id:string}).id);
+ reply.header('Cache-Control','no-store');
+ if(p.info.storage!=='repository'||!p.info.githubRepository)return {state:'unavailable',message:'No public GitHub repository configured.'};
+ const record=await p.store.get(id);
+ if(record.type!=='Increment'||!record.githubPullRequests?.some(ref=>ref.repository.toLowerCase()===p.info.githubRepository!.toLowerCase()&&ref.number===input.number))throw new MissingError('No matching authored pull request reference');
+ return hostedPull(p.info.githubRepository,input.number);
+});
+app.post('/api/projects/:projectId/hosted-jobs',async(request,reply)=>{
+ const p=projectFor(request),input=z.strictObject({runId:githubIdSchema,attempt:githubIdSchema}).parse(request.body);
+ reply.header('Cache-Control','no-store');
+ if(p.info.storage!=='repository'||!p.info.githubRepository)return {state:'unavailable',message:'No public GitHub repository configured.'};
+ // Limit details to a recently observed run/attempt from the configured repository.
+ const observed=await hostedRuns(p.info.githubRepository);
+ if(observed.state!=='available')return observed;
+ if(!observed.runs.some(run=>run.id===input.runId&&run.attempt===input.attempt))return {state:'unavailable',message:'Run attempt is no longer in the recent observation. Refresh workflow runs.'};
+ return hostedJobs(p.info.githubRepository,input.runId,input.attempt);
 });
 app.get('/api/projects/:projectId/changes',async request=>{const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return gitHistory(p.root);});
 app.get('/api/projects/:projectId/file', async request => {const p=projectFor(request);if(p.info.storage!=='repository')throw new MissingError('No connected repository');return readRepositoryFile(p.root,z.object({path:z.string().min(1).max(500)}).parse(request.query).path);});

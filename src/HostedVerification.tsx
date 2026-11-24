@@ -3,6 +3,7 @@ import { GitBranch,RefreshCw } from 'lucide-react';
 import { api } from './api';
 import { hostedRevisionRelation,hostedRunOutcome,hostedRunUrl } from '../shared/hostedVerification';
 import type { GitHistory } from '../shared/delivery';
+import HostedJobDetails from './HostedJobDetails';
 
 export default function HostedVerification({projectId,repository,history}:{projectId:string;repository?:string;history:GitHistory|undefined}){
  const query=useQuery({queryKey:['hosted-verification',projectId,repository],queryFn:()=>api.hostedVerification(projectId),enabled:false,retry:false});
@@ -20,6 +21,7 @@ export default function HostedVerification({projectId,repository,history}:{proje
       <p className="overview-note">{run.event} · {run.branch??'No branch'} · Attempt {run.attempt} · {new Date(run.updatedAt).toLocaleString()}</p>
       <p className="overview-note">Reported head <code>{run.head}</code> · {relation==='pr-head'?'PR head matches local HEAD; checkout revision not established':relation==='reported-head'?'Reported head matches local HEAD':relation==='different'?'Different reported revision':'Local HEAD unavailable'}</p>
       {run.pullRequests.length>0&&<p className="overview-note">Associated pull requests: {run.pullRequests.map(n=><a key={n} href={'https://github.com/'+data.repository+'/pull/'+n} target="_blank" rel="noopener noreferrer"> #{n} </a>)}</p>}
+      <HostedJobDetails projectId={projectId} repository={data.repository} run={run}/>
      </article>;
     })}</div>{!data.runs.length&&<p className="overview-note">GitHub returned no workflow runs.</p>}
    </>}

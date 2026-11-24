@@ -34,3 +34,30 @@ export function hostedRevisionRelation(run:Pick<HostedRun,'head'|'event'>,head:s
 export function hostedRunUrl(repository:string,id:number){
  return 'https://github.com/'+githubRepositorySchema.parse(repository)+'/actions/runs/'+String(z.number().int().positive().max(Number.MAX_SAFE_INTEGER).parse(id));
 }
+
+// Explicit authored references are repository-qualified, never inferred from branch names.
+export const githubIdSchema=z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+export const pullReferenceSchema=z.strictObject({repository:githubRepositorySchema,number:githubIdSchema});
+export const pullReferencesSchema=z.array(pullReferenceSchema).max(5).refine(refs=>new Set(refs.map(ref=>ref.repository.toLowerCase()+':'+ref.number)).size===refs.length,'Duplicate pull request reference');
+export type PullReference=z.infer<typeof pullReferenceSchema>;
+export function matchingPullRuns(reference:PullReference,repository:string,runs:HostedRun[]){
+ if(reference.repository.toLowerCase()!==repository.toLowerCase())return [];
+ return runs.filter(run=>run.event==='pull_request'&&run.pullRequests.includes(reference.number));
+}
+export function pullRequestUrl(reference:PullReference){
+ const ref=pullReferenceSchema.parse(reference);return 'https://github.com/'+ref.repository+'/pull/'+ref.number;
+}
+export const githubPullSchema=z.object({
+ number:githubIdSchema,title:z.string().min(1).max(500),state:z.enum(['open','closed']),draft:z.boolean(),merged:z.boolean(),
+ head:z.object({sha:revision}),base:z.object({sha:revision,repo:z.object({full_name:githubRepositorySchema})}),
+ merge_commit_sha:revision.nullable(),updated_at:z.iso.datetime({offset:true})
+});
+export const githubJobsSchema=z.object({total_count:z.number().int().nonnegative(),jobs:z.array(z.object({
+ id:githubIdSchema,run_id:githubIdSchema,run_attempt:githubIdSchema,head_sha:revision,name:z.string().min(1).max(300),status:label,conclusion:label.nullable(),
+ started_at:z.iso.datetime({offset:true}).nullable(),completed_at:z.iso.datetime({offset:true}).nullable()
+})).max(50)});
+export type HostedPull={number:number;title:string;state:'open'|'closed';draft:boolean;merged:boolean;head:string;base:string;reportedMerge:string|null;updatedAt:string};
+export type HostedJob={id:number;name:string;status:string;conclusion:string|null;reportedHead:string;startedAt:string|null;completedAt:string|null};
+export type HostedDetailError={state:'unavailable'|'error';message:string};
+export type HostedPullResult={state:'available';repository:string;observedAt:string;pull:HostedPull}|HostedDetailError;
+export type HostedJobsResult={state:'available';repository:string;observedAt:string;runId:number;attempt:number;total:number;jobs:HostedJob[]}|HostedDetailError;

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pullReferencesSchema } from './hostedVerification';
 export const types = ['Idea', 'Mechanic', 'Asset', 'Character', 'Location', 'System', 'Task', 'Decision', 'Objective', 'Feature', 'Requirement', 'Milestone', 'Increment', 'Risk', 'Research', 'Document', 'Test'] as const;
 export const statuses = ['Concept', 'In progress', 'Ready'] as const;
 export const priorities = ['Low', 'Normal', 'High'] as const;
@@ -24,6 +25,7 @@ const metadataShape = {
   createdAt:recordTimestamp.optional(),
   updatedAt:recordTimestamp.optional(),
   // Explicit, reviewed historical attribution; not editable via ordinary record mutations.
+  githubPullRequests: pullReferencesSchema.optional(),
   implementationCommits: z.array(z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/)).max(100).optional()
 };
 export const metadataSchema = z.looseObject(metadataShape);
