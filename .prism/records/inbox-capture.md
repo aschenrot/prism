@@ -7,7 +7,8 @@ priority: High
 accent: teal
 tags: [inbox, knowledge, product]
 relationships:
-  - search-index
+  - kind: implements
+    target: search-index
   - knowledge-engine
   - record-templates
 ---

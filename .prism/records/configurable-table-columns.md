@@ -8,8 +8,10 @@ accent: teal
 tags: [views, schema, product]
 relationships:
   - project-property-increment
-  - views-engine
-  - custom-schemas
+  - kind: implements
+    target: views-engine
+  - kind: implements
+    target: custom-schemas
   - kind: depends-on
     target: custom-entity-types
 ---

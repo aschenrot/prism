@@ -7,7 +7,8 @@ priority: High
 accent: amber
 tags: [management, interaction]
 relationships:
-  - management-views
+  - kind: implements
+    target: management-views
   - knowledge-engine
   - m1-milestone-acceptance
 ---

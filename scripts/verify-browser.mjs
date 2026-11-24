@@ -4,7 +4,7 @@ import { dirname,join,relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-const minimumScenarios=35;
+const minimumScenarios=36;
 const root=realpathSync(join(dirname(fileURLToPath(import.meta.url)),'..'));
 const npm=process.env.npm_execpath;
 if(!npm)throw Error('Use npm run test:browser.');

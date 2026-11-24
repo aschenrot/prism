@@ -7,7 +7,8 @@ priority: High
 accent: amber
 tags: [editing, reliability]
 relationships:
-  - editing-reliability
+  - kind: implements
+    target: editing-reliability
   - draft-recovery
   - knowledge-engine
   - m1-milestone-acceptance

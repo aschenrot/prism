@@ -7,7 +7,8 @@ priority: High
 accent: teal
 tags: [search, knowledge, product]
 relationships:
-  - search-index
+  - kind: implements
+    target: search-index
   - knowledge-engine
   - kind: depends-on
     target: configurable-table-columns
