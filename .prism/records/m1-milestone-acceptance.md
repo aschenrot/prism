@@ -53,6 +53,7 @@ relationships:
   - m1-review-readiness
   - m1-acceptance-navigation-correction
   - m1-functional-verification
+  - m1-task-first-workspace
   - knowledge-workflow-increment
   - management-planning-increment
   - editing-reliability-increment

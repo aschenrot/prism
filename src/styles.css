@@ -135,3 +135,71 @@ a.nav-item,a.record-card,a.overview-record,a.milestone-step,a.linked-row,a.secon
 .record-disclosure[open]>summary{border-bottom:1px solid var(--line);border-radius:9px 9px 0 0}
 .record-disclosure-body{padding:clamp(16px,2.5vw,28px);min-width:0}
 @media(prefers-reduced-motion:reduce){.record-disclosure>summary>svg{transition:none}}
+
+/* Task-first acceptance layout; ordinary record reading remains independent. */
+.record-page.acceptance-record-page{max-width:1600px;gap:12px}
+.workspace-content:has(>.acceptance-record-page){padding-top:18px}
+.acceptance-record-page .record-page-heading{gap:12px;padding:0 0 12px;flex-wrap:nowrap;align-items:flex-start}
+.acceptance-record-page .record-page-heading>div:first-child{flex:1 1 auto;min-width:0}
+.record-page-heading>.record-page-actions{flex:0 0 auto}
+.acceptance-record-page .record-page-heading h1{font-size:clamp(18px,1.6vw,23px);letter-spacing:-.3px;line-height:1.25;margin:5px 0 7px}
+.acceptance-record-page .record-page-meta{gap:6px}
+.acceptance-workspace,.acceptance-run{gap:12px}
+.acceptance-run-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start;min-width:0}
+.acceptance-progress{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:transparent;border:0;padding:8px 0}
+.acceptance-progress-top{justify-content:flex-start;gap:6px;white-space:nowrap}
+.acceptance-progress-top strong{font-size:18px;letter-spacing:0}
+.acceptance-progress-top strong small{font-size:12px}
+.acceptance-progress-track{min-width:65px;max-width:220px;flex:1 1 100px;height:5px}
+.acceptance-counts{gap:10px;font-size:11px}
+.acceptance-secondary-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;justify-content:flex-end}
+.acceptance-secondary-controls:has(details[open]){grid-column:1/-1;display:grid;grid-template-columns:1fr;justify-content:stretch}
+.acceptance-instructions{padding:0;background:var(--panel);min-width:0}
+.acceptance-instructions>summary{display:flex;align-items:center;gap:6px;list-style:none;padding:9px 10px;min-height:36px}
+.acceptance-instructions>summary::-webkit-details-marker{display:none}
+.acceptance-instructions[open]>summary>svg{transform:rotate(90deg)}
+.acceptance-instructions[open]>summary{border-bottom:1px solid var(--line)}
+.acceptance-detail-body{padding:12px;display:grid;gap:10px;min-width:0}
+.acceptance-detail-body>.acceptance-run-context{background:transparent;padding:0;border:0}
+.acceptance-detail-body>.overview-note{margin:0}
+.acceptance-layout{grid-template-columns:minmax(155px,215px) minmax(0,1fr);gap:12px}
+.acceptance-cases{padding:8px 6px;top:76px}
+.acceptance-case-content{padding:16px;gap:12px;container:review-case / inline-size}
+.acceptance-case-header{align-items:center}
+.acceptance-case-header h2{font-size:clamp(20px,1.7vw,26px);margin:4px 0 0;scroll-margin-top:78px}
+.acceptance-case-body{display:grid;gap:14px;min-width:0}
+.acceptance-case-instructions{display:grid;gap:12px;align-content:start;min-width:0}
+.acceptance-case-content h3{margin:0 0 5px}
+.acceptance-workspace .markdown-body{line-height:1.55}
+.acceptance-workspace .markdown-body p{margin:4px 0}
+.acceptance-expected,.acceptance-setup{padding:10px 12px}
+.acceptance-result-form{padding-top:12px;gap:10px;min-width:0}
+.acceptance-result-form fieldset{gap:10px}
+.acceptance-result-form legend{margin:0 0 7px}
+.acceptance-outcomes{gap:6px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.acceptance-outcomes label{padding:8px;min-height:36px}
+.acceptance-notes textarea{min-height:70px;max-width:100%;font-weight:400}
+.acceptance-case-actions{gap:6px}
+.acceptance-decision{padding-top:12px}
+@container review-case (min-width:680px){.acceptance-case-body{grid-template-columns:minmax(0,1.06fr) minmax(0,1fr);align-items:start;gap:16px}.acceptance-result-form{border-top:0;border-left:1px solid var(--line);padding:0 0 0 16px}}
+@media(max-width:1100px){.acceptance-run-bar{grid-template-columns:1fr}.acceptance-secondary-controls{justify-content:flex-start}.acceptance-layout{grid-template-columns:minmax(145px,180px) minmax(0,1fr)}}
+@media(max-width:720px){.acceptance-record-page .record-page-heading>div:first-child{flex-basis:auto}.acceptance-layout{grid-template-columns:1fr}.acceptance-cases{max-height:180px;position:static}.acceptance-case-content{padding:12px}.acceptance-case-actions .action-spacer{display:none}.acceptance-secondary-controls{width:100%}}
+/* Local registration guide: no filesystem capability is exposed to the browser. */
+.project-registration-dialog{width:min(620px,calc(100vw - 32px))}
+.registration-symbol{display:grid;place-items:center;width:40px;height:40px;border-radius:9px;background:#293329;color:var(--accent)}
+.registration-modes{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.registration-modes button[aria-pressed="true"]{background:#2c3828;border-color:#80985e;color:var(--accent)}
+.registration-storage{display:grid;gap:6px;font-size:12px;color:var(--muted);margin:12px 0}
+.project-registration-dialog h3{display:flex;align-items:center;gap:8px;font-size:14px;margin:16px 0 8px}
+.registration-steps{padding-left:20px;font-size:13px;line-height:1.55;color:#c6c8d0}
+.registration-steps li+li{margin-top:6px}
+.registration-command{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--base);border:1px solid var(--line);border-radius:7px;padding:10px;font-size:12px;line-height:1.5;user-select:text}
+.registration-projects{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.registration-projects li{border:1px solid var(--line);border-radius:6px;padding:8px;display:grid;gap:3px;overflow-wrap:anywhere}
+.registration-projects small{color:var(--muted);font-size:11px}
+
+.acceptance-instructions>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:7px}
+.acceptance-result-form>.acceptance-case-actions{display:grid;gap:8px}
+.acceptance-step-navigation,.acceptance-save-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.acceptance-discard{margin-left:auto}
+.acceptance-save-actions{justify-content:flex-end}

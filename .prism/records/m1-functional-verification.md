@@ -83,3 +83,7 @@ These are the original texts from the prior review definition, retained verbatim
 - [ ] K18 — **Recover a draft after its record disappears** — Retain a disposable draft and open Recovery. Review its identity, export and resume/discard choices without moving the underlying file. Expected: understandable recovery inventory and clear consequences for each action. Missing canonical files, restored files and cross-project isolation are developer-verified.
 
 - [ ] K19 — **Retain unfinished definition input** — Start a property, entity and template definition with incomplete values, keep and close each, reload and resume. Expected: the unsaved input remains separate from canonical definitions, current revision still gates saving, clear export/discard options and no cross-project recovery.
+
+
+## Task-first acceptance and project setup follow-up
+Developer-owned viewport regression for a representative P02-length case (1440×900 and 1280×800), explicit keyboard focus on case advance, preserved review history, and project registration guide with no registry writes or guard bypass. This addresses reported usability issues; it does not assert broader accessibility or native graphical folder creation.
