@@ -794,3 +794,21 @@ test('project dropdown exposes create connect and manage guidance without mutati
  await selector.selectOption(':add');const dialog=page.getByRole('dialog',{name:'Create project',exact:true});await expect(dialog.getByText(/Resolve this before stopping Prism/)).toBeVisible();await dialog.getByRole('button',{name:'Done',exact:true}).click();await expect(title(page)).toHaveValue('Unsaved draft before registration');
  await selector.selectOption(other);await expect(title(page)).toHaveValue('Unsaved draft before registration');await keep(page).click();await selector.selectOption(other);await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();await expect(selector).toHaveValue(other);
 });
+
+
+test('project setup focus survives delayed initial record loading and repeated dialog dismissal',async({page})=>{
+ const gates=[];let requests=0;
+ await page.route('**/api/projects/'+project+'/records',async route=>{if(requests++<2)await new Promise(resolve=>gates.push(resolve));await route.continue();});
+ const selector=page.locator('select[aria-label="Active project"]');
+ const loading=page.getByText('Opening your workspace…',{exact:true});
+ try{
+  await page.goto('/#/projects/'+project+'/overview');await expect(loading).toBeVisible();await expect.poll(()=>gates.length).toBe(1);
+  await selector.focus();await selector.selectOption(':add');const createGuide=page.getByRole('dialog',{name:'Create project',exact:true});await expect(createGuide).toBeVisible();
+  await page.keyboard.press('Escape');await expect(createGuide).toHaveCount(0);await expect(selector).toBeFocused();
+  gates[0]();await expect(loading).toHaveCount(0);await expect(selector).toBeFocused();
+  await page.reload();await expect(loading).toBeVisible();await expect.poll(()=>gates.length).toBe(2);
+  await selector.focus();await selector.selectOption(':connect');const connectGuide=page.getByRole('dialog',{name:'Connect existing project',exact:true});await expect(connectGuide).toBeVisible();
+  gates[1]();await expect(loading).toHaveCount(0);await expect(connectGuide.getByRole('button',{name:'Close project setup',exact:true})).toBeFocused();
+  await connectGuide.getByRole('button',{name:'Done',exact:true}).click();await expect(connectGuide).toHaveCount(0);await expect(selector).toBeFocused();
+ }finally{for(const release of gates)release();}
+});

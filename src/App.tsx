@@ -250,6 +250,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   const selected=route.kind==='record'?route.recordId:null;
   const [busy,setBusy]=useState(false),[editEntry,setEditEntry]=useState<string|null>(null);
   const [registrationGuide,setRegistrationGuide]=useState<RegistrationMode|null>(null);
+  const projectPickerRef=useRef<HTMLSelectElement>(null),restoreProjectPickerFocus=useRef(false);
   const editing=editEntry===router.entryKey;
   const destinations=destinationsFor(project);
   const qc=useQueryClient();
@@ -381,19 +382,22 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   useLayoutEffect(()=>{
     if(!ready)return;
     const target=router.entry.scroll;
-    pageRef.current?.focus({preventScroll:true});
+    // Initial data readiness must not steal focus from an already used project picker or its modal.
+    if(!registrationGuide&&(previousVisit.current!==null||document.activeElement!==projectPickerRef.current))pageRef.current?.focus({preventScroll:true});
     window.scrollTo(0,target);
     const frame=requestAnimationFrame(()=>window.scrollTo(0,target));
     return()=>cancelAnimationFrame(frame);
   },[router.entryKey,ready]);
+  // Restore the known initiating control after the native dialog closes and React removes it.
+  useLayoutEffect(()=>{if(!registrationGuide&&restoreProjectPickerFocus.current){restoreProjectPickerFocus.current=false;projectPickerRef.current?.focus({preventScroll:true});}},[registrationGuide]);
   // Animate only actual route visits, not polling, filter changes or a dirty editor's state.
   useLayoutEffect(()=>{if(!ready)return;const previous=previousVisit.current;previousVisit.current={trail:router.entry.trail,index:router.entry.index};const node=pageRef.current;if(!previous||!node||typeof node.animate!=='function'||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const backwards=previous.trail===router.entry.trail&&router.entry.index<previous.index;const animation=node.animate([{opacity:.72,transform:'translateX('+(backwards?-5:5)+'px)'},{opacity:1,transform:'translateX(0)'}],{duration:160,easing:'cubic-bezier(.2,.8,.2,1)'});return()=>animation.cancel();},[router.entryKey,ready]);
   useEffect(()=>{document.title=(record?.title||savedView?.title||destination.label)+' — '+project.title+' · Prism';},[record?.title,savedView?.title,destination.label,project.title]);
   useEffect(()=>{const handler=(e:KeyboardEvent)=>{if(creating||busy||workPending||bulkTargets||trashTarget||route.kind==='record'||view!=='Slides'||e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT','BUTTON'].includes((e.target as HTMLElement)?.tagName))return;if(e.key==='ArrowRight')setSlide(slide+1);if(e.key==='ArrowLeft')setSlide(slide-1);};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);},[route.kind,view,slide,visible.length,router.entryKey,router.entry.context,creating,busy,trashTarget,workPending,bulkTargets]);
   return <RecordCommandContext.Provider value={{duplicate:duplicateRecord,copy:target=>{void copyRecordLink(target);},triage:target=>{if(busy||creating||workPending||bulkTargets||query.isError||trash.isPending)return;setRecordNotice(null);inboxUpdate.mutate({target,inbox:!target.inbox});}}}><div className="shell workspace-shell routed-shell">
     <aside className="sidebar"><div className="brand"><div className="brand-mark"><Layers3 size={22}/></div><div>prism<span>PROJECT WORKSPACE</span></div></div>
-      <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>{const value=e.currentTarget.value;if(value===":add"||value===":connect"||value===":manage"){e.currentTarget.value=projectId;setRegistrationGuide(value===":add"?"create":value===":connect"?"connect":"manage");}else switchProject(value);}}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}<optgroup label="Project management"><option value=":add">Create project…</option><option value=":connect">Connect existing project…</option><option value=":manage">Manage projects…</option></optgroup></select></div>
-      {registrationGuide&&<ProjectRegistrationGuide mode={registrationGuide} projects={projects} blocked={navigationGuard} onClose={()=>setRegistrationGuide(null)}/>}
+      <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select ref={projectPickerRef} aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>{const value=e.currentTarget.value;if(value===":add"||value===":connect"||value===":manage"){e.currentTarget.value=projectId;setRegistrationGuide(value===":add"?"create":value===":connect"?"connect":"manage");}else switchProject(value);}}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}<optgroup label="Project management"><option value=":add">Create project…</option><option value=":connect">Connect existing project…</option><option value=":manage">Manage projects…</option></optgroup></select></div>
+      {registrationGuide&&<ProjectRegistrationGuide mode={registrationGuide} projects={projects} blocked={navigationGuard} onClose={()=>{restoreProjectPickerFocus.current=true;setRegistrationGuide(null);}}/>}
       <nav className="purpose-nav" aria-label="Project navigation">{navigationGroups.map(group=>{
         const items=destinations.filter(d=>d.group===group&&d.id!=='library'&&d.id!=='trash');if(!items.length)return null;
         return <div className="nav-group" key={group}>{group!=='Workspace'&&<div className="nav-label">{group}</div>}{items.map(d=>{const Icon=destinationIcons[d.id]||Database;return <RouteLink key={d.id} className={'nav-item purpose-item '+(destinationId===d.id?'active':'')} aria-current={destinationId===d.id?(route.kind==='record'?'location':'page'):undefined} href={categoryHref(d.id)} onNavigate={()=>navigate(d.id)}><Icon size={16}/><span>{d.label}</span></RouteLink>;})}</div>;

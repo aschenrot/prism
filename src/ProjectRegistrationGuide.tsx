@@ -11,12 +11,13 @@ const commands={
 export default function ProjectRegistrationGuide({mode,projects,blocked,onClose}:{mode:RegistrationMode;projects:ProjectInfo[];blocked:string;onClose:()=>void}){
  const dialog=useRef<HTMLDialogElement>(null),close=useRef<HTMLButtonElement>(null),heading=useId(),description=useId();
  const [selected,setSelected]=useState(mode),[storage,setStorage]=useState<'repository'|'standalone'>(mode==='connect'?'repository':'standalone'),[message,setMessage]=useState('');
- useLayoutEffect(()=>{const el=dialog.current;if(!el)return;const prior=document.activeElement instanceof HTMLElement?document.activeElement:null;el.showModal();close.current?.focus();return()=>{if(el.open)el.close();if(prior?.isConnected)prior.focus({preventScroll:true});};},[]);
+ useLayoutEffect(()=>{const el=dialog.current;if(!el)return;el.showModal();close.current?.focus();return()=>{if(el.open)el.close();};},[]);
+ const dismiss=()=>{if(dialog.current?.open)dialog.current.close();onClose();};
  const command=selected==='manage'?commands.manage:storage==='repository'?commands.connect:commands.create;
  const copy=async()=>{try{await navigator.clipboard.writeText(command);setMessage('Command template copied. Replace the example values before running it.');}catch{setMessage('Clipboard unavailable. Select and copy the command text manually.');}};
  const Icon=selected==='create'?FolderPlus:selected==='connect'?FolderOpen:Settings;
- return <dialog ref={dialog} className="prism-dialog project-registration-dialog" aria-labelledby={heading} aria-describedby={description} onCancel={e=>{e.preventDefault();onClose();}}>
-  <div className="dialog-header"><div className="registration-symbol"><Icon size={21}/></div><button ref={close} className="icon-button" type="button" aria-label="Close project setup" onClick={onClose}><X size={18}/></button></div>
+ return <dialog ref={dialog} className="prism-dialog project-registration-dialog" aria-labelledby={heading} aria-describedby={description} onCancel={e=>{e.preventDefault();dismiss();}}>
+  <div className="dialog-header"><div className="registration-symbol"><Icon size={21}/></div><button ref={close} className="icon-button" type="button" aria-label="Close project setup" onClick={dismiss}><X size={18}/></button></div>
   <h2 id={heading}>{labels[selected]}</h2>
   <p id={description}>Prism registers local folders through your terminal. This guide does not create, access or modify a folder from the browser.</p>
   <div className="registration-modes" role="group" aria-label="Project setup action">{(Object.keys(labels) as RegistrationMode[]).map(value=><button key={value} type="button" className="secondary" aria-pressed={selected===value} onClick={()=>{setSelected(value);setStorage(value==='connect'?'repository':'standalone');setMessage('');}}>{labels[value]}</button>)}</div>
@@ -29,6 +30,6 @@ export default function ProjectRegistrationGuide({mode,projects,blocked,onClose}
   <button type="button" className="secondary" onClick={()=>void copy()}><Copy size={15}/> Copy command template</button>
   {message&&<p role="status">{message}</p>}
   <p className="overview-note">Local registry changes take effect on restart. Explicit environment overrides must be resolved in the terminal. See docs/project-registration.md in the source checkout.</p>
-  <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose}>Done</button></div>
+  <div className="dialog-actions"><button type="button" className="secondary" onClick={dismiss}>Done</button></div>
  </dialog>;
 }
