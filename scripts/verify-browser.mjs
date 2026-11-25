@@ -4,7 +4,7 @@ import { dirname,join,relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-const minimumScenarios=39;
+const minimumScenarios=41;
 const root=realpathSync(join(dirname(fileURLToPath(import.meta.url)),'..'));
 const npm=process.env.npm_execpath;
 if(!npm)throw Error('Use npm run test:browser.');
@@ -50,7 +50,7 @@ try{
   git(repo,['-c','user.name=Prism test fixture','-c','user.email=fixture@example.invalid','-c','commit.gpgsign=false','-c','core.hooksPath='+hooks,'commit','--quiet','-m','Isolated browser test fixture'],isolatedGit);
   writeFileSync(join(fixture,'registry.json'),JSON.stringify([
     {id:'browser-review',title:'Browser fixture '+id,root:repo,storage:'repository',profiles:['core','product','project']},
-    {id:'browser-other',title:'Browser other fixture',root:other,storage:'standalone',profiles:['core','product','project']}
+    {id:'browser-other',title:'Browser other fixture',root:other,storage:'standalone',profiles:['core','product','project','game']}
   ]));
   const build=spawnSync(process.execPath,[npm,'run','build'],{cwd:root,stdio:'inherit',windowsHide:true});
   let result=null;
