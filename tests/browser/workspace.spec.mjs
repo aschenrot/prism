@@ -22,7 +22,7 @@ async function open(page,record,projectId=project){
 async function action(page,name,recordTitle){const trigger=recordTitle?page.getByRole('button',{name:'Actions for '+recordTitle,exact:true}):page.locator('.record-page').getByRole('button',{name:/^Actions for /});await trigger.click();await page.getByRole('menu').getByRole('menuitem',{name,exact:true}).click();}
 async function edit(page){await action(page,'Edit');await expect(page.getByLabel('Title',{exact:true})).toBeVisible();}
 function title(page){return page.getByLabel('Title',{exact:true});}
-async function collectionSearch(page){const toolbar=page.getByRole('region',{name:'Collection controls'});await expect(toolbar).toBeVisible();const input=toolbar.getByRole('textbox',{name:'Search records',exact:true});if(!await input.isVisible())await toolbar.getByRole('button',{name:'Search records',exact:true}).click();await expect(input).toBeVisible();return input;}
+async function collectionSearch(page){const toolbar=page.getByRole('region',{name:'Collection controls'});await expect(toolbar).toHaveCount(1);const input=toolbar.getByRole('textbox',{name:'Search records',exact:true});await expect(input).toBeVisible();return input;}
 function keep(page){return page.locator('.inspector-top').getByRole('button',{name:'Keep draft & close',exact:true});}
 function acceptDialog(page){page.once('dialog',dialog=>dialog.accept());}
 function save(page){return page.getByRole('button',{name:'Save',exact:true});}
@@ -654,24 +654,35 @@ test('one canonical requirement edit updates relationship readers, traceability,
  await page.goto('/#/projects/'+other+'/library');await page.getByRole('button',{name:'Search',exact:true}).click();await search.getByLabel('Search this project',{exact:true}).fill('canonicalintegrationmarker');await search.getByRole('button',{name:'Search project',exact:true}).click();await expect(search.getByRole('link',{name:updatedTitle,exact:true})).toHaveCount(0);
 });
 
-test('category navigation never automatically opens an empty collection search and retains active history filters',async({page,request})=>{
+test('one live collection toolbar across navigation and history, no stale controls or queries',async({page,request})=>{
  const record=await create(request,'Contextual search fixture');
  await page.goto('/#/projects/'+project+'/work');
  const nav=page.getByRole('navigation',{name:'Project navigation'}),toolbar=page.getByRole('region',{name:'Collection controls'}),input=page.getByRole('textbox',{name:'Search records',exact:true});
- const trigger=toolbar.getByRole('button',{name:'Search records',exact:true});
- await expect(trigger).toBeVisible();await expect(input).toHaveCount(0);
- await trigger.focus();await page.keyboard.press('Enter');await expect(input).toBeFocused();
- await input.fill(record.title);await expect(page.getByRole('link',{name:record.title,exact:true})).toBeVisible();
- await nav.getByRole('link',{name:'Requirements',exact:true}).click();await expect(page).toHaveURL(/\/requirements$/);await expect(trigger).toBeVisible();await expect(input).toHaveCount(0);
- await nav.getByRole('link',{name:'Overview',exact:true}).click();await expect(page).toHaveURL(/\/overview$/);await expect(toolbar).toHaveCount(0);await expect(input).toHaveCount(0);
- await page.goBack();await expect(trigger).toBeVisible();await expect(input).toHaveCount(0);
- await page.goBack();await expect(input).toHaveValue(record.title);await expect(page.getByRole('link',{name:record.title,exact:true})).toBeVisible();
+ const check=async(label,newLabel,value='')=>{
+  await expect(page.getByRole('heading',{name:label,exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(1);await expect(input).toHaveCount(1);await expect(input).toHaveValue(value);await expect(toolbar.getByRole('button',{name:newLabel,exact:true})).toBeVisible();
+ };
+ await check('Work','New task');await input.fill(record.title);await expect(page.getByRole('link',{name:record.title,exact:true})).toBeVisible();
+ await toolbar.getByRole('button',{name:'Filter',exact:true}).click();await expect(toolbar.getByLabel('Status',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Columns',exact:true}).click();await expect(page.getByRole('region',{name:'Table columns'})).toBeVisible();
+ await nav.getByRole('link',{name:'Requirements',exact:true}).click();await check('Requirements','New requirement');await expect(page.getByRole('button',{name:'New task',exact:true})).toHaveCount(0);await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Columns',exact:true})).toHaveCount(0);
+ await nav.getByRole('link',{name:'Overview',exact:true}).click();await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);await expect(input).toHaveCount(0);
+ await page.goBack();await check('Requirements','New requirement');
+ await page.goBack();await check('Work','New task',record.title);await expect(page.getByRole('button',{name:'Columns',exact:true})).toHaveCount(1);
  await page.getByRole('link',{name:record.title,exact:true}).click();await expect(page.getByRole('heading',{name:record.title,exact:true})).toBeVisible();await expect(input).toHaveCount(0);await expect(toolbar).toHaveCount(0);
- await page.goBack();await expect(input).toHaveValue(record.title);
- await toolbar.getByRole('button',{name:'Clear search',exact:true}).click();await expect(input).toHaveValue('');await expect(input).toBeFocused();await input.fill(record.title);
- await toolbar.getByRole('button',{name:'Clear and close search',exact:true}).click();await expect(input).toHaveCount(0);await expect(trigger).toBeFocused();
- await nav.getByRole('link',{name:'Quality',exact:true}).click();await expect(page).toHaveURL(/\/quality$/);await expect(toolbar).toHaveCount(0);
- await nav.getByRole('link',{name:'Data library',exact:true}).click();await page.getByRole('button',{name:'Search',exact:true}).click();await expect(page.getByLabel('Search this project',{exact:true})).toBeVisible();await expect(input).toHaveCount(0);await expect(toolbar).toHaveCount(0);
+ await page.goBack();await check('Work','New task',record.title);
+ await toolbar.getByRole('button',{name:'Clear search',exact:true}).click();await expect(input).toHaveValue('');
+ await nav.getByRole('link',{name:'Quality',exact:true}).click();await expect(page.getByRole('heading',{name:'Quality',exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);
+ await nav.getByRole('link',{name:'Data library',exact:true}).click();await check('Data library','New record');await page.getByRole('button',{name:'Search',exact:true}).click();await expect(page.getByLabel('Search this project',{exact:true})).toBeVisible();await expect(input).toHaveCount(0);await expect(toolbar).toHaveCount(0);
+ await page.getByRole('button',{name:'Table',exact:true}).click();await check('Data library','New record');
+ await page.getByRole('combobox',{name:'Active project',exact:true}).selectOption(other);await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);
+ await page.goBack();await check('Data library','New record');
+});
+test('every sidebar destination has only its current controls with reduced motion',async({page})=>{
+ await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/#/projects/'+project+'/overview');
+ const nav=page.getByRole('navigation',{name:'Project navigation'}),toolbar=page.getByRole('region',{name:'Collection controls'}),input=page.getByRole('textbox',{name:'Search records',exact:true});
+ const collections=[['Work','New task'],['Features','New feature'],['Strategy','New objective'],['Requirements','New requirement'],['Increments','New increment'],['Roadmap','New milestone'],['Documentation','New document'],['Decisions','New decision'],['Architecture','New system'],['Presentations','New record'],['Data library','New record']];
+ for(const [label,createLabel] of collections){await nav.getByRole('link',{name:label,exact:true}).click();await expect(page.getByRole('heading',{name:label,exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(1);await expect(input).toHaveCount(1);await expect(input).toHaveValue('');await expect(toolbar.getByRole('button',{name:createLabel,exact:true})).toBeVisible();await input.fill('not-found-'+label);}
+ for(const label of ['Overview','Inbox','Recovery','Quality','Repository','Changes','Schemas','Templates','Trash']){const link=label==='Trash'?page.getByRole('link',{name:label,exact:true}):nav.getByRole('link',{name:label,exact:true});await link.click();await expect(page.getByRole('heading',{name:label,exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);await expect(input).toHaveCount(0);}
 });
 test('record secondary information is collapsed on entry and keyboard accessible without data changes',async({page,request})=>{
  const target=await create(request,'Disclosure linked requirement','Requirement'),record=await create(request,'Disclosure fixture');

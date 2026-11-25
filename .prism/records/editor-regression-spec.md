@@ -78,3 +78,7 @@ Use this real review for normal progress checks. For destructive or conflicting 
 - [ ] F06 — **Export review evidence** — Export results after saving a case; inspect JSON and local project acceptance.local files. Expected: exact test-definition revision, tested HEAD, case observations, reviewer, environment and decision present; Git status shows no acceptance-run files. Preserve exports for review/backup; no automatic task status or PR changes.
 
 
+
+
+## G. Collection control ownership (M1 correction)
+Automated browser regression: navigate all product/management/knowledge/configuration sidebar destinations using isolated fixtures, with ordinary and reduced motion. Verify exactly one live collection toolbar and search input in collection views, correct contextual creation label and empty query on new destinations; zero collection controls on dedicated destinations and full record pages. Verify Back restores the saved query, switching project does not carry stale controls, and dedicated project Search is distinct. Secondary record sections default closed; keyboard activation and reload preserve canonical data. This is developer-owned technical verification, not additional owner acceptance.
