@@ -6,7 +6,7 @@ status: In progress
 priority: High
 accent: teal
 tags: [quality, management, milestone]
-relationships: [knowledge-engine, m1-milestone-acceptance, quality-gates, development-workflow-decision, record-navigation, editor-acceptance, collection-interaction, collection-acceptance, public-preview-readiness, ci-verification]
+relationships: [knowledge-engine, m1-milestone-acceptance, quality-gates, development-workflow-decision, m1-functional-verification, record-navigation, editor-acceptance, collection-interaction, collection-acceptance, public-preview-readiness, ci-verification]
 ---
 ## Closure criteria
 - Explicit Milestone → Increment → Task/Test scope, with repository-qualified PR references and one consolidated review definition. Review all seven increments; no omitted implementation tasks in recent work.
@@ -27,3 +27,7 @@ Explicitly author Implements links for M1 tasks where their recorded implementat
 
 ## Owner review outcome (2026-11-24)
 At verified main `3eda97b6b32ac3c98f3c5fb879f1e16e74efe652`, owner reported finalized Changes requested, run `011fd661-10c4-475e-9ddc-ffc30c22b6aa`, definition revision `2a195e11c4f8a468adc30ab05228fde3172107039f87cd0b92ddb9018c9f444f`: H01–H04 passed, R01 failed, 20 pending. Navigation search behavior blocked continuation; owner requested collapsible record sections and clearer instructions. These are historical observations, not current acceptance. See m1-acceptance-navigation-correction. M1 remains open.
+
+
+## Owner-approved review reduction (2026-11-25)
+Owner explicitly delegated remaining functional verification and requested a representative five-workflow product review. Retain the original 25 cases in m1-functional-verification and the immutable Git revision 8cb4e530912b6d05fa4519b4d87b8602b500fe65; keep prior local execution snapshots and outcomes untouched. Use new P01–P05 IDs in the existing milestone acceptance Test. The technical gate remains the complete exact candidate matrix, reviewed logs, and isolated visual evidence. A new product review is required; no case is prefilled. CLI fault simulation, exhaustive per-property checks and feature-by-feature repetition are developer-owned. The only remaining owner work is product judgment on the five workflows. Do not proceed to M2 without explicit direction.

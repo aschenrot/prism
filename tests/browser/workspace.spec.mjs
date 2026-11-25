@@ -277,7 +277,7 @@ test('hosted verification is opt-in, revision-aware and does not retain a stale 
  expect(requests).toBe(2);
 });
 
-test('increment shows only explicitly associated PR runs and exact attempt job metadata',async({page,request})=>{
+test('increment shows only explicitly associated PR runs and exact attempt job metadata',async({page,request},testInfo)=>{
  const increment=await create(request,'Scoped hosted fixture','Increment');
  const file=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'repo','.prism','records',increment.id+'.md');
  await writeFile(file,(await readFile(file,'utf8')).replace(/^---\r?\n/,'---\ngithubPullRequests: [{repository: owner/project, number: 13}, {repository: other/project, number: 99}]\n'));
@@ -297,6 +297,7 @@ test('increment shows only explicitly associated PR runs and exact attempt job m
  await expect(panel.getByText(/Unrelated Verify|Push Verify/)).toHaveCount(0);
  await panel.getByRole('button',{name:'Load jobs'}).click();await expect(panel.getByRole('link',{name:'verify matrix job'})).toBeVisible();
  await expect(panel.getByText(/Partial job list/)).toBeVisible();await expect(panel.getByText(/not actual checkout/)).toBeVisible();expect(calls).toBe(3);
+ await page.screenshot({path:testInfo.outputPath('hosted-scoped-evidence.png'),animations:'disabled',fullPage:true});
  expect((await recordOnDisk(request,increment.id)).status).toBe('Concept');
 });
 
@@ -410,7 +411,7 @@ test('custom entity definitions retain built-in roles, scoped fields and collect
  }finally{await unlink(schemaPath).catch(()=>{});}
 });
 
-test('configurable table columns preserve order and values across saved views and schema retirement',async({page,request})=>{
+test('configurable table columns preserve order and values across saved views and schema retirement',async({page,request},testInfo)=>{
  const schemaPath=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'other','schema.yaml'),otherPrefix='/api/projects/'+other;
  const definition={version:1,fields:[{id:'estimate',label:'Estimate',kind:'number',appliesTo:['Task']}]};
  try{
@@ -427,6 +428,7 @@ test('configurable table columns preserve order and values across saved views an
   await settings.getByLabel('Add column',{exact:true}).selectOption('property:estimate');await settings.getByRole('button',{name:'Move Estimate up',exact:true}).click();
   const headers=()=>table.locator('thead th').allTextContents();
   await expect.poll(headers).toEqual(['','Title','Type','Estimate','Priority','Actions']);
+ await page.screenshot({path:testInfo.outputPath('configured-table.png'),animations:'disabled',fullPage:true});
   await expect(table.getByRole('row').filter({hasText:record.title}).getByText('42',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Saved views',exact:true}).click();
   await page.getByRole('button',{name:'Save current view',exact:true}).click();await page.getByLabel('View name',{exact:true}).fill('Estimates only');await page.getByRole('button',{name:'Save new view',exact:true}).click();
@@ -442,7 +444,7 @@ test('configurable table columns preserve order and values across saved views an
  }finally{await unlink(schemaPath).catch(()=>{});}
 });
 
-test('project search finds saved records and local file content with provenance and preserves return context',async({page,request})=>{
+test('project search finds saved records and local file content with provenance and preserves return context',async({page,request},testInfo)=>{
  const fixture=process.env.PRISM_BROWSER_FIXTURE_ROOT,docs=join(fixture,'repo','docs');await mkdir(docs,{recursive:true});
  const file=join(docs,'search-fixture.md');await writeFile(file,'A documentation result for uniquefindmarker.');
  try{
@@ -456,6 +458,7 @@ test('project search finds saved records and local file content with provenance 
   await expect(panel.getByRole('link',{name:'Other project secret',exact:true})).toHaveCount(0);
   await panel.getByRole('button',{name:'docs/search-fixture.md',exact:true}).click();
   await expect(panel.getByRole('region',{name:'Search file preview'}).getByText('A documentation result for uniquefindmarker.',{exact:true})).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath('knowledge-search.png'),animations:'disabled',fullPage:true});
   await panel.getByRole('link',{name:'Search target',exact:true}).click();await expect(page.getByRole('heading',{name:'Search target',exact:true})).toBeVisible();
   await page.goBack();await expect(panel.getByLabel('Search this project',{exact:true})).toHaveValue('uniquefindmarker');await expect(panel.getByRole('link',{name:'Search target',exact:true})).toBeVisible();
   const bad=await request.post(prefix+'/search',{data:{query:'x',root:fixture}});expect(bad.status()).toBe(400);
@@ -464,7 +467,7 @@ test('project search finds saved records and local file content with provenance 
  }finally{await unlink(file).catch(()=>{});}
 });
 
-test('templates initialize independent records and retirement prevents new use',async({page,request})=>{
+test('templates initialize independent records and retirement prevents new use',async({page,request},testInfo)=>{
  const otherPrefix='/api/projects/'+other;
  await page.goto('/#/projects/'+other+'/templates');
  const admin=page.getByRole('region',{name:'Project templates'});await admin.getByRole('button',{name:'New template',exact:true}).click();
@@ -482,6 +485,7 @@ test('templates initialize independent records and retirement prevents new use',
  await page.getByRole('button',{name:'Create',exact:true}).click();
  await expect(page.getByLabel('Title',{exact:true})).toHaveValue('Review from template');
  await expect(page.locator('.editor textarea')).toHaveValue('Template body');
+ await page.screenshot({path:testInfo.outputPath('template-created-record.png'),animations:'disabled',fullPage:true});
  const r=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.title==='Review from template');
  expect(r.status).toBe('Concept');expect(r.priority).toBe('High');expect(r.relationships).toEqual([]);
  const {id,version,revision,...values}=t;const retired=await request.put(otherPrefix+'/templates/'+id,{data:{expectedRevision:revision,template:{...values,retired:true}}});expect(retired.ok()).toBeTruthy();
@@ -489,7 +493,7 @@ test('templates initialize independent records and retirement prevents new use',
  expect((await (await request.get(otherPrefix+'/records')).json()).records.find(v=>v.id===r.id).body).toBe('Template body');
 });
 
-test('inbox capture is project-local and triage preserves canonical record identity',async({page,request})=>{
+test('inbox capture is project-local and triage preserves canonical record identity',async({page,request},testInfo)=>{
  const otherPrefix='/api/projects/'+other;
  await page.goto('/#/projects/'+other+'/inbox');
  const panel=page.getByRole('region',{name:'Project inbox'});
@@ -500,6 +504,7 @@ test('inbox capture is project-local and triage preserves canonical record ident
  await panel.getByRole('button',{name:'Capture',exact:true}).click();
  const link=panel.getByRole('link',{name:'Capture fixture for triage',exact:true});
  await expect(link).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath('inbox-capture.png'),animations:'disabled',fullPage:true});
  const captured=(await (await request.get(otherPrefix+'/records')).json()).records.find(r=>r.title==='Capture fixture for triage');
  expect(captured).toMatchObject({type:'Idea',status:'Concept',inbox:true,body:'Keep this original note.',relationships:[]});
  expect((await (await request.get(prefix+'/records')).json()).records.some(r=>r.id===captured.id)).toBe(false);
@@ -515,7 +520,7 @@ test('inbox capture is project-local and triage preserves canonical record ident
  await expect(page.getByText('Needs triage',{exact:true})).toHaveCount(0);
 });
 
-test('board status moves use canonical revisions, keyboard control and recovery guards',async({page,request})=>{
+test('board status moves use canonical revisions, keyboard control and recovery guards',async({page,request},testInfo)=>{
  const a=await create(request,'Board move Alpha'),b=await create(request,'Board move Protected'),c=await create(request,'Board move Conflict');
  await open(page,b);await edit(page);await title(page).fill('Recover board draft');await keep(page).click();
  await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Board',exact:true}).click();
@@ -524,7 +529,8 @@ test('board status moves use canonical revisions, keyboard control and recovery 
  const move=name=>board.getByRole('combobox',{name:'Move '+name+' to status',exact:true});
  await expect(concept.getByRole('heading',{name:a.title,exact:true})).toBeVisible();
  await concept.locator('.board-card-shell').filter({has:page.getByRole('heading',{name:a.title,exact:true})}).locator('.board-grip').dragTo(progress.locator('.column-heading'));
- await expect(progress.getByRole('heading',{name:a.title,exact:true})).toBeVisible();expect((await recordOnDisk(request,a.id)).status).toBe('In progress');
+ await expect(progress.getByRole('heading',{name:a.title,exact:true})).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath('board-progress.png'),animations:'disabled',fullPage:true});expect((await recordOnDisk(request,a.id)).status).toBe('In progress');
  await move(a.title).focus();await move(a.title).selectOption('Ready');await expect(ready.getByRole('heading',{name:a.title,exact:true})).toBeVisible();await expect(move(a.title)).toBeFocused();
  await move(b.title).selectOption('Ready');await expect(page.getByText('Recovery draft or unavailable recovery storage; resolve it before editing.',{exact:true})).toBeVisible();expect((await recordOnDisk(request,b.id)).status).toBe('Concept');
  await page.route('**/api/projects/'+project+'/records/'+c.id+'/properties',async route=>{await update(request,c,{body:'External change'});await route.continue();},{times:1});
@@ -533,7 +539,7 @@ test('board status moves use canonical revisions, keyboard control and recovery 
  await (await collectionSearch(page)).fill(a.title);await page.getByRole('button',{name:'Filter',exact:true}).click();await page.getByLabel('Status',{exact:true}).selectOption('Ready');await move(a.title).focus();await move(a.title).selectOption('Concept');await expect(board.getByText('No matching records. Create a record or change your filters.',{exact:true})).toBeVisible();await expect(board).toBeFocused();
 });
 
-test('planning uses explicit dependency directions, shows filtered prerequisites and cycles, and retains navigation',async({page,request})=>{
+test('planning uses explicit dependency directions, shows filtered prerequisites and cycles, and retains navigation',async({page,request},testInfo)=>{
  const a=await create(request,'Plan fixture prerequisite','Document'),b=await create(request,'Plan fixture task'),c=await create(request,'Plan fixture cycle A'),d=await create(request,'Plan fixture cycle B'),e=await create(request,'Plan fixture missing');
  await update(request,a,{status:'Ready',relationships:[{kind:'blocks',target:b.id}]});
  await update(request,b,{relationships:[{kind:'depends-on',target:a.id}]});
@@ -545,12 +551,13 @@ test('planning uses explicit dependency directions, shows filtered prerequisites
  await expect(task.getByText('Direct prerequisites (1)',{exact:true})).toBeVisible();await expect(task.getByText('Outside current filter',{exact:true})).toBeVisible();
  await expect(panel.getByRole('article',{name:'Dependencies for '+c.title}).getByText('Dependency cycle',{exact:true})).toBeVisible();
  await expect(panel.getByRole('article',{name:'Dependencies for '+e.title}).getByText('Unavailable: missing-plan-fixture',{exact:true})).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath('dependency-plan.png'),animations:'disabled',fullPage:true});
  await task.getByRole('link',{name:a.title,exact:true}).click();await expect(page.getByRole('heading',{name:a.title,exact:true})).toBeVisible();await page.goBack();
  await expect(panel).toBeVisible();await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Plan fixture');
  expect((await recordOnDisk(request,b.id)).status).toBe('Concept');
 });
 
-test('authored timeline maps stable date fields, persists saved mapping and exposes unplotted values',async({page,request})=>{
+test('authored timeline maps stable date fields, persists saved mapping and exposes unplotted values',async({page,request},testInfo)=>{
  const schemaPath=join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'other','schema.yaml'),otherPrefix='/api/projects/'+other;
  const definition={version:1,fields:[{id:'start-date',label:'Start date',kind:'date'},{id:'end-date',label:'End date',kind:'date'}]};
  try{
@@ -560,6 +567,7 @@ test('authored timeline maps stable date fields, persists saved mapping and expo
  await page.goto('/#/projects/'+other+'/work');await page.getByRole('button',{name:'Timeline',exact:true}).click();await (await collectionSearch(page)).fill('Timeline fixture');
  const panel=page.getByRole('region',{name:'Authored timeline'});await panel.getByLabel('Date or start field',{exact:true}).selectOption('start-date');await panel.getByLabel('End field (optional)',{exact:true}).selectOption('end-date');
  await expect(panel.getByText('2026-12-01 – 2026-12-08',{exact:true})).toBeVisible();await expect(panel.getByRole('region',{name:'Unplotted records'}).getByRole('link',{name:b.title,exact:true})).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath('authored-timeline.png'),animations:'disabled',fullPage:true});
  await page.getByRole('button',{name:'Saved views',exact:true}).click();await page.getByRole('button',{name:'Save current view',exact:true}).click();await page.getByLabel('View name',{exact:true}).fill('Timeline fixture view');await page.getByRole('button',{name:'Save new view',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Timeline fixture view',exact:true})).toBeVisible();await page.reload();await expect(panel.getByLabel('Date or start field',{exact:true})).toHaveValue('start-date');await expect(panel.getByLabel('End field (optional)',{exact:true})).toHaveValue('end-date');
  await writeFile(schemaPath,JSON.stringify({...definition,fields:definition.fields.map(f=>f.id==='start-date'?{...f,retired:true}:f)}));
@@ -594,7 +602,7 @@ test('opt-in autosave commits valid drafts and pauses on external conflict witho
  await keep(page).click();await page.reload();await page.getByRole('button',{name:'Resume draft'}).click();await expect(toggle).not.toBeChecked();await expect(title(page)).toHaveValue('Unsaved local after conflict');
 });
 
-test('requirements traceability distinguishes explicit links from authored readiness and preserves context',async({page,request})=>{
+test('requirements traceability distinguishes explicit links from authored readiness and preserves context',async({page,request},testInfo)=>{
  const req=await create(request,'Trace fixture requirement','Requirement'),gap=await create(request,'Trace fixture gap','Requirement'),implementation=await create(request,'Trace fixture task','Task'),testRecord=await create(request,'Trace fixture test','Test'),generic=await create(request,'Trace fixture generic','Task');
  await update(request,implementation,{relationships:[{kind:'implements',target:req.id}]});await update(request,testRecord,{status:'Ready',relationships:[{kind:'verifies',target:req.id}]});await update(request,generic,{relationships:[req.id]});
  await page.goto('/#/projects/'+project+'/requirements');await page.getByRole('button',{name:'Traceability',exact:true}).click();await (await collectionSearch(page)).fill('Trace fixture');
@@ -602,6 +610,7 @@ test('requirements traceability distinguishes explicit links from authored readi
  await expect(row.getByRole('link',{name:implementation.title,exact:true})).toBeVisible();await expect(row.getByRole('link',{name:testRecord.title,exact:true})).toBeVisible();await expect(row.getByRole('link',{name:generic.title,exact:true})).toHaveCount(0);
  await expect(panel.getByRole('columnheader',{name:'Test links (not results)',exact:true})).toBeVisible();
  const gapRow=panel.getByRole('row').filter({has:page.getByRole('link',{name:gap.title,exact:true})});await expect(gapRow.getByText('No explicit link',{exact:true})).toHaveCount(3);
+ await page.screenshot({path:testInfo.outputPath('requirements-traceability.png'),animations:'disabled',fullPage:true});
  await row.getByRole('link',{name:implementation.title,exact:true}).click();await expect(page.getByRole('heading',{name:implementation.title,exact:true})).toBeVisible();await page.goBack();await expect(panel).toBeVisible();await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Trace fixture');
 });
 
@@ -704,4 +713,37 @@ test('record secondary information is collapsed on entry and keyboard accessible
  await page.screenshot({path:testInfo.outputPath('record-secondary-expanded.png'),animations:'disabled',fullPage:true});
  await rs.click();await expect(relationships).not.toHaveAttribute('open','');await expect(evidence).toHaveAttribute('open','');
  await page.reload();await expect(relationships).not.toHaveAttribute('open','');await expect(evidence).not.toHaveAttribute('open','');expect((await recordOnDisk(request,record.id)).revision).toBe(linked.revision);
+});
+
+
+test('replacing an acceptance definition preserves the old finalized run and starts five new pending cases',async({page,request},testInfo)=>{
+ const initial=await create(request,'Consolidated review fixture','Test');
+ const original=await update(request,initial,{tags:['acceptance'],body:'## Review instructions\nHistorical fixture.\n\n## R. Original review\n- [ ] R01 — **Old navigation** — Inspect old navigation. Expected: Correct controls.\n- [ ] R02 — **Old editing** — Inspect old editing. Expected: Saved draft.\n'});
+ const endpoint=prefix+'/acceptance/'+original.id;
+ const start=async()=>{await page.getByRole('textbox',{name:'Reviewer',exact:true}).fill('Fixture reviewer');await page.getByRole('textbox',{name:'Test environment',exact:true}).fill('Isolated Chromium');await page.getByRole('button',{name:'Start acceptance',exact:true}).click();};
+ await open(page,original);await start();await expect(page.getByRole('heading',{name:'Old navigation',exact:true})).toBeVisible();
+ await page.locator('input[name="case-outcome"][value="Failed"]').check();await page.getByLabel(/Observations/).fill('Historical defect');await page.getByRole('button',{name:'Save & next',exact:true}).click();await expect(page.getByRole('heading',{name:'Old editing',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Record review decision'}).click();await page.getByLabel('Review decision notes').fill('Historical changes requested');acceptDialog(page);await page.getByRole('button',{name:'Request changes',exact:true}).click();await expect(page.getByText('Changes requested',{exact:true})).toBeVisible();
+ const old=(await (await request.get(endpoint)).json()).runs[0];const oldResponse=await request.get(endpoint+'/'+old.id);expect(oldResponse.ok()).toBeTruthy();const oldData=await oldResponse.json();
+ const changed=await update(request,original,{body:'## Review instructions\nNew product review.\n\n## P. Product workflows\n'+['Navigate','Capture','Organize','Plan','Trust'].map((name,i)=>'- [ ] P0'+(i+1)+' — **'+name+'** — Observe the fixture workflow. Expected: Coherent interaction.').join('\n')+'\n'});
+ await page.reload();await expect(page.getByRole('heading',{name:'Start an acceptance run',exact:true})).toBeVisible();await expect(page.getByText('5 cases',{exact:true})).toBeVisible();
+ await start();await expect(page.getByRole('heading',{name:'Navigate',exact:true})).toBeVisible();
+ const progress=page.getByRole('progressbar',{name:'Cases passed'});await expect(progress).toHaveAttribute('aria-valuemax','5');await expect(progress).toHaveAttribute('aria-valuenow','0');await expect(page.getByText('5 pending',{exact:true}).first()).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath('five-workflow-review.png'),animations:'disabled',fullPage:true});
+ const list=(await (await request.get(endpoint)).json()).runs;expect(list).toHaveLength(2);const current=list.find(r=>r.id!==old.id);expect(current.progress).toEqual({total:5,passed:0,failed:0,blocked:0,pending:5});expect(current.definitionRevision).toBe(changed.revision);
+ await page.getByRole('combobox',{name:'Review run',exact:true}).selectOption(old.id);await expect(page.getByText(/Historical or unconfirmed revision/)).toBeVisible();await expect(progress).toHaveAttribute('aria-valuemax','2');await expect(page.locator('input[name="case-outcome"][value="Failed"]')).toBeDisabled();
+ expect(await (await request.get(endpoint+'/'+old.id)).json()).toEqual(oldData);
+ await page.getByRole('combobox',{name:'Review run',exact:true}).selectOption(current.id);await expect(progress).toHaveAttribute('aria-valuemax','5');await expect(progress).toHaveAttribute('aria-valuenow','0');
+});
+test('game profile navigation and record keyboard controls remain usable at a narrow desktop viewport',async({page,request},testInfo)=>{
+ await page.setViewportSize({width:1024,height:800});await page.emulateMedia({reducedMotion:'reduce'});
+ const item=await create(request,'Narrow gameplay fixture','Mechanic',other);
+ await page.goto('/#/projects/'+other+'/overview');const nav=page.getByRole('navigation',{name:'Project navigation'}),toolbar=page.getByRole('region',{name:'Collection controls'}),input=page.getByRole('textbox',{name:'Search records',exact:true});
+ for(const [label,newLabel] of [['Gameplay','New mechanic'],['World','New location'],['Characters','New character'],['Assets','New asset']]){
+  await nav.getByRole('link',{name:label,exact:true}).click();await expect(page.getByRole('heading',{name:label,level:1,exact:true})).toBeVisible();await expect(toolbar).toHaveCount(1);await expect(input).toHaveCount(1);await expect(input).toHaveValue('');await expect(toolbar.getByRole('button',{name:newLabel,exact:true})).toBeVisible();await input.fill('narrow fixture '+label);
+ }
+ await nav.getByRole('link',{name:'Gameplay',exact:true}).click();await page.getByRole('button',{name:'Table',exact:true}).click();await input.fill(item.title);await page.getByRole('link',{name:item.title,exact:true}).click();await expect(page.getByRole('heading',{name:item.title,exact:true})).toBeVisible();await expect(toolbar).toHaveCount(0);
+ const trigger=page.getByRole('button',{name:'Actions for '+item.title,exact:true});await trigger.focus();await page.keyboard.press('ArrowDown');const menu=page.getByRole('menu',{name:'Actions for '+item.title,exact:true});await expect(menu).toBeVisible();await expect(menu.getByRole('menuitem',{name:'Edit',exact:true})).toBeFocused();const box=await menu.boundingBox();expect(box.x).toBeGreaterThanOrEqual(0);expect(box.y).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(1024);expect(box.y+box.height).toBeLessThanOrEqual(800);
+ await page.screenshot({path:testInfo.outputPath('narrow-game-record-menu.png'),animations:'disabled'});await page.keyboard.press('Escape');await expect(menu).toBeHidden();await expect(trigger).toBeFocused();
+ await page.goBack();await expect(input).toHaveValue(item.title);await expect(toolbar).toHaveCount(1);await page.screenshot({path:testInfo.outputPath('narrow-game-table.png'),animations:'disabled'});
 });

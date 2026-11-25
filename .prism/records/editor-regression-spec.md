@@ -12,6 +12,7 @@ relationships:
   - draft-recovery
   - record-navigation
   - acceptance-workspace
+  - m1-functional-verification
 ---
 ## Purpose
 Preserve the 31 original technical checks from editor-acceptance at 86b85781646721e5d95b0332af5a1e799f2325cf. These are regression requirements, not a second mandatory owner checklist and not results. The owner evaluates the smaller UX acceptance record; developer-owned automated checks and any uncovered risks remain separate.
@@ -85,7 +86,7 @@ Automated browser regression: navigate all product/management/knowledge/configur
 
 
 ## H. Developer-owned M1 verification map
-The owner review retains H01–H04, R01–R02 and K01–K19. Do not ask the owner to simulate filesystem corruption, competing writes or invalid provider responses. The following implementation tests carry those repeatable technical checks (the full matrix must pass on the actual candidate):
+The former detailed H01–H04, R01–R02 and K01–K19 scope is now developer-owned. The current owner review is P01–P05; see m1-functional-verification for the exact archived cases and coverage mapping. Do not ask the owner to simulate filesystem corruption, competing writes or invalid provider responses. The following implementation tests carry those repeatable technical checks (the full matrix must pass on the actual candidate):
 - H01–H04: hosted-verification.test.ts, pullReferenceEditing.test.ts and browser scenarios for opt-in hosted verification, scoped PR jobs and reference authoring. Browser provider responses are controlled fixtures; real hosted lookup remains a product observation.
 - R01–R02: routes.test.ts, navigation.test.ts, views.test.ts, record-management.test.ts, trash.test.ts, editor.test.ts and browser navigation, menus, sorting, conflicts, missing files, duplication, trash, disclosure and sidebar scenarios.
 - K01/K02/K17: integration browser scenario for one canonical requirement edit, traceability.test.ts, relationship/navigation/browser regressions. Visual cohesion remains human judgment.
@@ -95,3 +96,6 @@ The owner review retains H01–H04, R01–R02 and K01–K19. Do not ask the owne
 - K15–K16: projectBackup.test.ts, localRegistry.test.ts, registry.test.ts, projects.test.ts; exact bytes, incomplete backups/restores, unsafe links/roots, registry isolation and startup preflight. CLI usability remains a product judgment, not a claim that a unit test is a human review.
 
 No automated result is a human acceptance observation. Historical owner results remain associated with their original revision and definition.
+
+
+The revised developer scope includes an actual subprocess CLI backup/restore/registration round trip; a browser check that finalized reviews with replaced definitions remain unchanged while the new five-case review starts at zero; and game-profile navigation with a narrower desktop viewport. Passing screenshots are inspected from isolated fixtures. These checks complement rather than replace the original suite. Do not infer universal accessibility, live provider reliability or unsupported viewport/platform coverage.
