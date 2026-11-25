@@ -6,7 +6,7 @@ status: In progress
 priority: High
 accent: teal
 tags: [delivery, management]
-githubPullRequests: [{repository: aschenrot/prism, number: 11}, {repository: aschenrot/prism, number: 37}]
+githubPullRequests: [{repository: aschenrot/prism, number: 11}, {repository: aschenrot/prism, number: 37}, {repository: aschenrot/prism, number: 39}]
 relationships:
   - kind: contains
     target: record-actions

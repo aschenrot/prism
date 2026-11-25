@@ -750,24 +750,33 @@ test('game profile navigation and record keyboard controls remain usable at a na
 
 
 test('active acceptance case and result controls occupy the first desktop viewport with secondary details closed',async({page,request},testInfo)=>{
- const initial=await create(request,'Milestone acceptance — configurable knowledge and management fixture','Test');
- const record=await update(request,initial,{tags:['acceptance','quality','milestone'],body:'## Review instructions\nReview setup remains available.\n\n## P. Product acceptance\n- [ ] P01 — **Capture, edit and recover an idea** — In a non-production project, capture a clearly disposable note or task in Inbox. Open it, make a small unsaved edit, choose Keep draft & close, Resume draft, save the edit and finish triage. Expected: Understandable transition from captured idea to saved work, clear distinction between local draft and canonical save, no surprising navigation or data loss, discoverable recovery. Technical recovery, undo/redo, autosave, trash, duplication, conflicts and unfinished definitions are verified separately; no fault injection required.\n- [ ] P02 — **Find connected knowledge** — Follow a linked task. Expected: Clear provenance.\n'});
+ const initial=await create(request,'Milestone acceptance — configurable knowledge and management','Test');
+ const record=await update(request,initial,{status:'In progress',priority:'High',tags:['acceptance','quality','milestone'],body:'## Review instructions\nReview setup remains available.\n\n## P. Product acceptance\n- [ ] P01 — **Navigate and read work** — Open a record. Expected: Predictable navigation.\n- [ ] P02 — **Capture, edit and recover an idea** — In a non-production project, capture a clearly disposable note or task in Inbox. Open it, make a small unsaved edit, choose Keep draft & close, Resume draft, save the edit and finish triage. Expected: Understandable transition from captured idea to saved work, clear distinction between local draft and canonical save, no surprising navigation or data loss, discoverable recovery. Technical recovery, undo/redo, autosave, trash, duplication, conflicts and unfinished definitions are verified separately; no fault injection required.\n- [ ] P03 — **Find and organize connected knowledge** — Follow a linked task. Expected: Clear provenance.\n- [ ] P04 — **Plan and understand progress** — Inspect work. Expected: Clear status.\n- [ ] P05 — **Trust project boundaries and delivery evidence** — Inspect delivery. Expected: Clear evidence boundaries.\n'});
  await page.setViewportSize({width:1440,height:900});await page.emulateMedia({reducedMotion:'reduce'});await open(page,record);
+ await expect(page.getByText(/Read the setup and safety instructions before beginning/)).toBeVisible();
  await page.getByRole('textbox',{name:'Reviewer',exact:true}).fill('Fixture reviewer');await page.getByRole('textbox',{name:'Test environment',exact:true}).fill('Isolated Chromium');await page.getByRole('button',{name:'Start acceptance',exact:true}).click();
- const heading=page.getByRole('heading',{name:'Capture, edit and recover an idea',exact:true}),notes=page.getByLabel(/Observations/),saveNext=page.getByRole('button',{name:'Save & next',exact:true});
- await expect(heading).toBeVisible();await expect(page.getByText(/In a non-production project, capture/)).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Navigate and read work',exact:true})).toBeVisible();
+ const saveNext=page.getByRole('button',{name:'Save & next',exact:true});
+ await page.locator('input[name="case-outcome"][value="Passed"]').check();await saveNext.click();
+ const heading=page.getByRole('heading',{name:'Capture, edit and recover an idea',exact:true}),notes=page.getByLabel(/Observations/),progress=page.getByRole('progressbar',{name:'Cases passed'});
+ await expect(heading).toBeVisible();await expect(heading).toBeFocused();await expect(progress).toHaveAttribute('aria-valuemax','5');await expect(progress).toHaveAttribute('aria-valuenow','1');
+ await expect(page.getByText(/In a non-production project, capture/)).toBeVisible();
  await expect(page.locator('.acceptance-run-details')).not.toHaveAttribute('open','');await expect(page.locator('select[aria-label="Review run"]')).toBeHidden();await expect(page.getByRole('heading',{name:'Expected result',exact:true})).toBeVisible();
- for(const viewport of [{width:1440,height:900},{width:1280,height:800}]){
+ const fit=async(viewport)=>{
   await page.setViewportSize(viewport);await page.evaluate(()=>window.scrollTo(0,0));
   await expect.poll(async()=>{const r=await heading.boundingBox();return !!r&&r.y<viewport.height*.4;}).toBe(true);
   await expect.poll(async()=>{const r=await notes.boundingBox(),s=await saveNext.boundingBox();return !!r&&!!s&&r.y>=0&&r.y+r.height<=viewport.height&&s.y+s.height<=viewport.height;}).toBe(true);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
-  await page.screenshot({path:testInfo.outputPath('task-first-'+viewport.width+'.png'),animations:'disabled'});
+ };
+ for(const viewport of [{width:1440,height:900},{width:1280,height:800}]){
+  await fit(viewport);await page.screenshot({path:testInfo.outputPath('task-first-'+viewport.width+'.png'),animations:'disabled'});
  }
  await page.locator('.acceptance-run-details summary').click();await expect(page.getByRole('combobox',{name:'Review run',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Export results',exact:true})).toBeVisible();await page.locator('.acceptance-run-details summary').click();
- await page.locator('input[name="case-outcome"][value="Passed"]').check();await notes.fill('Fixture observation retained');
+ await page.locator('input[name="case-outcome"][value="Passed"]').check();await notes.fill('Fixture observation retained');await expect(saveNext).toBeEnabled();
  await page.locator('.acceptance-run-details summary').click();await expect(page.getByRole('button',{name:'Copy review summary'})).toBeDisabled();await page.locator('.acceptance-run-details summary').click();
- await saveNext.click();const next=page.getByRole('heading',{name:'Find connected knowledge',exact:true});await expect(next).toBeVisible();await expect(next).toBeFocused();await expect(page.getByRole('progressbar',{name:'Cases passed'})).toHaveAttribute('aria-valuenow','1');
+ await fit({width:1280,height:800});await page.screenshot({path:testInfo.outputPath('task-first-1280-dirty.png'),animations:'disabled'});
+ await page.setViewportSize({width:1024,height:800});await notes.scrollIntoViewIfNeeded();await expect(notes).toBeInViewport();await saveNext.scrollIntoViewIfNeeded();await expect(saveNext).toBeInViewport();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
+ await fit({width:1280,height:800});await saveNext.click();const next=page.getByRole('heading',{name:'Find and organize connected knowledge',exact:true});await expect(next).toBeVisible();await expect(next).toBeFocused();await expect(progress).toHaveAttribute('aria-valuenow','2');
 });
 test('project dropdown exposes create connect and manage guidance without mutating projects or bypassing draft protection',async({page,request},testInfo)=>{
  await page.goto('/#/projects/'+project+'/overview');const selector=page.locator('select[aria-label="Active project"]');await expect(selector).toHaveValue(project);
@@ -776,8 +785,8 @@ test('project dropdown exposes create connect and manage guidance without mutati
  for(const [value,name] of [[':add','Create project'],[':connect','Connect existing project'],[':manage','Manage projects']]){
   await selector.focus();await selector.selectOption(value);const dialog=page.getByRole('dialog',{name,exact:true});await expect(dialog).toBeVisible();await expect(dialog.getByText(/does not create, access or modify a folder/)).toBeVisible();await expect(dialog.getByLabel('Registration command template')).toContainText('npm run project --');await expect(selector).toHaveValue(project);await expect(page).toHaveURL(new RegExp('/'+project+'/overview$'));
   if(value===':add'){await expect(dialog.getByLabel('Project storage')).toHaveValue('standalone');await page.screenshot({path:testInfo.outputPath('create-project-guide.png'),animations:'disabled'});}
-  if(value===':connect'){await expect(dialog.getByLabel('Project storage')).toHaveValue('repository');await expect(dialog.getByLabel('Registration command template')).toContainText('repository');}
-  if(value===':manage')await expect(dialog.getByText('Browser other fixture',{exact:true})).toBeVisible();
+  if(value===':connect'){await expect(dialog.getByLabel('Project storage')).toHaveValue('repository');await expect(dialog.getByLabel('Registration command template')).toContainText('repository');await page.screenshot({path:testInfo.outputPath('connect-project-guide.png'),animations:'disabled'});}
+  if(value===':manage'){await expect(dialog.getByText('Browser other fixture',{exact:true})).toBeVisible();await expect(dialog.getByText(/omitting it or using a dash clears it/)).toBeVisible();await page.screenshot({path:testInfo.outputPath('manage-projects-guide.png'),animations:'disabled'});}
   await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(selector).toBeFocused();
  }
  expect(writes).toBe(0);expect(await (await request.get('/api/projects')).json()).toEqual(before);

@@ -18,3 +18,5 @@ Startup applies the same disjoint-data-root and store-directory validation to ev
 
 ### Discover registration in Prism
 Open the project selector and choose Create project, Connect existing project or Manage projects. The guide explains how to choose an existing folder, copy a command template, authorize the operation in the local terminal and restart. Replace the example ID, title and path before running commands; a new standalone project starts from an empty folder created in the file manager. Save or retain unsaved work before stopping Prism. The browser does not execute commands or register folders itself.
+
+When using Manage projects, supply the entire desired profile list and include the existing owner/repository argument if you want to retain a GitHub association. Omitting it or supplying a dash clears the association.

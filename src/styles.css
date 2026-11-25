@@ -141,8 +141,8 @@ a.nav-item,a.record-card,a.overview-record,a.milestone-step,a.linked-row,a.secon
 .workspace-content:has(>.acceptance-record-page){padding-top:18px}
 .acceptance-record-page .record-page-heading{gap:12px;padding:0 0 12px;flex-wrap:nowrap;align-items:flex-start}
 .acceptance-record-page .record-page-heading>div:first-child{flex:1 1 auto;min-width:0}
-.acceptance-record-page .record-page-heading>.record-page-actions{flex:0 0 auto}
-.acceptance-record-page .record-page-heading h1{font-size:clamp(20px,1.9vw,28px);letter-spacing:-.45px;line-height:1.25;margin:5px 0 7px}
+.record-page-heading>.record-page-actions{flex:0 0 auto}
+.acceptance-record-page .record-page-heading h1{font-size:clamp(18px,1.6vw,23px);letter-spacing:-.3px;line-height:1.25;margin:5px 0 7px}
 .acceptance-record-page .record-page-meta{gap:6px}
 .acceptance-workspace,.acceptance-run{gap:12px}
 .acceptance-run-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start;min-width:0}
@@ -178,7 +178,7 @@ a.nav-item,a.record-card,a.overview-record,a.milestone-step,a.linked-row,a.secon
 .acceptance-result-form legend{margin:0 0 7px}
 .acceptance-outcomes{gap:6px;grid-template-columns:repeat(2,minmax(0,1fr))}
 .acceptance-outcomes label{padding:8px;min-height:36px}
-.acceptance-notes textarea{min-height:70px;max-width:100%}
+.acceptance-notes textarea{min-height:70px;max-width:100%;font-weight:400}
 .acceptance-case-actions{gap:6px}
 .acceptance-decision{padding-top:12px}
 @container review-case (min-width:680px){.acceptance-case-body{grid-template-columns:minmax(0,1.06fr) minmax(0,1fr);align-items:start;gap:16px}.acceptance-result-form{border-top:0;border-left:1px solid var(--line);padding:0 0 0 16px}}
@@ -197,3 +197,9 @@ a.nav-item,a.record-card,a.overview-record,a.milestone-step,a.linked-row,a.secon
 .registration-projects{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .registration-projects li{border:1px solid var(--line);border-radius:6px;padding:8px;display:grid;gap:3px;overflow-wrap:anywhere}
 .registration-projects small{color:var(--muted);font-size:11px}
+
+.acceptance-instructions>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:7px}
+.acceptance-result-form>.acceptance-case-actions{display:grid;gap:8px}
+.acceptance-step-navigation,.acceptance-save-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.acceptance-discard{margin-left:auto}
+.acceptance-save-actions{justify-content:flex-end}
