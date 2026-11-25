@@ -41,6 +41,7 @@ import DependencyPlan from './DependencyPlan';
 import Timeline from './Timeline';
 import Traceability from './Traceability';
 import RecoveryWorkspace from './RecoveryWorkspace';
+import ProjectRegistrationGuide,{type RegistrationMode} from './ProjectRegistrationGuide';
 import type { RecordTemplate } from '../shared/templates';
 import { columnFor,defaultTableColumns,tableMinWidth,propertyColumnValue } from '../shared/tableColumns';
 import RecordActions,{RecordCommandContext} from './RecordActions';
@@ -248,6 +249,7 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   const categoryHref=(id:string)=>routeHash(collectionRoute(projectId,id));
   const selected=route.kind==='record'?route.recordId:null;
   const [busy,setBusy]=useState(false),[editEntry,setEditEntry]=useState<string|null>(null);
+  const [registrationGuide,setRegistrationGuide]=useState<RegistrationMode|null>(null);
   const editing=editEntry===router.entryKey;
   const destinations=destinationsFor(project);
   const qc=useQueryClient();
@@ -390,7 +392,8 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   useEffect(()=>{const handler=(e:KeyboardEvent)=>{if(creating||busy||workPending||bulkTargets||trashTarget||route.kind==='record'||view!=='Slides'||e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT','BUTTON'].includes((e.target as HTMLElement)?.tagName))return;if(e.key==='ArrowRight')setSlide(slide+1);if(e.key==='ArrowLeft')setSlide(slide-1);};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);},[route.kind,view,slide,visible.length,router.entryKey,router.entry.context,creating,busy,trashTarget,workPending,bulkTargets]);
   return <RecordCommandContext.Provider value={{duplicate:duplicateRecord,copy:target=>{void copyRecordLink(target);},triage:target=>{if(busy||creating||workPending||bulkTargets||query.isError||trash.isPending)return;setRecordNotice(null);inboxUpdate.mutate({target,inbox:!target.inbox});}}}><div className="shell workspace-shell routed-shell">
     <aside className="sidebar"><div className="brand"><div className="brand-mark"><Layers3 size={22}/></div><div>prism<span>PROJECT WORKSPACE</span></div></div>
-      <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>switchProject(e.target.value)}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select></div>
+      <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>{const value=e.currentTarget.value;if(value===":add"||value===":connect"||value===":manage"){e.currentTarget.value=projectId;setRegistrationGuide(value===":add"?"create":value===":connect"?"connect":"manage");}else switchProject(value);}}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}<optgroup label="Project management"><option value=":add">Create project…</option><option value=":connect">Connect existing project…</option><option value=":manage">Manage projects…</option></optgroup></select></div>
+      {registrationGuide&&<ProjectRegistrationGuide mode={registrationGuide} projects={projects} blocked={navigationGuard} onClose={()=>setRegistrationGuide(null)}/>}
       <nav className="purpose-nav" aria-label="Project navigation">{navigationGroups.map(group=>{
         const items=destinations.filter(d=>d.group===group&&d.id!=='library'&&d.id!=='trash');if(!items.length)return null;
         return <div className="nav-group" key={group}>{group!=='Workspace'&&<div className="nav-label">{group}</div>}{items.map(d=>{const Icon=destinationIcons[d.id]||Database;return <RouteLink key={d.id} className={'nav-item purpose-item '+(destinationId===d.id?'active':'')} aria-current={destinationId===d.id?(route.kind==='record'?'location':'page'):undefined} href={categoryHref(d.id)} onNavigate={()=>navigate(d.id)}><Icon size={16}/><span>{d.label}</span></RouteLink>;})}</div>;

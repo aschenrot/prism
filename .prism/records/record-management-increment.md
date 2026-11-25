@@ -19,6 +19,8 @@ relationships:
   - kind: contains
     target: record-actions-acceptance
   - kind: contains
+    target: m1-task-first-workspace
+  - kind: contains
     target: m1-acceptance-navigation-correction
   - kind: contains
     target: m1-milestone-acceptance
