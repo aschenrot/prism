@@ -2,11 +2,11 @@
 id: record-management-increment
 type: Increment
 title: Record management and interaction
-status: Ready
+status: In progress
 priority: High
 accent: teal
 tags: [delivery, management]
-githubPullRequests: [{repository: aschenrot/prism, number: 11}]
+githubPullRequests: [{repository: aschenrot/prism, number: 11}, {repository: aschenrot/prism, number: 37}]
 relationships:
   - kind: contains
     target: record-actions
@@ -18,6 +18,10 @@ relationships:
     target: delivery-increment-scope
   - kind: contains
     target: record-actions-acceptance
+  - kind: contains
+    target: m1-acceptance-navigation-correction
+  - kind: contains
+    target: m1-milestone-acceptance
   - kind: related-to
     target: management-views
 ---
@@ -39,3 +43,8 @@ Owner confirmed the npm and browser gates passed at intermediate PR #11 head 377
 
 ## Integration outcome
 Owner confirmed both automated gates and all manual acceptance checks passed for PR #11 and explicitly approved merging on 2026-11-24. Tested topic head: b625b1986a69159d8d0f6a0fc2c00d237899188c. Regular merge: c96c5c728acfbcc64953d8e1e94579bd44dfcc30. See [PR #11](https://github.com/aschenrot/prism/pull/11). Owner-reported acceptance; individual case observations and local run JSON were not supplied. This is historical evidence, not verification of the public-preview integration candidate.
+
+
+M1 review reopened the current increment after R01 failed at 3eda97b. Earlier PR #11 acceptance remains historical; the corrective task and consolidated review are pending.
+
+The corrective implementation is associated with [PR #37](https://github.com/aschenrot/prism/pull/37); this association does not imply human acceptance.

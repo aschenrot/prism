@@ -22,6 +22,7 @@ async function open(page,record,projectId=project){
 async function action(page,name,recordTitle){const trigger=recordTitle?page.getByRole('button',{name:'Actions for '+recordTitle,exact:true}):page.locator('.record-page').getByRole('button',{name:/^Actions for /});await trigger.click();await page.getByRole('menu').getByRole('menuitem',{name,exact:true}).click();}
 async function edit(page){await action(page,'Edit');await expect(page.getByLabel('Title',{exact:true})).toBeVisible();}
 function title(page){return page.getByLabel('Title',{exact:true});}
+async function collectionSearch(page){const toolbar=page.getByRole('region',{name:'Collection controls'});await expect(toolbar).toHaveCount(1);const input=toolbar.getByRole('textbox',{name:'Search records',exact:true});await expect(input).toBeVisible();return input;}
 function keep(page){return page.locator('.inspector-top').getByRole('button',{name:'Keep draft & close',exact:true});}
 function acceptDialog(page){page.once('dialog',dialog=>dialog.accept());}
 function save(page){return page.getByRole('button',{name:'Save',exact:true});}
@@ -59,7 +60,7 @@ test('recover incomplete edits after reload and save canonical content',async({p
 test('blocked navigation is a toast and does not lose input; saved collection context returns',async({page,request})=>{
   const record=await create(request,'Navigation fixture');
   await page.goto('/#/projects/'+project+'/work');
-  await page.getByRole('textbox',{name:'Search records'}).fill(record.title);
+  await (await collectionSearch(page)).fill(record.title);
   await page.getByRole('link',{name:record.title,exact:true}).click();
   await expect(page).toHaveURL(new RegExp('/records/'+record.id+'$'));
   const trigger=page.locator('.record-page').getByRole('button',{name:'Actions for '+record.title,exact:true});
@@ -157,7 +158,7 @@ test('review saves and advances, restores progress and requires observations and
 test('collection toolbar sorts both directions and opens the editor directly while retaining context',async({page,request})=>{
   const a=await create(request,'Sort sample Alpha'),b=await create(request,'Sort sample Beta');await update(request,a,{priority:'Low'});await update(request,b,{priority:'High'});
   await page.goto('/#/projects/'+project+'/work');
-  const search=page.getByRole('textbox',{name:'Search records'});await search.fill('Sort sample');
+  const search=await collectionSearch(page);await search.fill('Sort sample');
   const rows=page.locator('.record-table-title');await expect(rows).toHaveText([b.title,a.title]);
   await page.getByRole('combobox',{name:'Sort direction'}).selectOption('Ascending');await expect(rows).toHaveText([a.title,b.title]);
   await page.getByRole('button',{name:'Title',exact:true}).click();await expect(rows).toHaveText([a.title,b.title]);await page.getByRole('button',{name:'Title',exact:true}).click();await expect(rows).toHaveText([b.title,a.title]);
@@ -171,10 +172,10 @@ test('collection toolbar sorts both directions and opens the editor directly whi
 });
 test('wiki reader follows filters and board cards have direct edit actions',async({page,request})=>{
   const a=await create(request,'Reader Alpha','Document'),b=await create(request,'Reader Beta','Document');
-  await page.goto('/#/projects/'+project+'/documentation');await page.getByRole('button',{name:'Wiki',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Reader');const index=page.getByRole('navigation',{name:'Knowledge index',exact:true});await index.getByRole('button',{name:/^Reader Beta\s*Document$/}).click();await expect(page.locator('.knowledge-heading h2')).toHaveText(b.title);await index.getByRole('button',{name:/^Reader Alpha\s*Document$/}).click();
-  await expect(page.locator('.knowledge-heading h2')).toHaveText(a.title);await page.getByRole('textbox',{name:'Search records'}).fill('Reader Beta');await expect(page.locator('.knowledge-heading h2')).toHaveText(b.title);
-  await page.getByRole('textbox',{name:'Search records'}).fill('No matches here');await expect(page.locator('.knowledge-heading h2')).toHaveCount(0);
-  const task=await create(request,'Board edit fixture');await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Board',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill(task.title);await action(page,'Edit',task.title);await expect(title(page)).toHaveValue(task.title);
+  await page.goto('/#/projects/'+project+'/documentation');await page.getByRole('button',{name:'Wiki',exact:true}).click();await (await collectionSearch(page)).fill('Reader');const index=page.getByRole('navigation',{name:'Knowledge index',exact:true});await index.getByRole('button',{name:/^Reader Beta\s*Document$/}).click();await expect(page.locator('.knowledge-heading h2')).toHaveText(b.title);await index.getByRole('button',{name:/^Reader Alpha\s*Document$/}).click();
+  await expect(page.locator('.knowledge-heading h2')).toHaveText(a.title);await (await collectionSearch(page)).fill('Reader Beta');await expect(page.locator('.knowledge-heading h2')).toHaveText(b.title);
+  await (await collectionSearch(page)).fill('No matches here');await expect(page.locator('.knowledge-heading h2')).toHaveCount(0);
+  const task=await create(request,'Board edit fixture');await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Board',exact:true}).click();await (await collectionSearch(page)).fill(task.title);await action(page,'Edit',task.title);await expect(title(page)).toHaveValue(task.title);
 });
 
 test('move to trash is reversible, keeps links and protects an existing recovery draft',async({page,request})=>{
@@ -192,7 +193,7 @@ test('move to trash is reversible, keeps links and protects an existing recovery
 
 test('sort headers reserve their width and date sorting orders authored records',async({page,request})=>{
  const a=await create(request,'Dates Alpha'),b=await create(request,'Dates Beta');await update(request,a,{title:'Dates Alpha edited'});
- await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Dates');const rows=page.locator('.record-table-title');await expect(rows).toHaveCount(2);
+ await page.goto('/#/projects/'+project+'/work');await (await collectionSearch(page)).fill('Dates');const rows=page.locator('.record-table-title');await expect(rows).toHaveCount(2);
  const headers=page.locator('.records-table thead th');const widths=()=>headers.evaluateAll(nodes=>nodes.map(n=>{const rect=n.getBoundingClientRect();return [Math.round(rect.x*10),Math.round(rect.width*10)];}));
  const before=await widths();const titleSort=page.getByRole('button',{name:'Title',exact:true});
  await titleSort.click();await expect(rows).toHaveText(['Dates Alpha edited','Dates Beta']);expect(await widths()).toEqual(before);
@@ -204,7 +205,7 @@ test('sort headers reserve their width and date sorting orders authored records'
 });
 
 test('record menus support keyboard and collection removal without losing search context',async({page,request})=>{
- const record=await create(request,'Menu fixture target'),otherRecord=await create(request,'Menu fixture other');await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Menu fixture');
+ const record=await create(request,'Menu fixture target'),otherRecord=await create(request,'Menu fixture other');await page.goto('/#/projects/'+project+'/work');await (await collectionSearch(page)).fill('Menu fixture');
  const trigger=page.getByRole('button',{name:'Actions for '+record.title,exact:true});await trigger.focus();await page.keyboard.press('ArrowDown');const menu=page.getByRole('menu',{name:'Actions for '+record.title});await expect(menu.getByRole('menuitem',{name:'Edit',exact:true})).toBeFocused();await page.keyboard.press('ArrowDown');await expect(menu.getByRole('menuitem',{name:'Duplicate',exact:true})).toBeFocused();await page.keyboard.press('End');await expect(menu.getByRole('menuitem',{name:'Move to trash',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(menu).toBeHidden();await expect(trigger).toBeFocused();
  await trigger.click();await page.getByRole('button',{name:'Actions for '+otherRecord.title,exact:true}).click();await expect(menu).toBeHidden();await page.keyboard.press('Escape');
  await action(page,'Move to trash',record.title);const dialog=page.getByRole('dialog',{name:'Move record to trash?'});await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await expect(trigger).toBeFocused();await action(page,'Move to trash',record.title);await dialog.getByRole('button',{name:'Move to trash',exact:true}).click();
@@ -222,14 +223,14 @@ test('relationship search limits candidates and saves only compatible selected t
 test('inline properties and bounded bulk selection preserve recovery and report actual results',async({page,request})=>{
  const a=await create(request,'Bulk fixture Alpha'),b=await create(request,'Bulk fixture Beta'),c=await create(request,'Bulk fixture protected');
  await open(page,c);await edit(page);await title(page).fill('Protected local draft');await keep(page).click();
- await page.goto('/#/projects/'+project+'/work');await page.getByRole('textbox',{name:'Search records'}).fill('Bulk fixture');
+ await page.goto('/#/projects/'+project+'/work');await (await collectionSearch(page)).fill('Bulk fixture');
  await page.getByRole('combobox',{name:'Status for '+a.title,exact:true}).selectOption('In progress');await expect(page.getByText(a.title+' saved.',{exact:true})).toBeVisible();
  expect((await recordOnDisk(request,a.id)).status).toBe('In progress');await expect(page).toHaveURL(/\/work$/);
  await page.getByRole('checkbox',{name:'Select all visible records'}).check();await expect(page.getByText('3 selected',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Edit selected',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Edit 3 selected records'});await expect(dialog).toBeVisible();const priority=dialog.getByRole('combobox',{name:'Priority',exact:true});await expect(priority).toBeVisible();await expect(dialog.getByRole('combobox',{name:'Status',exact:true})).toHaveValue('');await priority.selectOption('High');await dialog.getByRole('button',{name:'Apply changes'}).click();
  const result=page.getByRole('dialog',{name:'Bulk edit results'});await expect(result.getByText('2 confirmed · 1 not updated or unconfirmed')).toBeVisible();await expect(result.getByText(c.title,{exact:true})).toBeVisible();
  expect((await recordOnDisk(request,a.id)).priority).toBe('High');expect((await recordOnDisk(request,a.id)).status).toBe('In progress');expect((await recordOnDisk(request,b.id)).priority).toBe('High');expect((await recordOnDisk(request,b.id)).status).toBe('Concept');expect((await recordOnDisk(request,c.id)).priority).toBe('Normal');await result.getByRole('button',{name:'Done',exact:true}).click();
- await page.getByRole('checkbox',{name:'Select '+a.title,exact:true}).check();await page.getByRole('textbox',{name:'Search records'}).fill(b.title);await expect(page.getByText('1 selected',{exact:true})).toHaveCount(0);
+ await page.getByRole('checkbox',{name:'Select '+a.title,exact:true}).check();await (await collectionSearch(page)).fill(b.title);await expect(page.getByText('1 selected',{exact:true})).toHaveCount(0);
  await open(page,c);await page.getByRole('button',{name:'Resume draft'}).click();await expect(title(page)).toHaveValue('Protected local draft');await keep(page).click();
 });
 test('duplicate starts independent work and copy link is a stable project record address',async({page,request,context})=>{
@@ -245,7 +246,7 @@ test('delivery increments show explicit task scope and independent local evidenc
  const increment=await create(request,'Delivery fixture','Increment'),milestone=await create(request,'Delivery fixture milestone','Milestone');
  const scoped=await update(request,increment,{status:'In progress',relationships:[{kind:'contains',target:task.id},{kind:'contains',target:testRecord.id},outside.id]});
  const parent=await update(request,milestone,{relationships:[{kind:'contains',target:scoped.id}]});
- await page.goto('/#/projects/'+project+'/increments');await page.getByRole('textbox',{name:'Search records'}).fill(scoped.title);await page.getByRole('link',{name:scoped.title,exact:true}).click();
+ await page.goto('/#/projects/'+project+'/increments');await (await collectionSearch(page)).fill(scoped.title);await page.getByRole('link',{name:scoped.title,exact:true}).click();
  const panel=page.getByRole('region',{name:'Delivery increment scope'});await expect(panel.getByRole('link',{name:new RegExp(task.title)})).toBeVisible();await expect(panel.getByRole('link',{name:new RegExp(outside.title)})).toHaveCount(0);await expect(panel.getByText('No executable acceptance definition',{exact:true})).toBeVisible();await expect(panel.getByText('Local npm verification',{exact:true})).toBeVisible();await expect(panel.getByText('Browser regression',{exact:true})).toBeVisible();
  await panel.getByRole('link',{name:parent.title,exact:true}).click();await expect(page.getByRole('heading',{name:'Delivery increments',exact:true})).toBeVisible();await expect(page.locator('.increment-panel').getByRole('link',{name:new RegExp(scoped.title)})).toBeVisible();
 });
@@ -518,7 +519,7 @@ test('board status moves use canonical revisions, keyboard control and recovery 
  const a=await create(request,'Board move Alpha'),b=await create(request,'Board move Protected'),c=await create(request,'Board move Conflict');
  await open(page,b);await edit(page);await title(page).fill('Recover board draft');await keep(page).click();
  await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Board',exact:true}).click();
- await page.getByRole('textbox',{name:'Search records'}).fill('Board move');
+ await (await collectionSearch(page)).fill('Board move');
  const board=page.getByRole('region',{name:'Status board'}),concept=board.getByRole('region',{name:'Concept column'}),progress=board.getByRole('region',{name:'In progress column'}),ready=board.getByRole('region',{name:'Ready column'});
  const move=name=>board.getByRole('combobox',{name:'Move '+name+' to status',exact:true});
  await expect(concept.getByRole('heading',{name:a.title,exact:true})).toBeVisible();
@@ -529,7 +530,7 @@ test('board status moves use canonical revisions, keyboard control and recovery 
  await page.route('**/api/projects/'+project+'/records/'+c.id+'/properties',async route=>{await update(request,c,{body:'External change'});await route.continue();},{times:1});
  await move(c.title).selectOption('Ready');await expect(page.getByText('Record changed on disk. Refresh before editing its properties.',{exact:true})).toBeVisible();const latest=await recordOnDisk(request,c.id);expect(latest.status).toBe('Concept');expect(latest.body).toBe('External change');
  await expect(page.getByRole('textbox',{name:'Search records'})).toHaveValue('Board move');
- await page.getByRole('textbox',{name:'Search records'}).fill(a.title);await page.getByRole('button',{name:'Filter',exact:true}).click();await page.getByLabel('Status',{exact:true}).selectOption('Ready');await move(a.title).focus();await move(a.title).selectOption('Concept');await expect(board.getByText('No matching records. Create a record or change your filters.',{exact:true})).toBeVisible();await expect(board).toBeFocused();
+ await (await collectionSearch(page)).fill(a.title);await page.getByRole('button',{name:'Filter',exact:true}).click();await page.getByLabel('Status',{exact:true}).selectOption('Ready');await move(a.title).focus();await move(a.title).selectOption('Concept');await expect(board.getByText('No matching records. Create a record or change your filters.',{exact:true})).toBeVisible();await expect(board).toBeFocused();
 });
 
 test('planning uses explicit dependency directions, shows filtered prerequisites and cycles, and retains navigation',async({page,request})=>{
@@ -538,7 +539,7 @@ test('planning uses explicit dependency directions, shows filtered prerequisites
  await update(request,b,{relationships:[{kind:'depends-on',target:a.id}]});
  await update(request,c,{relationships:[{kind:'depends-on',target:d.id}]});await update(request,d,{relationships:[{kind:'depends-on',target:c.id}]});
  await update(request,e,{relationships:[{kind:'depends-on',target:'missing-plan-fixture'}]});
- await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Plan',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Plan fixture');
+ await page.goto('/#/projects/'+project+'/work');await page.getByRole('button',{name:'Plan',exact:true}).click();await (await collectionSearch(page)).fill('Plan fixture');
  const panel=page.getByRole('region',{name:'Dependency planning'}),task=panel.getByRole('article',{name:'Dependencies for '+b.title});
  await expect(task.getByText('Direct prerequisites marked Ready',{exact:true})).toBeVisible();
  await expect(task.getByText('Direct prerequisites (1)',{exact:true})).toBeVisible();await expect(task.getByText('Outside current filter',{exact:true})).toBeVisible();
@@ -556,7 +557,7 @@ test('authored timeline maps stable date fields, persists saved mapping and expo
  await writeFile(schemaPath,JSON.stringify(definition));const schema=await (await request.get(otherPrefix+'/schema')).json();
  const a=await create(request,'Timeline fixture range','Task',other),b=await create(request,'Timeline fixture undated','Task',other);
  const saved=await request.put(otherPrefix+'/records/'+a.id,{data:{expectedRevision:a.revision,expectedSchemaRevision:schema.revision,changes:{...editable(a),customProperties:{'start-date':'2026-12-01','end-date':'2026-12-08'}}}});expect(saved.ok()).toBeTruthy();
- await page.goto('/#/projects/'+other+'/work');await page.getByRole('button',{name:'Timeline',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Timeline fixture');
+ await page.goto('/#/projects/'+other+'/work');await page.getByRole('button',{name:'Timeline',exact:true}).click();await (await collectionSearch(page)).fill('Timeline fixture');
  const panel=page.getByRole('region',{name:'Authored timeline'});await panel.getByLabel('Date or start field',{exact:true}).selectOption('start-date');await panel.getByLabel('End field (optional)',{exact:true}).selectOption('end-date');
  await expect(panel.getByText('2026-12-01 – 2026-12-08',{exact:true})).toBeVisible();await expect(panel.getByRole('region',{name:'Unplotted records'}).getByRole('link',{name:b.title,exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Saved views',exact:true}).click();await page.getByRole('button',{name:'Save current view',exact:true}).click();await page.getByLabel('View name',{exact:true}).fill('Timeline fixture view');await page.getByRole('button',{name:'Save new view',exact:true}).click();
@@ -596,7 +597,7 @@ test('opt-in autosave commits valid drafts and pauses on external conflict witho
 test('requirements traceability distinguishes explicit links from authored readiness and preserves context',async({page,request})=>{
  const req=await create(request,'Trace fixture requirement','Requirement'),gap=await create(request,'Trace fixture gap','Requirement'),implementation=await create(request,'Trace fixture task','Task'),testRecord=await create(request,'Trace fixture test','Test'),generic=await create(request,'Trace fixture generic','Task');
  await update(request,implementation,{relationships:[{kind:'implements',target:req.id}]});await update(request,testRecord,{status:'Ready',relationships:[{kind:'verifies',target:req.id}]});await update(request,generic,{relationships:[req.id]});
- await page.goto('/#/projects/'+project+'/requirements');await page.getByRole('button',{name:'Traceability',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('Trace fixture');
+ await page.goto('/#/projects/'+project+'/requirements');await page.getByRole('button',{name:'Traceability',exact:true}).click();await (await collectionSearch(page)).fill('Trace fixture');
  const panel=page.getByRole('region',{name:'Requirements traceability'}),row=panel.getByRole('row').filter({has:page.getByRole('link',{name:req.title,exact:true})});
  await expect(row.getByRole('link',{name:implementation.title,exact:true})).toBeVisible();await expect(row.getByRole('link',{name:testRecord.title,exact:true})).toBeVisible();await expect(row.getByRole('link',{name:generic.title,exact:true})).toHaveCount(0);
  await expect(panel.getByRole('columnheader',{name:'Test links (not results)',exact:true})).toBeVisible();
@@ -646,9 +647,61 @@ test('one canonical requirement edit updates relationship readers, traceability,
  const original=await update(request,requirement,{relationships:[objective.id],body:'Original integration definition'}),linkedTask=await update(request,task,{relationships:[{kind:'implements',target:requirement.id}]});
  await open(page,original);await edit(page);const updatedTitle='M1 integration requirement revised';await title(page).fill(updatedTitle);await page.locator('.editor textarea').fill('canonicalintegrationmarker');await save(page).click();await expect(page.getByText('Saved to disk',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Return to record',exact:true}).click();
  await expect(page.getByRole('heading',{name:updatedTitle,exact:true})).toBeVisible();
- await page.goto('/#/projects/'+project+'/requirements');await page.getByRole('button',{name:'Table',exact:true}).click();await page.getByRole('textbox',{name:'Search records'}).fill('M1 integration requirement');const table=page.locator('.records-table');await expect(table.getByRole('link',{name:updatedTitle,exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Traceability',exact:true}).click();const panel=page.getByRole('region',{name:'Requirements traceability'}),row=panel.getByRole('row').filter({has:page.getByRole('link',{name:updatedTitle,exact:true})});await expect(row.getByRole('link',{name:task.title,exact:true})).toBeVisible();await row.getByRole('link',{name:task.title,exact:true}).click();await expect(page.locator('.record-links').getByRole('link',{name:new RegExp(updatedTitle)})).toBeVisible();
+ await page.goto('/#/projects/'+project+'/requirements');await page.getByRole('button',{name:'Table',exact:true}).click();await (await collectionSearch(page)).fill('M1 integration requirement');const table=page.locator('.records-table');await expect(table.getByRole('link',{name:updatedTitle,exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Traceability',exact:true}).click();const panel=page.getByRole('region',{name:'Requirements traceability'}),row=panel.getByRole('row').filter({has:page.getByRole('link',{name:updatedTitle,exact:true})});await expect(row.getByRole('link',{name:task.title,exact:true})).toBeVisible();await row.getByRole('link',{name:task.title,exact:true}).click();await page.locator('.record-disclosure>summary').filter({hasText:'Relationships'}).click();await expect(page.locator('.record-links').getByRole('link',{name:new RegExp(updatedTitle)})).toBeVisible();
  await page.goto('/#/projects/'+project+'/library');await page.getByRole('button',{name:'Search',exact:true}).click();const search=page.getByRole('region',{name:'Project search'});await search.getByLabel('Search this project',{exact:true}).fill('canonicalintegrationmarker');await search.getByRole('button',{name:'Search project',exact:true}).click();await expect(search.getByRole('link',{name:updatedTitle,exact:true})).toBeVisible();
  const latest=await recordOnDisk(request,requirement.id);expect(latest.id).toBe(requirement.id);expect(latest.body).toBe('canonicalintegrationmarker');expect(latest.relationships).toEqual([objective.id]);expect((await recordOnDisk(request,task.id)).revision).toBe(linkedTask.revision);expect((await recordOnDisk(request,objective.id)).revision).toBe(objective.revision);
  await page.goto('/#/projects/'+other+'/library');await page.getByRole('button',{name:'Search',exact:true}).click();await search.getByLabel('Search this project',{exact:true}).fill('canonicalintegrationmarker');await search.getByRole('button',{name:'Search project',exact:true}).click();await expect(search.getByRole('link',{name:updatedTitle,exact:true})).toHaveCount(0);
+});
+
+test('one live collection toolbar across navigation and history, no stale controls or queries',async({page,request},testInfo)=>{
+ const record=await create(request,'Contextual search fixture');
+ await page.goto('/#/projects/'+project+'/work');
+ const nav=page.getByRole('navigation',{name:'Project navigation'}),toolbar=page.getByRole('region',{name:'Collection controls'}),input=page.getByRole('textbox',{name:'Search records',exact:true});
+ const check=async(label,newLabel,value='')=>{
+  await expect(page.getByRole('heading',{name:label,exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(1);await expect(input).toHaveCount(1);await expect(input).toHaveValue(value);await expect(toolbar.getByRole('button',{name:newLabel,exact:true})).toBeVisible();
+ };
+ await check('Work','New task');await input.fill(record.title);await expect(page.getByRole('link',{name:record.title,exact:true})).toBeVisible();
+ await toolbar.getByRole('button',{name:'Filter',exact:true}).click();await expect(toolbar.getByLabel('Status',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Columns',exact:true}).click();await expect(page.getByRole('region',{name:'Table columns'})).toBeVisible();
+ await nav.getByRole('link',{name:'Requirements',exact:true}).click();await check('Requirements','New requirement');await expect(page.getByRole('button',{name:'New task',exact:true})).toHaveCount(0);await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Columns',exact:true})).toHaveCount(0);
+ await page.screenshot({path:testInfo.outputPath('requirements-single-toolbar.png'),animations:'disabled'});
+ await toolbar.getByRole('button',{name:'Filter',exact:true}).click();await expect(toolbar.getByLabel('Status',{exact:true})).toBeVisible();
+ await page.goBack();await check('Work','New task',record.title);await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);await expect(page.getByRole('region',{name:'Table columns'})).toHaveCount(0);
+ await nav.getByRole('link',{name:'Features',exact:true}).click();await check('Features','New feature');await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);
+ await page.goBack();await check('Work','New task',record.title);await nav.getByRole('link',{name:'Requirements',exact:true}).click();await check('Requirements','New requirement');await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);
+ await nav.getByRole('link',{name:'Overview',exact:true}).click();await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);await expect(input).toHaveCount(0);
+ await page.goBack();await check('Requirements','New requirement');
+ await page.goBack();await check('Work','New task',record.title);await expect(page.getByRole('button',{name:'Columns',exact:true})).toHaveCount(1);
+ await page.getByRole('link',{name:record.title,exact:true}).click();await expect(page.getByRole('heading',{name:record.title,exact:true})).toBeVisible();await expect(input).toHaveCount(0);await expect(toolbar).toHaveCount(0);
+ await page.goBack();await check('Work','New task',record.title);
+ await toolbar.getByRole('button',{name:'Clear search',exact:true}).click();await expect(input).toHaveValue('');
+ await nav.getByRole('link',{name:'Quality',exact:true}).click();await expect(page.getByRole('heading',{name:'Quality',exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);
+ await nav.getByRole('link',{name:'Data library',exact:true}).click();await check('Data library','New record');await page.getByRole('button',{name:'Search',exact:true}).click();await expect(page.getByLabel('Search this project',{exact:true})).toBeVisible();await expect(input).toHaveCount(0);await expect(toolbar).toHaveCount(0);
+ await page.getByRole('button',{name:'Table',exact:true}).click();await check('Data library','New record');
+ await page.getByRole('combobox',{name:'Active project',exact:true}).selectOption(other);await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);
+ await page.goBack();await check('Data library','New record');
+});
+test('every sidebar destination has only its current controls with reduced motion',async({page})=>{
+ await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/#/projects/'+project+'/overview');
+ const nav=page.getByRole('navigation',{name:'Project navigation'}),toolbar=page.getByRole('region',{name:'Collection controls'}),input=page.getByRole('textbox',{name:'Search records',exact:true});
+ const collections=[['Work','New task'],['Features','New feature'],['Strategy','New objective'],['Requirements','New requirement'],['Increments','New increment'],['Roadmap','New milestone'],['Documentation','New document'],['Decisions','New decision'],['Architecture','New system'],['Presentations','New record'],['Data library','New record']];
+ for(const [label,createLabel] of collections){await nav.getByRole('link',{name:label,exact:true}).click();await expect(page.getByRole('heading',{name:label,exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(1);await expect(input).toHaveCount(1);await expect(input).toHaveValue('');await expect(toolbar.getByRole('button',{name:createLabel,exact:true})).toBeVisible();await input.fill('not-found-'+label);}
+ for(const label of ['Overview','Inbox','Recovery','Quality','Repository','Changes','Schemas','Templates','Trash']){const link=label==='Trash'?page.getByRole('link',{name:label,exact:true}):nav.getByRole('link',{name:label,exact:true});await link.click();await expect(page.getByRole('heading',{name:label,exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);await expect(input).toHaveCount(0);}
+});
+test('record secondary information is collapsed on entry and keyboard accessible without data changes',async({page,request},testInfo)=>{
+ const target=await create(request,'Disclosure linked requirement','Requirement'),record=await create(request,'Disclosure fixture');
+ const linked=await update(request,record,{relationships:[{kind:'implements',target:target.id}],body:'Primary content remains visible'});
+ await open(page,linked);
+ const relationships=page.locator('.record-disclosure').filter({has:page.locator('summary').filter({hasText:'Relationships'})}),evidence=page.locator('.record-disclosure').filter({has:page.locator('summary').filter({hasText:'Implementation evidence'})});
+ const rs=relationships.locator('summary'),es=evidence.locator('summary');
+ await expect(page.getByText('Primary content remains visible',{exact:true})).toBeVisible();
+ await expect(relationships).not.toHaveAttribute('open','');await expect(evidence).not.toHaveAttribute('open','');
+ await expect(relationships.getByRole('link',{name:new RegExp(target.title)})).toBeHidden();
+ await page.screenshot({path:testInfo.outputPath('record-secondary-collapsed.png'),animations:'disabled',fullPage:true});
+ await rs.focus();await page.keyboard.press('Enter');await expect(relationships).toHaveAttribute('open','');await expect(relationships.getByRole('link',{name:new RegExp(target.title)})).toBeVisible();
+ await es.click();await expect(evidence).toHaveAttribute('open','');await expect(evidence.getByRole('button',{name:'Refresh',exact:true})).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath('record-secondary-expanded.png'),animations:'disabled',fullPage:true});
+ await rs.click();await expect(relationships).not.toHaveAttribute('open','');await expect(evidence).toHaveAttribute('open','');
+ await page.reload();await expect(relationships).not.toHaveAttribute('open','');await expect(evidence).not.toHaveAttribute('open','');expect((await recordOnDisk(request,record.id)).revision).toBe(linked.revision);
 });

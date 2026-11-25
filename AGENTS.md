@@ -61,7 +61,7 @@
 - Cancel editing restores the recovery state at session entry, distinct from retaining or discarding the entire draft. Guard feedback uses non-blocking notifications; never hide failed saves or override conflicting recovery data. Copy/share only saved review evidence with an explicit owner action.
 
 ## Collection operations
-- Place search and contextual creation in shared collection controls, not global navigation. Sort direction is explicit and persisted, with backward-compatible legacy defaults; stable tie-breaks. Reader focus must respect filters. Use the same revision-checked editor for direct edit actions and guard asynchronous navigation against stale entry identity.
+- Place search and contextual creation in shared collection controls, not global navigation. Maintain one live toolbar in a stable host slot; new destinations must not retain stale controls or filters. Scope transient expansion to the current history entry; verify exact toolbar counts during category, record and project transitions. Sort direction is explicit and persisted, with backward-compatible legacy defaults; stable tie-breaks. Reader focus must respect filters. Use the same revision-checked editor for direct edit actions and guard asynchronous navigation against stale entry identity.
 - Removal is reversible trash, never permanent deletion. Preserve original bytes, IDs, inbound relationships and evidence. Warn about affected links, reject unresolved local drafts, validate expected revisions and never overwrite a destination on restore. Use only disposable isolated records for destructive regression tests.
 
 ## Public preview and licensing

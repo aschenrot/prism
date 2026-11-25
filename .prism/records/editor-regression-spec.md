@@ -78,3 +78,20 @@ Use this real review for normal progress checks. For destructive or conflicting 
 - [ ] F06 — **Export review evidence** — Export results after saving a case; inspect JSON and local project acceptance.local files. Expected: exact test-definition revision, tested HEAD, case observations, reviewer, environment and decision present; Git status shows no acceptance-run files. Preserve exports for review/backup; no automatic task status or PR changes.
 
 
+
+
+## G. Collection control ownership (M1 correction)
+Automated browser regression: navigate all product/management/knowledge/configuration sidebar destinations using isolated fixtures, with ordinary and reduced motion. Verify exactly one live collection toolbar and search input in collection views, correct contextual creation label and empty query on new destinations; zero collection controls on dedicated destinations and full record pages. Verify Back restores the saved query, switching project does not carry stale controls, and dedicated project Search is distinct. Secondary record sections default closed; keyboard activation and reload preserve canonical data. This is developer-owned technical verification, not additional owner acceptance.
+
+
+## H. Developer-owned M1 verification map
+The owner review retains H01–H04, R01–R02 and K01–K19. Do not ask the owner to simulate filesystem corruption, competing writes or invalid provider responses. The following implementation tests carry those repeatable technical checks (the full matrix must pass on the actual candidate):
+- H01–H04: hosted-verification.test.ts, pullReferenceEditing.test.ts and browser scenarios for opt-in hosted verification, scoped PR jobs and reference authoring. Browser provider responses are controlled fixtures; real hosted lookup remains a product observation.
+- R01–R02: routes.test.ts, navigation.test.ts, views.test.ts, record-management.test.ts, trash.test.ts, editor.test.ts and browser navigation, menus, sorting, conflicts, missing files, duplication, trash, disclosure and sidebar scenarios.
+- K01/K02/K17: integration browser scenario for one canonical requirement edit, traceability.test.ts, relationship/navigation/browser regressions. Visual cohesion remains human judgment.
+- K03–K06: custom-properties.test.ts, tableColumns.test.ts and browser schema/identity/columns cases including retirement and stale writes.
+- K07–K12: search.test.ts, templates.test.ts, inbox.test.ts, dependencyPlan.test.ts, timeline.test.ts and corresponding browser scenarios; board movement browser checks cover revision and recovery guards.
+- K13–K14/K18–K19: draftHistory.test.ts, autosave.test.ts, draftInventory.test.ts, definitionRecovery.test.ts and related browser scenarios.
+- K15–K16: projectBackup.test.ts, localRegistry.test.ts, registry.test.ts, projects.test.ts; exact bytes, incomplete backups/restores, unsafe links/roots, registry isolation and startup preflight. CLI usability remains a product judgment, not a claim that a unit test is a human review.
+
+No automated result is a human acceptance observation. Historical owner results remain associated with their original revision and definition.
