@@ -6,7 +6,7 @@ status: In progress
 priority: High
 accent: teal
 tags: [delivery, management]
-githubPullRequests: [{repository: aschenrot/prism, number: 11}]
+githubPullRequests: [{repository: aschenrot/prism, number: 11}, {repository: aschenrot/prism, number: 37}]
 relationships:
   - kind: contains
     target: record-actions
@@ -46,3 +46,5 @@ Owner confirmed both automated gates and all manual acceptance checks passed for
 
 
 M1 review reopened the current increment after R01 failed at 3eda97b. Earlier PR #11 acceptance remains historical; the corrective task and consolidated review are pending.
+
+The corrective implementation is associated with [PR #37](https://github.com/aschenrot/prism/pull/37); this association does not imply human acceptance.

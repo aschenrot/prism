@@ -654,7 +654,7 @@ test('one canonical requirement edit updates relationship readers, traceability,
  await page.goto('/#/projects/'+other+'/library');await page.getByRole('button',{name:'Search',exact:true}).click();await search.getByLabel('Search this project',{exact:true}).fill('canonicalintegrationmarker');await search.getByRole('button',{name:'Search project',exact:true}).click();await expect(search.getByRole('link',{name:updatedTitle,exact:true})).toHaveCount(0);
 });
 
-test('one live collection toolbar across navigation and history, no stale controls or queries',async({page,request})=>{
+test('one live collection toolbar across navigation and history, no stale controls or queries',async({page,request},testInfo)=>{
  const record=await create(request,'Contextual search fixture');
  await page.goto('/#/projects/'+project+'/work');
  const nav=page.getByRole('navigation',{name:'Project navigation'}),toolbar=page.getByRole('region',{name:'Collection controls'}),input=page.getByRole('textbox',{name:'Search records',exact:true});
@@ -665,6 +665,11 @@ test('one live collection toolbar across navigation and history, no stale contro
  await toolbar.getByRole('button',{name:'Filter',exact:true}).click();await expect(toolbar.getByLabel('Status',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Columns',exact:true}).click();await expect(page.getByRole('region',{name:'Table columns'})).toBeVisible();
  await nav.getByRole('link',{name:'Requirements',exact:true}).click();await check('Requirements','New requirement');await expect(page.getByRole('button',{name:'New task',exact:true})).toHaveCount(0);await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Columns',exact:true})).toHaveCount(0);
+ await page.screenshot({path:testInfo.outputPath('requirements-single-toolbar.png'),animations:'disabled'});
+ await toolbar.getByRole('button',{name:'Filter',exact:true}).click();await expect(toolbar.getByLabel('Status',{exact:true})).toBeVisible();
+ await page.goBack();await check('Work','New task',record.title);await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);await expect(page.getByRole('region',{name:'Table columns'})).toHaveCount(0);
+ await nav.getByRole('link',{name:'Features',exact:true}).click();await check('Features','New feature');await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);
+ await page.goBack();await check('Work','New task',record.title);await nav.getByRole('link',{name:'Requirements',exact:true}).click();await check('Requirements','New requirement');await expect(toolbar.getByLabel('Status',{exact:true})).toHaveCount(0);
  await nav.getByRole('link',{name:'Overview',exact:true}).click();await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);await expect(input).toHaveCount(0);
  await page.goBack();await check('Requirements','New requirement');
  await page.goBack();await check('Work','New task',record.title);await expect(page.getByRole('button',{name:'Columns',exact:true})).toHaveCount(1);
@@ -684,7 +689,7 @@ test('every sidebar destination has only its current controls with reduced motio
  for(const [label,createLabel] of collections){await nav.getByRole('link',{name:label,exact:true}).click();await expect(page.getByRole('heading',{name:label,exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(1);await expect(input).toHaveCount(1);await expect(input).toHaveValue('');await expect(toolbar.getByRole('button',{name:createLabel,exact:true})).toBeVisible();await input.fill('not-found-'+label);}
  for(const label of ['Overview','Inbox','Recovery','Quality','Repository','Changes','Schemas','Templates','Trash']){const link=label==='Trash'?page.getByRole('link',{name:label,exact:true}):nav.getByRole('link',{name:label,exact:true});await link.click();await expect(page.getByRole('heading',{name:label,exact:true,level:1})).toBeVisible();await expect(toolbar).toHaveCount(0);await expect(input).toHaveCount(0);}
 });
-test('record secondary information is collapsed on entry and keyboard accessible without data changes',async({page,request})=>{
+test('record secondary information is collapsed on entry and keyboard accessible without data changes',async({page,request},testInfo)=>{
  const target=await create(request,'Disclosure linked requirement','Requirement'),record=await create(request,'Disclosure fixture');
  const linked=await update(request,record,{relationships:[{kind:'implements',target:target.id}],body:'Primary content remains visible'});
  await open(page,linked);
@@ -693,8 +698,10 @@ test('record secondary information is collapsed on entry and keyboard accessible
  await expect(page.getByText('Primary content remains visible',{exact:true})).toBeVisible();
  await expect(relationships).not.toHaveAttribute('open','');await expect(evidence).not.toHaveAttribute('open','');
  await expect(relationships.getByRole('link',{name:new RegExp(target.title)})).toBeHidden();
+ await page.screenshot({path:testInfo.outputPath('record-secondary-collapsed.png'),animations:'disabled',fullPage:true});
  await rs.focus();await page.keyboard.press('Enter');await expect(relationships).toHaveAttribute('open','');await expect(relationships.getByRole('link',{name:new RegExp(target.title)})).toBeVisible();
  await es.click();await expect(evidence).toHaveAttribute('open','');await expect(evidence.getByRole('button',{name:'Refresh',exact:true})).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath('record-secondary-expanded.png'),animations:'disabled',fullPage:true});
  await rs.click();await expect(relationships).not.toHaveAttribute('open','');await expect(evidence).toHaveAttribute('open','');
  await page.reload();await expect(relationships).not.toHaveAttribute('open','');await expect(evidence).not.toHaveAttribute('open','');expect((await recordOnDisk(request,record.id)).revision).toBe(linked.revision);
 });

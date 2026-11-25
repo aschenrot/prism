@@ -1,4 +1,4 @@
-import { useId,useState } from 'react';
+import { useId,useLayoutEffect,useState } from 'react';
 import { ArrowDown,ArrowUp,Plus,Search,SlidersHorizontal } from 'lucide-react';
 import type { EntityDefinition } from '../shared/customProperties';
 import { priorities,statuses,types } from '../shared/records';
@@ -7,6 +7,7 @@ type Props={scope:string;filters:Filters;entityTypes?:EntityDefinition[];allowTy
 export default function CollectionToolbar({scope,filters,entityTypes,allowType,disabled,creating,newLabel,onChange,onReset,onCreate}:Props){
   const [expandedScope,setExpandedScope]=useState<string|null>(null);
   const showFilters=expandedScope===scope;
+  useLayoutEffect(()=>setExpandedScope(null),[scope]);
   const sortFieldId=useId(),sortDirectionId=useId();
   const count=Number(filters.status!=='Any status')+Number(filters.priority!=='Any priority')+Number(allowType&&filters.type!=='All records')+Number(!!filters.entityType);
   const entities=(entityTypes??[]).filter(e=>filters.type==='All records'||e.baseType===filters.type);
