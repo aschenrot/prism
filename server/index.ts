@@ -8,7 +8,7 @@ import { ConflictError, MissingError, CustomPropertyError,RecordContentError } f
 import { schemaUpdateSchema } from '../shared/customProperties';
 import { SchemaWriteConflict,SchemaWriteRejected } from './projectSchema';
 import { loadProjects } from './projects';
-import { createWorkspaceSchema } from '../shared/projects';
+import { createWorkspaceSchema,updateProjectSettingsSchema } from '../shared/projects';
 import { indexRepository, readRepositoryFile } from './repository';
 import { searchInputSchema,searchRecords,searchTerms,type ProjectSearchResult } from '../shared/search';
 import { searchRepository } from './search';
@@ -52,6 +52,8 @@ const projectFor = (request:{params:unknown}) => projects.get(idSchema.parse((re
 app.get('/api/projects', async () => projects.list());
 app.get('/api/workspace-creation',async()=>projects.creationAvailability());
 app.post('/api/projects',async(request,reply)=>reply.code(201).send(await projects.createWorkspace(createWorkspaceSchema.parse(request.body))));
+app.get('/api/projects/:projectId/settings',async request=>projects.settings(idSchema.parse((request.params as {projectId:string}).projectId)));
+app.put('/api/projects/:projectId/settings',async request=>projects.updateSettings(idSchema.parse((request.params as {projectId:string}).projectId),updateProjectSettingsSchema.parse(request.body)));
 app.get('/api/projects/:projectId/schema',async request=>projectFor(request).store.schema());
 app.put('/api/projects/:projectId/schema',async request=>{const input=schemaUpdateSchema.parse(request.body);return projectFor(request).store.updateSchema(input.expectedRevision,input.definition);});
 app.get('/api/projects/:projectId/records', async request => projectFor(request).store.list());

@@ -13,6 +13,8 @@ relationships:
   - project-registry
   - data-integrity
   - kind: contains
+    target: m1-native-project-settings
+  - kind: contains
     target: m1-native-workspace-creation
   - kind: contains
     target: m1-product-quality-corrections

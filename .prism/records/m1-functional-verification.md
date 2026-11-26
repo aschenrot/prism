@@ -95,3 +95,7 @@ Developer-owned coverage: strict validated request, registry publication only af
 
 ## Record byte integrity follow-up
 Developer regression covers CRLF and non-ASCII exact-byte hashes, malformed UTF-8 rejection without overwrite, oversized external record isolation and invalid Unicode write rejection. See m1-record-byte-integrity. Existing save/conflict/trash browser tests remain required. No new owner technical cases.
+
+
+## Graphical project settings
+Developer-owned verification of live settings, root/store/record preservation, stale revision rejection, external registry changes, explicit override, association clearing, navigation removal, dirty form guard and restart persistence. See m1-native-project-settings. No additional owner regression cases.

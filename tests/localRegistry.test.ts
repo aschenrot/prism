@@ -79,3 +79,23 @@ test('managed workspace initialization failure does not publish registry or over
  await assert.rejects(lstat(join(cwd,'.prism/projects.local.yaml')));assert.deepEqual(await readFile(join(cwd,'.prism/projects.yaml')),original);
  await assert.rejects(changeLocalRegistry(cwd,{}, {action:'create-managed',input,expected,prepare:async()=>{throw Error('must not initialize again');}}),/unregistered workspace folder/);
 }));
+
+test('live project settings preserve root, other profiles and records; reject stale revisions and persist on restart',()=>fixture(async cwd=>{
+ await changeLocalRegistry(cwd,{}, {action:'add',config:{...config('second','second','repository'),profiles:['core','rust','project','game'],githubRepository:'owner/repo'}});
+ const projects=await loadProjects(cwd,{}),target=projects.get('second'),record=await target.store.create('Retained record','Task');
+ const initial=projects.settings('second');assert.equal(initial.editable,true);assert.ok(!('root' in initial.project));
+ const input={expectedRevision:initial.revision,title:'Renamed',product:true,game:false,githubRepository:'owner/repo'};
+ const saved=await projects.updateSettings('second',input);assert.equal(saved.project.title,'Renamed');assert.deepEqual(saved.project.profiles,['core','rust','project','product']);assert.equal(saved.project.githubRepository,'owner/repo');assert.notEqual(saved.revision,initial.revision);
+ assert.equal(projects.get('second'),target);assert.equal((await target.store.get(record.id)).revision,record.revision);
+ await assert.rejects(projects.updateSettings('second',input),/settings changed/);
+ const reopened=await loadProjects(cwd,{});assert.deepEqual(reopened.settings('second'),saved);assert.equal((await reopened.get('second').store.get(record.id)).title,record.title);
+ const clear=await projects.updateSettings('second',{...input,expectedRevision:saved.revision,githubRepository:null});assert.equal(clear.project.githubRepository,undefined);
+}));
+test('live settings reject external registry edits, override mode, root mutation and standalone GitHub association',()=>fixture(async cwd=>{
+ const projects=await loadProjects(cwd,{}),initial=projects.settings('first'),input={expectedRevision:initial.revision,title:'Rename',product:true,game:false,githubRepository:null};
+ await assert.rejects(projects.updateSettings('first',{...input,root:'second'} as typeof input),/Unrecognized/);
+ await assert.rejects(projects.updateSettings('first',{...input,githubRepository:'owner/repo'}),/connected repository/);
+ const override=await loadProjects(cwd,{PRISM_PROJECT:'first'});assert.equal(override.settings('local').editable,false);await assert.rejects(override.updateSettings('local',{...input,expectedRevision:override.settings('local').revision}),/read-only/);
+ await changeLocalRegistry(cwd,{}, {action:'add',config:config('second','second')});
+ await assert.rejects(projects.updateSettings('first',input),/configuration changed/);assert.equal(projects.settings('first').project.title,initial.project.title);
+}));

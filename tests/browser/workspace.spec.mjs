@@ -783,10 +783,10 @@ test('project dropdown exposes create connect and manage guidance without mutati
  const before=await (await request.get('/api/projects')).json();
  let writes=0;page.on('request',r=>{if(/\/api\/projects(?:\/|$)/.test(r.url())&&!['GET','HEAD'].includes(r.method()))writes++;});
  for(const [value,name] of [[':add','Create workspace'],[':connect','Connect existing project'],[':manage','Manage projects']]){
-  await selector.focus();await selector.selectOption(value);const dialog=page.getByRole('dialog',{name,exact:true});await expect(dialog).toBeVisible();if(value!==':add'){await expect(dialog.getByText(/does not create, access or modify a folder/)).toBeVisible();await expect(dialog.getByLabel('Registration command template')).toContainText('npm run project --');}await expect(selector).toHaveValue(project);await expect(page).toHaveURL(new RegExp('/'+project+'/overview$'));
+  await selector.focus();await selector.selectOption(value);const dialog=page.getByRole('dialog',{name,exact:true});await expect(dialog).toBeVisible();if(value===':connect'){await expect(dialog.getByText(/does not create, access or modify a folder/)).toBeVisible();await expect(dialog.getByLabel('Registration command template')).toContainText('npm run project --');}await expect(selector).toHaveValue(project);await expect(page).toHaveURL(new RegExp('/'+project+'/overview$'));
   if(value===':add'){await expect(dialog.getByLabel('Workspace name')).toBeVisible();await expect(dialog.getByRole('button',{name:'Create workspace',exact:true})).toBeDisabled();await page.screenshot({path:testInfo.outputPath('create-project-guide.png'),animations:'disabled'});}
   if(value===':connect'){await expect(dialog.getByLabel('Project storage')).toHaveValue('repository');await expect(dialog.getByLabel('Registration command template')).toContainText('repository');await page.screenshot({path:testInfo.outputPath('connect-project-guide.png'),animations:'disabled'});}
-  if(value===':manage'){await expect(dialog.getByText('Browser other fixture',{exact:true})).toBeVisible();await expect(dialog.getByText(/omitting it or using a dash clears it/)).toBeVisible();await page.screenshot({path:testInfo.outputPath('manage-projects-guide.png'),animations:'disabled'});}
+  if(value===':manage'){await expect(dialog.getByLabel('Project',{exact:true})).toHaveValue(project);await expect(dialog.getByLabel('Project name')).toBeVisible();await expect(dialog.getByRole('button',{name:'Save settings',exact:true})).toBeDisabled();await page.screenshot({path:testInfo.outputPath('manage-projects-guide.png'),animations:'disabled'});}
   await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(selector).toBeFocused();
  }
  expect(writes).toBe(0);expect(await (await request.get('/api/projects')).json()).toEqual(before);
@@ -811,6 +811,29 @@ test('project setup focus survives delayed initial record loading and repeated d
   gates[1]();await expect(loading).toHaveCount(0);await expect(connectGuide.getByRole('button',{name:'Close project setup',exact:true})).toBeFocused();
   await connectGuide.getByRole('button',{name:'Done',exact:true}).click();await expect(connectGuide).toHaveCount(0);await expect(selector).toBeFocused();
  }finally{for(const release of gates)release();}
+});
+
+test('graphical project settings preserve identity and records, reconcile removed navigation and reject stale input',async({page,request},testInfo)=>{
+ const endpoint='/api/projects/'+other+'/settings',original=await (await request.get(endpoint)).json();
+ const record=await create(request,'Settings preserve this record','Task',other);
+ await page.goto('/#/projects/'+other+'/gameplay');
+ const selector=page.locator('select[aria-label="Active project"]');await expect(selector).toHaveValue(other);
+ await selector.selectOption(':manage');const dialog=page.getByRole('dialog',{name:'Manage projects',exact:true});
+ await dialog.getByLabel('Project name').fill('Renamed fixture project');await dialog.getByRole('checkbox',{name:'Game design',exact:true}).uncheck();
+ await expect(dialog.getByLabel('Project',{exact:true})).toBeDisabled();
+ await page.screenshot({path:testInfo.outputPath('native-project-settings.png'),animations:'disabled'});
+ await dialog.getByRole('button',{name:'Save settings',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(selector).toHaveValue(other);
+ await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();await expect(page.getByRole('link',{name:'Gameplay',exact:true})).toHaveCount(0);
+ const updated=await (await request.get(endpoint)).json();expect(updated.project.title).toBe('Renamed fixture project');expect(updated.project.id).toBe(other);expect(updated.project.storage).toBe(original.project.storage);expect(updated.project).not.toHaveProperty('root');
+ expect((await (await request.get('/api/projects/'+other+'/records')).json()).records.some(r=>r.id===record.id)).toBe(true);
+ await selector.selectOption(':manage');await expect(dialog.getByLabel('Project name')).toHaveValue('Renamed fixture project');
+ const remote=await request.put(endpoint,{data:{expectedRevision:updated.revision,title:'External settings edit',product:true,game:false,githubRepository:null}});expect(remote.ok()).toBeTruthy();
+ await dialog.getByLabel('Project name').fill('Unsaved settings draft');
+ await dialog.getByRole('button',{name:'Save settings',exact:true}).click();
+ await expect(dialog.getByRole('alert')).toContainText('Project settings changed');await expect(dialog.getByLabel('Project name')).toHaveValue('Unsaved settings draft');
+ acceptDialog(page);await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await expect(dialog).toHaveCount(0);
+ const latest=await (await request.get(endpoint)).json();const restore=await request.put(endpoint,{data:{expectedRevision:latest.revision,title:original.project.title,product:original.project.profiles.includes('product'),game:original.project.profiles.includes('game'),githubRepository:original.project.githubRepository??null}});expect(restore.ok()).toBeTruthy();
+ await page.reload();await expect(selector).toHaveValue(other);await expect(page.getByRole('link',{name:'Gameplay',exact:true})).toBeVisible();
 });
 
 test('native workspace creation retains failed input, switches immediately, persists registry and isolates records',async({page,request},testInfo)=>{

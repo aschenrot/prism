@@ -1,7 +1,8 @@
-import { lstat, mkdir, readFile, realpath } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { lstat, mkdir, realpath } from 'node:fs/promises';
 import { resolve, join,relative } from 'node:path';
 import { selectRegistry,validateRegistration,changeLocalRegistry,managedWorkspaceDirectory,RegistryChanged } from './localRegistry';
-import { registrySchema,createWorkspaceSchema,workspaceProfile,type CreateWorkspaceInput,type WorkspaceCreationAvailability,type ProjectConfig, type ProjectInfo } from '../shared/projects';
+import { registrySchema,projectSchema,createWorkspaceSchema,workspaceProfile,updateProjectSettingsSchema,type UpdateProjectSettingsInput,type ProjectSettingsResult,type CreateWorkspaceInput,type WorkspaceCreationAvailability,type ProjectConfig, type ProjectInfo } from '../shared/projects';
 import { ConflictError,MissingError, RecordStore } from './store';
 import { ViewStore } from './views';
 import { TemplateStore } from './templates';
@@ -12,7 +13,7 @@ import { readVerification } from './verification';
 export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; views:ViewStore; templates:TemplateStore; acceptance:AcceptanceStore };
 export class Projects {
   private context:{cwd:string;env:NodeJS.ProcessEnv}|undefined;
-  private creating=false;
+  private changingRegistry=false;
   private constructor(private projects:Map<string,OpenProject>) {}
   static async open(configs:ProjectConfig[]) {
     // Preflight the complete registry before creating any project store, regardless
@@ -59,8 +60,8 @@ export class Projects {
       if(relative(expected,existing.root)===''&&existing.info.storage==='standalone'&&existing.info.title===input.title&&JSON.stringify(existing.info.profiles)===JSON.stringify(workspaceProfile(input.profile)))return existing.info;
       throw new ConflictError('This creation request already belongs to another workspace. Start a new request.');
     }
-    if(this.creating)throw new ConflictError('Another workspace is being created. Try again.');
-    this.creating=true;
+    if(this.changingRegistry)throw new ConflictError('Another workspace change is in progress. Try again.');
+    this.changingRegistry=true;
     try{
       const expected=[...this.projects.values()].map(p=>({...p.info,root:p.root}));
       const prepared:OpenProject[]=[];
@@ -74,7 +75,34 @@ export class Projects {
     }catch(e){
       if(e instanceof RegistryChanged)throw new ConflictError(e.message);
       throw e;
-    }finally{this.creating=false;}
+    }finally{this.changingRegistry=false;}
+  }
+  private settingsRevision(p:OpenProject){return createHash('sha256').update(JSON.stringify(projectSchema.parse({...p.info,root:p.root}))).digest('hex');}
+  settings(id:string):ProjectSettingsResult{
+    const p=this.get(id),editable=!!this.context&&!this.context.env.PRISM_PROJECTS&&!this.context.env.PRISM_PROJECT;
+    return {project:p.info,revision:this.settingsRevision(p),editable,...(!editable?{reason:'Project settings are read-only while an explicit project configuration is active.'}:{})};
+  }
+  async updateSettings(id:string,raw:UpdateProjectSettingsInput):Promise<ProjectSettingsResult>{
+    const input=updateProjectSettingsSchema.parse(raw),p=this.get(id);
+    if(!this.context||!this.settings(id).editable)throw new ConflictError('Project settings are read-only while an explicit project configuration is active.');
+    if(this.changingRegistry)throw new ConflictError('Another workspace change is in progress. Try again.');
+    if(this.settingsRevision(p)!==input.expectedRevision)throw new ConflictError('Project settings changed. Close and reopen settings to review the current values.');
+    if(p.info.storage!=='repository'&&input.githubRepository)throw new ConflictError('GitHub association requires a connected repository.');
+    const profiles=p.info.profiles.filter(v=>(v!=='product'||input.product)&&(v!=='game'||input.game));
+    if(input.product&&!profiles.includes('product'))profiles.push('product');
+    if(input.game&&!profiles.includes('game'))profiles.push('game');
+    this.changingRegistry=true;
+    try{
+      const expected=[...this.projects.values()].map(project=>({...project.info,root:project.root}));
+      const configs=await changeLocalRegistry(this.context.cwd,this.context.env,{action:'settings',id,title:input.title,profiles,githubRepository:input.githubRepository??undefined,expected});
+      const saved=configs.find(config=>config.id===id);
+      if(!saved)throw Error('Saved project settings unavailable');
+      const {root:_,...info}=saved;
+      // Keep the same root and store instances. Settings never remap project identity.
+      p.info=info;
+      return this.settings(id);
+    }catch(e){if(e instanceof RegistryChanged)throw new ConflictError(e.message);throw e;}
+    finally{this.changingRegistry=false;}
   }
   list(){return [...this.projects.values()].map(p=>p.info);}
   get(id:string){const project=this.projects.get(id);if(!project)throw new MissingError('Unknown project');return project;}
