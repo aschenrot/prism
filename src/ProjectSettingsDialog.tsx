@@ -37,8 +37,8 @@ export default function ProjectSettingsDialog({projects,activeId,blocked,dirty,o
   <p id={description}>Change project settings without moving or deleting files.</p>
   <label className="registration-storage">Project<select value={selected} disabled={pending||dirty} onChange={e=>{onResetError();setSelected(e.target.value);}}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select></label>
   {dirty&&<p className="overview-note">Save or cancel changes before choosing another project.</p>}
-  {query.isPending&&<p role="status">Opening project settings…</p>}
+  {(query.isPending||query.isFetching&&!dirty)&&<p role="status">Opening project settings…</p>}
   {query.isError&&<p className="warning" role="alert">Could not load settings. <button type="button" className="secondary" onClick={()=>void query.refetch()}>Retry</button></p>}
-  {query.data&&<SettingsForm key={selected} initial={query.data} blocked={blocked} pending={pending} error={error} onDirtyChange={onDirtyChange} onSave={input=>onSave(selected,input)} onCancel={dismiss}/>}
+  {query.data&&(!query.isFetching||dirty)&&<SettingsForm key={selected} initial={query.data} blocked={blocked} pending={pending} error={error} onDirtyChange={onDirtyChange} onSave={input=>onSave(selected,input)} onCancel={dismiss}/>}
  </dialog>;
 }

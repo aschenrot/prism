@@ -16,7 +16,7 @@ export default function WorkspaceOverview({project,records,findings,incomplete,h
   if(!records.length&&!incomplete)return <div className="overview" aria-label="Project overview">
     <section className="workspace-first-use">
       <h2>Start your project</h2>
-      <p>Capture ideas, plan work or write down what you know. Your first saved item will appear here.</p>
+      <p>Capture ideas, plan work or document your project.</p>
       <div className="first-use-actions">
         <button type="button" className="first-use-action first-use-primary" onClick={()=>onNavigate('inbox')}><Inbox size={22} aria-hidden="true"/><span><strong>Capture an idea</strong><small>Save a thought in your inbox.</small></span><ArrowRight size={17} aria-hidden="true"/></button>
         <button type="button" className="first-use-action" onClick={()=>onNavigate('work')}><ListChecks size={22} aria-hidden="true"/><span><strong>Plan work</strong><small>Organize tasks and next steps.</small></span><ArrowRight size={17} aria-hidden="true"/></button>
