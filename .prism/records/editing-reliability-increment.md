@@ -12,6 +12,8 @@ relationships:
   - editing-reliability
   - data-integrity
   - kind: contains
+    target: m1-record-byte-integrity
+  - kind: contains
     target: draft-command-history
   - kind: contains
     target: opt-in-autosave

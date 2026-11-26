@@ -91,3 +91,7 @@ Developer-owned viewport regression for a representative P02-length case (1440×
 
 ## Managed native workspace creation
 Developer-owned coverage: strict validated request, registry publication only after initialization, restart persistence, identical-request replay, explicit override/external edit/link rejection, failed initialization preservation, isolated graphical create and retry, draft guard and project switching. See m1-native-workspace-creation. No human acceptance inferred.
+
+
+## Record byte integrity follow-up
+Developer regression covers CRLF and non-ASCII exact-byte hashes, malformed UTF-8 rejection without overwrite, oversized external record isolation and invalid Unicode write rejection. See m1-record-byte-integrity. Existing save/conflict/trash browser tests remain required. No new owner technical cases.

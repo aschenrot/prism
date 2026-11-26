@@ -16,7 +16,7 @@
 File -> parse -> validate -> query -> projection (board/table/gallery/slides).
 Inspector -> validated command + expected revision -> atomic write -> query invalidation -> all projections.
 
-The current client polls the local API. A future file watcher plus server events can reduce polling. A stale revision returns HTTP 409. Invalid external files produce visible errors instead of being silently discarded. Atomic replacement prevents partial writes but cannot guarantee transaction isolation against non-cooperating external processes; the server serializes its own writes. Multi-record transactions and recovery journals are later work.
+The current client polls the local API. A future file watcher plus server events can reduce polling. A stale revision returns HTTP 409. Invalid external files produce visible errors instead of being silently discarded. Record reads are bounded at 16 MB (matching the scoped backup limit), validate UTF-8 without replacing invalid bytes and hash the original byte buffer. New files are published exclusively; updates recheck the expected revision immediately before atomic replacement and verify the saved revision. Atomic replacement prevents partial writes but cannot guarantee transaction isolation against non-cooperating external processes; the server serializes its own writes. Multi-record transactions and recovery journals are later work.
 
 ## Project format
 

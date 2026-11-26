@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readdir, readFile, lstat, realpath, rename, unlink, writeFile, link, rmdir } from 'node:fs/promises';
+import { mkdir, readdir, open, lstat, realpath, rename, unlink, writeFile, link, rmdir } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
 import { parse, stringify } from 'yaml';
 import { readProjectSchema,writeProjectSchema } from './projectSchema';
@@ -11,6 +11,25 @@ import { idSchema, metadataSchema, recordSchema, editableSchema, propertyChanges
 export class ConflictError extends Error {}
 export class MissingError extends Error {}
 export class CustomPropertyError extends Error {}
+export class RecordContentError extends Error {}
+// Align with the existing scoped backup limit; no valid bytes are rewritten on rejection.
+export const RECORD_FILE_LIMIT=16_000_000;
+async function readRecordBytes(path:string){
+  const initial=await lstat(path);
+  if(!initial.isFile())throw new RecordContentError('Record must be a regular file');
+  if(initial.size>RECORD_FILE_LIMIT)throw new RecordContentError('Record file exceeds the 16 MB limit');
+  const handle=await open(path,'r');
+  try{
+    const stat=await handle.stat();
+    if(!stat.isFile()||stat.dev!==initial.dev||stat.ino!==initial.ino||stat.size>RECORD_FILE_LIMIT)throw new RecordContentError('Record changed before it could be read. Refresh and retry.');
+    // Read at most the observed size plus one byte, even if another process grows the file.
+    const buffer=Buffer.allocUnsafe(stat.size+1);let offset=0;
+    while(offset<buffer.length){const {bytesRead}=await handle.read(buffer,offset,buffer.length-offset,offset);if(!bytesRead)break;offset+=bytesRead;}
+    const end=await handle.stat();
+    if(offset!==stat.size||end.size!==stat.size||end.mtimeMs!==stat.mtimeMs||end.ctimeMs!==stat.ctimeMs)throw new RecordContentError('Record changed while it was being read. Refresh and retry.');
+    return buffer.subarray(0,offset);
+  }finally{await handle.close();}
+}
 export class RecordStore {
   private queue: Promise<unknown> = Promise.resolve();
   private constructor(private dir: string) {}
@@ -30,20 +49,21 @@ export class RecordStore {
   updateSchema(expectedRevision:string,definition:ProjectPropertySchema){return this.serialize(()=>writeProjectSchema(dirname(this.dir),expectedRevision,definition));}
   async get(id: string): Promise<ProjectRecord> {return this.readAt(id,this.path(id));}
   private async readAt(id:string,path:string):Promise<ProjectRecord>{
-    let raw: string;
+    let bytes:Buffer;
     try {
-      if (!(await lstat(path)).isFile()) throw new Error('Record must be a regular file');
-      raw = await readFile(path, 'utf8');
+      bytes=await readRecordBytes(path);
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code === 'ENOENT') throw new MissingError('Record not found');
       throw e;
     }
+    let raw:string;
+    try{raw=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}catch{throw new RecordContentError('Record is not valid UTF-8. Repair its encoding outside Prism; original bytes are unchanged.');}
     const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/.exec(raw);
     if (!match) throw new Error('Missing YAML frontmatter');
     const metadata = metadataSchema.parse(parse(match[1], { maxAliasCount: 0 }));
     if (metadata.id !== id) throw new Error('Record ID does not match filename');
     const record = recordSchema.parse({ ...metadata, body: match[2] });
-    return { ...record, revision: createHash('sha256').update(raw).digest('hex') };
+    return { ...record, revision: createHash('sha256').update(bytes).digest('hex') };
   }
   async list(): Promise<RecordList> {
     const records: ProjectRecord[] = [], errors: RecordList['errors'] = [];
@@ -111,15 +131,30 @@ export class RecordStore {
       return this.get(id);
     });
   }
-  private async persist(record: unknown) {
+  private async persist(record: unknown,expectedRevision?:string) {
     const {body, ...metadata} = recordSchema.parse(record);
     delete metadata.revision;
     const path = this.path(String(metadata.id)), tmp = join(this.dir, '.' + randomUUID() + '.tmp');
+    const raw='---\n'+stringify(metadata)+'---\n'+body;
+    if(Buffer.byteLength(raw,'utf8')>RECORD_FILE_LIMIT)throw new RecordContentError('Record file exceeds the 16 MB limit. No changes were published.');
+    const bytes=Buffer.from(raw,'utf8');
+    if(bytes.toString('utf8')!==raw)throw new RecordContentError('Record contains invalid Unicode text. Correct the text before saving.');
+    const intended=createHash('sha256').update(bytes).digest('hex');
     try {
-      await writeFile(tmp, '---\n' + stringify(metadata) + '---\n' + body, { flag:'wx', flush:true });
-      await rename(tmp, path);
+      await writeFile(tmp,bytes,{flag:'wx',flush:true});
+      if(expectedRevision===undefined){
+        // New identity: publish exclusively, never replace an existing record.
+        try{await link(tmp,path);}catch(e){if((e as NodeJS.ErrnoException).code==='EEXIST')throw new ConflictError('Record ID already exists. No existing record was overwritten.');throw e;}
+      }else{
+        // Recheck immediately before publication. Not a transaction against
+        // non-cooperating external editors racing the final rename.
+        if((await this.get(String(metadata.id))).revision!==expectedRevision)throw new ConflictError('Record changed before save. Review the current version and retry.');
+        await rename(tmp,path);
+      }
     } finally { await unlink(tmp).catch(() => undefined); }
-    return this.get(String(metadata.id));
+    const saved=await this.get(String(metadata.id));
+    if(saved.revision!==intended)throw new ConflictError('Save could not be confirmed. Refresh and review the file before retrying.');
+    return saved;
   }
   create(title: string, type: Editable['type'],customTypeId?:string,expectedSchemaRevision?:string) {
     return this.serialize(async () => {
@@ -149,7 +184,7 @@ export class RecordStore {
     });
   }
   capture(title:string,body:string){return this.serialize(()=>{const now=new Date().toISOString();return this.persist({id:randomUUID(),title,type:'Idea',status:'Concept',priority:'Normal',accent:'violet',tags:[],relationships:[],body,inbox:true,createdAt:now,updatedAt:now});});}
-  setInbox(id:string,revision:string,inbox:boolean){return this.serialize(async()=>{const current=await this.get(id);if(current.revision!==revision)throw new ConflictError('Record changed on disk. Refresh before triage.');if(!!current.inbox===inbox)return current;const {revision:_,...previous}=current;return this.persist({...previous,inbox,updatedAt:new Date().toISOString()});});}
+  setInbox(id:string,revision:string,inbox:boolean){return this.serialize(async()=>{const current=await this.get(id);if(current.revision!==revision)throw new ConflictError('Record changed on disk. Refresh before triage.');if(!!current.inbox===inbox)return current;const {revision:_,...previous}=current;return this.persist({...previous,inbox,updatedAt:new Date().toISOString()},revision);});}
   // Duplicate only saved, editable content. A copy is new work, never inherited acceptance.
   duplicate(id:string,revision:string){
     return this.serialize(async()=>{
@@ -165,7 +200,7 @@ export class RecordStore {
     const current=await this.get(id);if(current.revision!==revision)throw new ConflictError('Record changed on disk. Review before saving pull request references.');
     if(current.type!=='Increment')throw new ConflictError('Pull request associations can only be authored for delivery increments.');
     const next=pullReferencesSchema.parse(references);if(JSON.stringify(current.githubPullRequests??[])===JSON.stringify(next))return current;
-    const {revision:_,...previous}=current;return this.persist({...previous,githubPullRequests:next,updatedAt:new Date().toISOString()});
+    const {revision:_,...previous}=current;return this.persist({...previous,githubPullRequests:next,updatedAt:new Date().toISOString()},revision);
   });}
   updateProperties(id:string,revision:string,changes:PropertyChanges){
     return this.serialize(async()=>{
@@ -174,7 +209,7 @@ export class RecordStore {
       const next=propertyChangesSchema.parse(changes);
       if(Object.entries(next).every(([key,value])=>value===undefined||current[key]===value))return current;
       const {revision:_,...previous}=current;
-      return this.persist({...previous,...Object.fromEntries(Object.entries(next).filter(([,value])=>value!==undefined)),updatedAt:new Date().toISOString()});
+      return this.persist({...previous,...Object.fromEntries(Object.entries(next).filter(([,value])=>value!==undefined)),updatedAt:new Date().toISOString()},revision);
     });
   }
   update(id: string, revision: string, changes: Editable, expectedSchemaRevision?:string) {
@@ -210,7 +245,7 @@ export class RecordStore {
       if(next.customProperties===undefined)delete next.customProperties;
       if(next.customTypeId===undefined)delete next.customTypeId;
       if(Object.entries(next).every(([key,value])=>JSON.stringify(current[key])===JSON.stringify(value)))return current;
-      return this.persist({...previous,...next,id,updatedAt:new Date().toISOString()});
+      return this.persist({...previous,...next,id,updatedAt:new Date().toISOString()},revision);
     });
   }
 }
