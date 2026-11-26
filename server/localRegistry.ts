@@ -45,21 +45,22 @@ export async function validateRegistration(configs:ProjectConfig[],cwd:string){
 }
 export const managedWorkspaceDirectory='.prism-workspaces.local';
 export class RegistryChanged extends Error {}
-export type RegistryChange={action:'create-managed';input:CreateWorkspaceInput;expected:ProjectConfig[];prepare:(config:ProjectConfig)=>Promise<void>}|{action:'add';config:ProjectConfig}|{action:'settings';id:string;title:string;profiles:ProjectConfig['profiles'];githubRepository?:string};
+export type RegistryChange={action:'create-managed';input:CreateWorkspaceInput;expected:ProjectConfig[];prepare:(config:ProjectConfig)=>Promise<void>}|{action:'add';config:ProjectConfig}|{action:'settings';id:string;title:string;profiles:ProjectConfig['profiles'];githubRepository?:string;expected?:ProjectConfig[]};
 export async function changeLocalRegistry(cwd:string,env:NodeJS.ProcessEnv,change:RegistryChange){
  if(env.PRISM_PROJECTS||env.PRISM_PROJECT)throw Error('Explicit project override active. Unset it before changing the default local registry.');
  const dir=join(cwd,'.prism');await mkdir(dir,{recursive:true});
  if(!(await lstat(dir)).isDirectory())throw Error('Local registry directory must be a real directory');
  const lock=join(dir,'projects.local.yaml.lock'),temp=join(dir,'.registry-'+randomUUID()+'.tmp');
- await writeFile(lock,'Local registry command in progress\n',{flag:'wx',mode:0o600});
+ try{await writeFile(lock,'Local registry command in progress\n',{flag:'wx',mode:0o600});}catch(e){if((e as NodeJS.ErrnoException).code==='EEXIST')throw new RegistryChanged('Another local registry change is in progress, or its lock needs local inspection.');throw e;}
  try{
   const before=await selectRegistry(cwd,{},true);
   let configs=before.configs.map(p=>({...p}));
+  const normalize=async(items:ProjectConfig[])=>Promise.all(items.map(async p=>projectSchema.parse({...p,root:await realDirectory(resolve(cwd,p.root))})));
+  const expected=change.action==='add'?undefined:change.expected;
+  if(expected&&JSON.stringify(await normalize(configs))!==JSON.stringify(await normalize(expected)))throw new RegistryChanged('Project configuration changed on disk. Restart Prism before changing project settings or creating a workspace.');
   if(change.action==='create-managed'){
    const input=createWorkspaceSchema.parse(change.input),id='workspace-'+input.requestId;
-   const normalize=async(items:ProjectConfig[])=>Promise.all(items.map(async p=>projectSchema.parse({...p,root:await realDirectory(resolve(cwd,p.root))})));
-   const current=await normalize(configs),expected=await normalize(change.expected);
-   if(JSON.stringify(current)!==JSON.stringify(expected))throw new RegistryChanged('Project configuration changed on disk. Restart Prism before creating a workspace.');
+   const current=await normalize(configs);
    if(current.length>=40)throw new RegistryChanged('The project limit has been reached.');
    if(current.some(p=>p.id===id))throw new RegistryChanged('This workspace identity is already registered. Restart Prism to refresh the project list.');
    await validateRegistration(current,cwd);
@@ -86,6 +87,7 @@ export async function changeLocalRegistry(cwd:string,env:NodeJS.ProcessEnv,chang
   // A fallback folder is not silently created by the registration command. Start
   // the default workspace once if it does not yet exist.
   await validateRegistration(configs,cwd);
+  if(change.action==='settings'&&change.expected&&JSON.stringify(configs)===JSON.stringify(before.configs))return registrySchema.parse(configs);
   const raw=stringify(registrySchema.parse(configs));if(Buffer.byteLength(raw)>LIMIT)throw Error('Registry exceeds size limit');
   await writeFile(temp,raw,{flag:'wx',mode:0o600,flush:true});
   const observed=await selectRegistry(cwd,{},true);

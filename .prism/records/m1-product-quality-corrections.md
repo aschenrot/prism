@@ -12,6 +12,7 @@ relationships:
   - data-integrity
   - m1-review-readiness
   - m1-native-workspace-creation
+  - m1-native-project-settings
   - m1-milestone-acceptance
 ---
 ## Current scope

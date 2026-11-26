@@ -28,3 +28,13 @@ export type WorkspaceCreationAvailability={available:boolean;reason?:string};
 export function workspaceProfile(profile:CreateWorkspaceInput['profile']):ProjectConfig['profiles']{
  return profile==='game'?['core','game','product','project']:profile==='product'?['core','product','project']:['core','project'];
 }
+
+export const updateProjectSettingsSchema=z.strictObject({
+ expectedRevision:z.string().regex(/^[a-f0-9]{64}$/),
+ title:z.string().trim().min(1).max(120),
+ product:z.boolean(),
+ game:z.boolean(),
+ githubRepository:z.union([githubRepositorySchema,z.null()])
+});
+export type UpdateProjectSettingsInput=z.infer<typeof updateProjectSettingsSchema>;
+export type ProjectSettingsResult={project:ProjectInfo;revision:string;editable:boolean;reason?:string};
