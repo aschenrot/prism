@@ -17,3 +17,6 @@ audit-report.json
 .prism/acceptance.local/
 
 .prism/projects.local.yaml.lock
+
+# User-owned managed workspaces (never include in source control)
+.prism-workspaces.local/

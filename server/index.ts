@@ -8,6 +8,7 @@ import { ConflictError, MissingError, CustomPropertyError } from './store';
 import { schemaUpdateSchema } from '../shared/customProperties';
 import { SchemaWriteConflict,SchemaWriteRejected } from './projectSchema';
 import { loadProjects } from './projects';
+import { createWorkspaceSchema } from '../shared/projects';
 import { indexRepository, readRepositoryFile } from './repository';
 import { searchInputSchema,searchRecords,searchTerms,type ProjectSearchResult } from '../shared/search';
 import { searchRepository } from './search';
@@ -49,6 +50,8 @@ app.setErrorHandler((err, request, reply) => {
 });
 const projectFor = (request:{params:unknown}) => projects.get(idSchema.parse((request.params as {projectId:string}).projectId));
 app.get('/api/projects', async () => projects.list());
+app.get('/api/workspace-creation',async()=>projects.creationAvailability());
+app.post('/api/projects',async(request,reply)=>reply.code(201).send(await projects.createWorkspace(createWorkspaceSchema.parse(request.body))));
 app.get('/api/projects/:projectId/schema',async request=>projectFor(request).store.schema());
 app.put('/api/projects/:projectId/schema',async request=>{const input=schemaUpdateSchema.parse(request.body);return projectFor(request).store.updateSchema(input.expectedRevision,input.definition);});
 app.get('/api/projects/:projectId/records', async request => projectFor(request).store.list());
@@ -131,6 +134,6 @@ app.get('/api/projects/:projectId/acceptance/:testId',async request=>projectFor(
 app.post('/api/projects/:projectId/acceptance/:testId',async (request,reply)=>reply.code(201).send(await projectFor(request).acceptance.create(acceptanceParams.parse(request.params).testId,startAcceptanceSchema.parse(request.body))));
 app.get('/api/projects/:projectId/acceptance/:testId/:runId',async request=>{const {testId,runId}=runParams.parse(request.params);return projectFor(request).acceptance.get(testId,runId);});
 app.put('/api/projects/:projectId/acceptance/:testId/:runId',async request=>{const {testId,runId}=runParams.parse(request.params);return projectFor(request).acceptance.update(testId,runId,updateAcceptanceSchema.parse(request.body));});
-const dist = resolve('dist');
+const dist = resolve(import.meta.dirname,'../dist');
 if (existsSync(dist)) await app.register(fastifyStatic,{root:dist});
 await app.listen({host:'127.0.0.1',port:4174});

@@ -1,5 +1,5 @@
 import type { Editable, ProjectRecord, RecordList, TrashList, PropertyChanges } from '../shared/records';
-import type { ProjectInfo, RepositoryIndex } from '../shared/projects';
+import type { ProjectInfo, RepositoryIndex,CreateWorkspaceInput,WorkspaceCreationAvailability } from '../shared/projects';
 import type { ProjectSearchResult } from '../shared/search';
 import type { ProjectSchemaResult,ProjectPropertySchema } from '../shared/customProperties';
 import type { GitHistory } from '../shared/delivery';
@@ -37,6 +37,8 @@ export const api = {
   updateView:(project:string,id:string,expectedRevision:string,view:ViewInput)=>request<SavedView>(base(project)+'/views/'+encodeURIComponent(id),json('PUT',{expectedRevision,view})),
   removeView:(project:string,id:string,expectedRevision:string)=>request<{ok:boolean}>(base(project)+'/views/'+encodeURIComponent(id),json('DELETE',{expectedRevision})),
   projects:()=>request<ProjectInfo[]>('/api/projects'),
+  workspaceCreation:()=>request<WorkspaceCreationAvailability>('/api/workspace-creation'),
+  createWorkspace:(input:CreateWorkspaceInput)=>request<ProjectInfo>('/api/projects',json('POST',input)),
   trash:(project:string)=>request<TrashList>(base(project)+'/trash'),
   moveToTrash:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/records/'+encodeURIComponent(id)+'/trash',json('POST',{expectedRevision})),
   restoreTrash:(project:string,id:string,expectedRevision:string)=>request<ProjectRecord>(base(project)+'/trash/'+encodeURIComponent(id)+'/restore',json('POST',{expectedRevision})),

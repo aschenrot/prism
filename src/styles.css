@@ -203,3 +203,15 @@ a.nav-item,a.record-card,a.overview-record,a.milestone-step,a.linked-row,a.secon
 .acceptance-step-navigation,.acceptance-save-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .acceptance-discard{margin-left:auto}
 .acceptance-save-actions{justify-content:flex-end}
+
+.workspace-create-form{display:grid;gap:16px;margin-top:18px}
+.workspace-create-form>label{display:grid;gap:6px;font-size:14px;font-weight:550}
+.workspace-create-form input:not([type=radio]){font-size:14px}
+.workspace-create-form fieldset{min-width:0;border:0;padding:0;margin:0;display:grid;gap:7px}
+.workspace-create-form legend{font-size:14px;font-weight:550;margin-bottom:8px}
+.workspace-profile-option{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer}
+.workspace-profile-option:has(input:checked){border-color:#80985e;background:#293329}
+.workspace-profile-option>span{display:grid;gap:4px;min-width:0}
+.workspace-profile-option strong{font-size:14px;font-weight:550}
+.workspace-profile-option small{font-size:12px;color:#b9bbc4}
+.workspace-create-form .dialog-actions{margin-top:0}

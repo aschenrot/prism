@@ -48,3 +48,34 @@ test('startup preflights every configured data root before opening stores, inclu
  await mkdir(join(cwd,'second','.prism'));await writeFile(join(cwd,'override.yaml'),stringify([config('repo','second','repository'),config('same-data','second/.prism')]));
  await assert.rejects(loadProjects(cwd,{PRISM_PROJECTS:'override.yaml'}),/overlap/);await assert.rejects(lstat(join(cwd,'second','.prism','records')));
 }));
+
+test('managed workspace is initialized before registry publication, persists on restart and retries are idempotent',()=>fixture(async cwd=>{
+ const projects=await loadProjects(cwd,{}),original=await readFile(join(cwd,'.prism/projects.yaml'));
+ const input={title:'New project',profile:'game' as const,requestId:'12345678-1234-4234-8234-123456789abc'};
+ const created=await projects.createWorkspace(input);assert.equal(created.title,'New project');assert.equal(created.storage,'standalone');assert.ok(!('root' in created));
+ assert.deepEqual(await projects.createWorkspace(input),created);assert.equal(projects.list().length,2);
+ const record=await projects.get(created.id).store.create('Only in new workspace','Task');
+ assert.equal((await projects.get('first').store.list()).records.length,0);
+ const reopened=await loadProjects(cwd,{});assert.deepEqual(reopened.list(),projects.list());assert.equal((await reopened.get(created.id).store.get(record.id)).title,record.title);
+ assert.deepEqual(await readFile(join(cwd,'.prism/projects.yaml')),original);
+ await assert.rejects(projects.createWorkspace({...input,title:'Different name'}),/already belongs/);
+}));
+test('managed creation rejects override, external registry change, invalid input and linked storage without altering existing project',()=>fixture(async cwd=>{
+ const input={title:'New project',profile:'general' as const,requestId:'12345678-1234-4234-8234-123456789abc'};
+ const override=await loadProjects(cwd,{PRISM_PROJECT:'first'});assert.equal(override.creationAvailability().available,false);await assert.rejects(override.createWorkspace(input),/explicit project configuration/);
+ const projects=await loadProjects(cwd,{});const original=await readFile(join(cwd,'.prism/projects.yaml'));
+ await assert.rejects(projects.createWorkspace({...input,requestId:'../outside'}));
+ await symlink(join(cwd,'second'),join(cwd,'.prism-workspaces.local'),'junction');
+ await assert.rejects(projects.createWorkspace(input),/real directory/);assert.deepEqual(await readFile(join(cwd,'.prism/projects.yaml')),original);await rm(join(cwd,'.prism-workspaces.local'));
+ await changeLocalRegistry(cwd,{}, {action:'add',config:config('second','second')});
+ await assert.rejects(projects.createWorkspace(input),/configuration changed/);assert.equal(projects.list().length,1);
+ await assert.rejects(lstat(join(cwd,'.prism-workspaces.local')));
+}));
+test('managed workspace initialization failure does not publish registry or overwrite a reserved directory',()=>fixture(async cwd=>{
+ const input={title:'New project',profile:'general' as const,requestId:'12345678-1234-4234-8234-123456789abc'};
+ const original=await readFile(join(cwd,'.prism/projects.yaml'));
+ const expected=(await selectRegistry(cwd,{})).configs;
+ await assert.rejects(changeLocalRegistry(cwd,{}, {action:'create-managed',input,expected,prepare:async()=>{throw Error('fixture initialization failure');}}),/fixture initialization failure/);
+ await assert.rejects(lstat(join(cwd,'.prism/projects.local.yaml')));assert.deepEqual(await readFile(join(cwd,'.prism/projects.yaml')),original);
+ await assert.rejects(changeLocalRegistry(cwd,{}, {action:'create-managed',input,expected,prepare:async()=>{throw Error('must not initialize again');}}),/unregistered workspace folder/);
+}));
