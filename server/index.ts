@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ZodError } from 'zod';
 import { createSchema, idSchema, updateSchema, propertyUpdateSchema } from '../shared/records';
-import { ConflictError, MissingError, CustomPropertyError } from './store';
+import { ConflictError, MissingError, CustomPropertyError,RecordContentError } from './store';
 import { schemaUpdateSchema } from '../shared/customProperties';
 import { SchemaWriteConflict,SchemaWriteRejected } from './projectSchema';
 import { loadProjects } from './projects';
@@ -37,7 +37,7 @@ app.setErrorHandler((err, request, reply) => {
   if (err instanceof ZodError) return reply.code(400).send({error:err.issues.map(i => i.message).join('; ')});
   if(err instanceof SchemaWriteConflict)return reply.code(409).send({error:err.message});
   if(err instanceof SchemaWriteRejected)return reply.code(422).send({error:err.message});
-  if (err instanceof CustomPropertyError) return reply.code(422).send({error:err.message});
+  if (err instanceof CustomPropertyError||err instanceof RecordContentError) return reply.code(422).send({error:err.message});
   if (err instanceof ConflictError) return reply.code(409).send({error:err.message});
   if (err instanceof MissingError) return reply.code(404).send({error:err.message});
   if (typeof err === 'object' && err !== null && 'statusCode' in err) {
