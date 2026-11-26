@@ -1,4 +1,4 @@
-import { ArrowUpRight,ArrowRight,AlertTriangle,Flag,Target,ListChecks } from 'lucide-react';
+import { ArrowUpRight,ArrowRight,AlertTriangle,Flag,Target,ListChecks,Inbox,BookOpen } from 'lucide-react';
 import type { ProjectRecord } from '../shared/records';
 import type { ProjectInfo } from '../shared/projects';
 import { overviewFor } from '../shared/navigation';
@@ -13,6 +13,18 @@ function Row({record,onSelect,hrefFor}:{record:ProjectRecord;onSelect:(id:string
 }
 function description(body:string){return body.split('\n').find(line=>line.trim()&&!line.startsWith('#')&&!line.startsWith('-'))||'No description yet.';}
 export default function WorkspaceOverview({project,records,findings,incomplete,history,historyError,onSelect,onNavigate,hrefFor}:Props){
+  if(!records.length&&!incomplete)return <div className="overview" aria-label="Project overview">
+    <section className="workspace-first-use">
+      <h2>Start your project</h2>
+      <p>Capture ideas, plan work or write down what you know. Your first saved item will appear here.</p>
+      <div className="first-use-actions">
+        <button type="button" className="first-use-action first-use-primary" onClick={()=>onNavigate('inbox')}><Inbox size={22} aria-hidden="true"/><span><strong>Capture an idea</strong><small>Save a thought in your inbox.</small></span><ArrowRight size={17} aria-hidden="true"/></button>
+        <button type="button" className="first-use-action" onClick={()=>onNavigate('work')}><ListChecks size={22} aria-hidden="true"/><span><strong>Plan work</strong><small>Organize tasks and next steps.</small></span><ArrowRight size={17} aria-hidden="true"/></button>
+        <button type="button" className="first-use-action" onClick={()=>onNavigate('documentation')}><BookOpen size={22} aria-hidden="true"/><span><strong>Write documentation</strong><small>Keep project knowledge together.</small></span><ArrowRight size={17} aria-hidden="true"/></button>
+        {project.profiles.includes('product')&&<button type="button" className="first-use-action" onClick={()=>onNavigate('strategy')}><Target size={22} aria-hidden="true"/><span><strong>Define direction</strong><small>Describe your objectives.</small></span><ArrowRight size={17} aria-hidden="true"/></button>}
+      </div>
+    </section>
+  </div>;
   const data=overviewFor(records);
   const trace=traceabilityFor(records);
   const increments=records.filter(r=>r.type==='Increment'&&r.status==='In progress');

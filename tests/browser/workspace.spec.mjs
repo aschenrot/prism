@@ -853,6 +853,9 @@ test('native workspace creation retains failed input, switches immediately, pers
  expect(added).toBeTruthy();expect(after).toHaveLength(before.length+1);expect(added).toMatchObject({title:'New game fixture',storage:'standalone',profiles:['core','game','product','project']});expect(added).not.toHaveProperty('root');
  await expect(selector).toHaveValue(added.id);await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();
  await expect(page.getByRole('link',{name:'Gameplay',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Start your project',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Current milestones',exact:true})).toHaveCount(0);
+ await page.screenshot({path:testInfo.outputPath('empty-workspace-start.png'),animations:'disabled'});
+ await page.getByRole('button',{name:/Capture an idea/}).click();await expect(page.getByLabel('Capture title')).toBeVisible();await page.getByRole('link',{name:'Overview',exact:true}).click();await expect(page.getByRole('heading',{name:'Start your project',exact:true})).toBeVisible();
  const registry=await readFile(join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'.prism','projects.local.yaml'),'utf8');expect(registry).toContain(added.id);
  const record=await create(request,'New workspace only','Task',added.id);expect((await (await request.get('/api/projects/'+added.id+'/records')).json()).records.map(r=>r.id)).toEqual([record.id]);
  expect((await (await request.get(prefix+'/records')).json()).records.some(r=>r.id===record.id)).toBe(false);

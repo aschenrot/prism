@@ -23,3 +23,7 @@ Manage names, visible product/game navigation and optional GitHub association di
 - Graphical settings retain unsaved input on failure, prevent unsafe navigation and preserve current project selection. If an active category is disabled, move to Overview. Reopen/restart confirms saved values.
 - Tests cover preserved store identity and records, stale settings, external configuration, explicit overrides, unsupported root/association changes and actual browser behavior. Exact CI and visual review before integration.
 - External folder connection, relocation and unregistration remain separate.
+
+
+## First-use follow-up
+The verified workspace creation screenshot demonstrated an empty dashboard dominated by missing-state reports. A genuinely empty, successfully loaded project should instead offer direct paths to Inbox, Work, Documentation and Strategy when applicable. Never show this state if record loading is incomplete. The existing native creation browser scenario verifies the empty state and its Inbox entry point.

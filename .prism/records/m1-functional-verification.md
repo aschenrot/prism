@@ -99,3 +99,5 @@ Developer regression covers CRLF and non-ASCII exact-byte hashes, malformed UTF-
 
 ## Graphical project settings
 Developer-owned verification of live settings, root/store/record preservation, stale revision rejection, external registry changes, explicit override, association clearing, navigation removal, dirty form guard and restart persistence. See m1-native-project-settings. No additional owner regression cases.
+
+Native workspace creation additionally verifies that a newly empty project offers actionable first-use entry points rather than a stack of absent-state metrics.

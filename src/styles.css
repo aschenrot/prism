@@ -222,3 +222,17 @@ a.nav-item,a.record-card,a.overview-record,a.milestone-step,a.linked-row,a.secon
 .project-settings-areas{display:grid;gap:8px}
 .project-settings-areas>strong{font-size:14px;font-weight:550}
 .project-settings-areas>label{display:flex;gap:8px;align-items:center;font-size:14px}
+
+.workspace-first-use{max-width:880px;width:100%;padding:clamp(18px,3vw,30px);border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.workspace-first-use h2{font-size:24px;line-height:1.3;margin:0 0 8px;font-weight:620;letter-spacing:-.5px}
+.workspace-first-use>p{color:#c0c3cc;font-size:14px;line-height:1.6;margin:0 0 20px}
+.first-use-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:10px}
+.first-use-action{display:flex;align-items:center;gap:12px;text-align:left;padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--raised);min-width:0;color:inherit}
+.first-use-action:hover{border-color:#71767a;background:#292c30}
+.first-use-action.first-use-primary{background:#293329;border-color:#80985e}
+.first-use-action.first-use-primary:hover{background:#303d2e}
+.first-use-action>svg:first-child{color:var(--accent);flex-shrink:0}
+.first-use-action>svg:last-child{color:var(--muted);flex-shrink:0}
+.first-use-action>span{flex:1;min-width:0;display:grid;gap:4px}
+.first-use-action strong{font-size:15px;font-weight:600}
+.first-use-action small{font-size:13px;font-weight:400;color:#b9bbc4;line-height:1.4}
