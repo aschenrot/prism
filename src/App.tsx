@@ -42,6 +42,8 @@ import Timeline from './Timeline';
 import Traceability from './Traceability';
 import RecoveryWorkspace from './RecoveryWorkspace';
 import ProjectRegistrationGuide,{type RegistrationMode} from './ProjectRegistrationGuide';
+import CreateWorkspaceDialog from './CreateWorkspaceDialog';
+import type { CreateWorkspaceInput } from '../shared/projects';
 import type { RecordTemplate } from '../shared/templates';
 import { columnFor,defaultTableColumns,tableMinWidth,propertyColumnValue } from '../shared/tableColumns';
 import RecordActions,{RecordCommandContext} from './RecordActions';
@@ -254,6 +256,12 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   const editing=editEntry===router.entryKey;
   const destinations=destinationsFor(project);
   const qc=useQueryClient();
+  const workspaceCreation=useMutation({mutationFn:(input:CreateWorkspaceInput)=>api.createWorkspace(input),onSuccess:created=>{
+    qc.setQueryData<ProjectInfo[]>(['projects'],old=>[...(old??projects).filter(p=>p.id!==created.id),created]);
+    setRegistrationGuide(null);
+    if(!router.go(collectionRoute(created.id),undefined,true)){restoreProjectPickerFocus.current=true;}
+    void qc.invalidateQueries({queryKey:['projects']});
+  }});
   const query=useQuery({queryKey:['records',projectId],queryFn:()=>api.list(projectId),refetchInterval:2500});
   const records=query.data?.records||[];
   const schemaQuery=useProjectSchema(projectId);
@@ -373,10 +381,10 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   const trashIncoming=trashTarget?[...new Map(relationshipsFor(records,trashTarget.id).incoming.map(link=>[link.id,link.record])).values()]:[];
   const findings=auditRecords(records);
   const projectSwitchHint=project.storage==='repository'?'Connected repository':'Local workspace';
-  const navigationGuard=workPending?'Record changes are being saved.':bulkTargets?'Close bulk editing before navigating.':trash.isPending?'Moving a record to trash.':trashTarget?'Close the record removal dialog before navigating.':busy?(editing?'Save, keep your draft, or cancel editing before leaving.':view==='Schemas'?'Save or cancel the schema definition before navigating.':view==='Templates'?'Save or cancel the template definition before navigating.':view==='Inbox'?'Finish or clear capture before navigating.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
+  const navigationGuard=workspaceCreation.isPending?'Creating workspace.':workPending?'Record changes are being saved.':bulkTargets?'Close bulk editing before navigating.':trash.isPending?'Moving a record to trash.':trashTarget?'Close the record removal dialog before navigating.':busy?(editing?'Save, keep your draft, or cancel editing before leaving.':view==='Schemas'?'Save or cancel the schema definition before navigating.':view==='Templates'?'Save or cancel the template definition before navigating.':view==='Inbox'?'Finish or clear capture before navigating.':'Save or discard your review changes before navigating.'):create.isPending?'Record creation is still running.':creating?'Finish or cancel record creation.':'';
   // The same guard covers sidebar, related links, breadcrumbs and browser history.
   useLayoutEffect(()=>{router.setGuard(navigationGuard);if(!navigationGuard)router.clearNotice();return()=>router.setGuard('');},[navigationGuard]);
-  useEffect(()=>{if(!creating&&!create.isPending&&!trash.isPending&&!workPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[creating,create.isPending,trash.isPending,workPending]);
+  useEffect(()=>{if(!creating&&!create.isPending&&!trash.isPending&&!workPending&&!workspaceCreation.isPending)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[creating,create.isPending,trash.isPending,workPending,workspaceCreation.isPending]);
   const switchProject=(id:string)=>{if(id!==projectId&&projects.some(p=>p.id===id))router.go(collectionRoute(id));};
   const ready=!query.isPending&&(route.kind!=='saved'||!savedQuery.isPending);
   useLayoutEffect(()=>{
@@ -396,8 +404,8 @@ function Workspace({project,projects,router}:{project:ProjectInfo;projects:Proje
   useEffect(()=>{const handler=(e:KeyboardEvent)=>{if(creating||busy||workPending||bulkTargets||trashTarget||route.kind==='record'||view!=='Slides'||e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT','BUTTON'].includes((e.target as HTMLElement)?.tagName))return;if(e.key==='ArrowRight')setSlide(slide+1);if(e.key==='ArrowLeft')setSlide(slide-1);};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);},[route.kind,view,slide,visible.length,router.entryKey,router.entry.context,creating,busy,trashTarget,workPending,bulkTargets]);
   return <RecordCommandContext.Provider value={{duplicate:duplicateRecord,copy:target=>{void copyRecordLink(target);},triage:target=>{if(busy||creating||workPending||bulkTargets||query.isError||trash.isPending)return;setRecordNotice(null);inboxUpdate.mutate({target,inbox:!target.inbox});}}}><div className="shell workspace-shell routed-shell">
     <aside className="sidebar"><div className="brand"><div className="brand-mark"><Layers3 size={22}/></div><div>prism<span>PROJECT WORKSPACE</span></div></div>
-      <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select ref={projectPickerRef} aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>{const value=e.currentTarget.value;if(value===":add"||value===":connect"||value===":manage"){e.currentTarget.value=projectId;setRegistrationGuide(value===":add"?"create":value===":connect"?"connect":"manage");}else switchProject(value);}}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}<optgroup label="Project management"><option value=":add">Create project…</option><option value=":connect">Connect existing project…</option><option value=":manage">Manage projects…</option></optgroup></select></div>
-      {registrationGuide&&<ProjectRegistrationGuide mode={registrationGuide} projects={projects} blocked={navigationGuard} onClose={()=>{restoreProjectPickerFocus.current=true;setRegistrationGuide(null);}}/>}
+      <div className="project-label project-switcher"><FolderOpen size={17} aria-hidden="true"/><div className="project-switcher-copy"><strong>{project.title}</strong><small id="project-switch-hint">{projectSwitchHint}</small></div><ChevronRight className="project-switcher-chevron" size={15} aria-hidden="true"/><select ref={projectPickerRef} aria-label="Active project" aria-describedby="project-switch-hint" value={projectId} onChange={e=>{const value=e.currentTarget.value;if(value===":add"||value===":connect"||value===":manage"){e.currentTarget.value=projectId;workspaceCreation.reset();setRegistrationGuide(value===":add"?"create":value===":connect"?"connect":"manage");}else switchProject(value);}}>{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}<optgroup label="Project management"><option value=":add">Create workspace…</option><option value=":connect">Connect existing project…</option><option value=":manage">Manage projects…</option></optgroup></select></div>
+      {registrationGuide==="create"?<CreateWorkspaceDialog blocked={navigationGuard} pending={workspaceCreation.isPending} error={workspaceCreation.error?.message} onCreate={input=>workspaceCreation.mutate(input)} onClose={()=>{restoreProjectPickerFocus.current=true;setRegistrationGuide(null);}}/>:registrationGuide&&<ProjectRegistrationGuide mode={registrationGuide} projects={projects} blocked={navigationGuard} onClose={()=>{restoreProjectPickerFocus.current=true;setRegistrationGuide(null);}}/>}
       <nav className="purpose-nav" aria-label="Project navigation">{navigationGroups.map(group=>{
         const items=destinations.filter(d=>d.group===group&&d.id!=='library'&&d.id!=='trash');if(!items.length)return null;
         return <div className="nav-group" key={group}>{group!=='Workspace'&&<div className="nav-label">{group}</div>}{items.map(d=>{const Icon=destinationIcons[d.id]||Database;return <RouteLink key={d.id} className={'nav-item purpose-item '+(destinationId===d.id?'active':'')} aria-current={destinationId===d.id?(route.kind==='record'?'location':'page'):undefined} href={categoryHref(d.id)} onNavigate={()=>navigate(d.id)}><Icon size={16}/><span>{d.label}</span></RouteLink>;})}</div>;

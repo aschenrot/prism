@@ -37,6 +37,8 @@ relationships:
     target: editing-reliability-increment
   - kind: contains
     target: project-configuration-increment
+  - m1-product-quality-corrections
+  - m1-native-workspace-creation
   - m1-review-readiness
   - public-preview-readiness
   - ci-verification
@@ -75,3 +77,7 @@ PRs #16–22 integrated after exact hosted verification. Custom schemas, entity 
 Use the seven explicit delivery increments, m1-review-readiness and the single m1-milestone-acceptance definition. PRs #23–35 cover management views, reliability, project settings, explicit hosted reference authoring and closure fixes. Technical status is established by exact current matrix evidence, not an authored Ready flag. The remaining integration and human review gates must pass before M1 acceptance. No M2 implementation authority implied.
 
 Earlier paragraphs retain historical decisions and evidence for their original revisions. PRs #9–11 are accepted historical slices; PRs #12–13 establish public preview and required hosted verification. The ruleset conflict was resolved; all four checks are required on main. The final M1 readiness task, not older Current increment headings, controls the remaining closure work. PR #35 is integrated at 420a125; H04 review remains pending. PR #36 is the final closure candidate subject to current verification and integration. Persistent indexing and durable hosted artifact attestation are deferred boundaries, not claimed implementations. Final owner acceptance remains open.
+
+
+## Current corrective scope (2026-11-26)
+The product audit identified incomplete native workspace creation, interaction hierarchy, terminology, acceptance lifecycle, integrity and maintainability gaps. m1-product-quality-corrections tracks the proposed corrective sequence. Start with m1-native-workspace-creation in project-configuration-increment. Historical implementation statements above do not supersede this current scope. M1 remains open; M2 is not authorized.

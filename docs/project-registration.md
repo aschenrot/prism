@@ -1,6 +1,6 @@
 # Local project registration
 
-The local shell is the authorization boundary for folders. Stop Prism before registration or settings changes; run commands from the Prism checkout. No environment variables or manual YAML editing are required.
+The local shell is the authorization boundary for existing external folders. New standalone workspaces can be created from Prism within its fixed managed storage directory. Stop Prism before registration or settings changes; run commands from the Prism checkout. No environment variables or manual YAML editing are required.
 
 ```sh
 npm run project -- list
@@ -16,7 +16,7 @@ The settings command replaces title, profile list and optional GitHub repository
 Startup applies the same disjoint-data-root and store-directory validation to every registry source, including manual YAML files and explicit environment overrides, before initializing stores. Existing nested repository roots are allowed only when their data directories are disjoint. Invalid registries fail explicitly; no alternate project is silently opened.
 
 
-### Discover registration in Prism
-Open the project selector and choose Create project, Connect existing project or Manage projects. The guide explains how to choose an existing folder, copy a command template, authorize the operation in the local terminal and restart. Replace the example ID, title and path before running commands; a new standalone project starts from an empty folder created in the file manager. Save or retain unsaved work before stopping Prism. The browser does not execute commands or register folders itself.
+### Create a workspace in Prism
+Choose **Create workspace** from the project selector, enter a name and choose a profile. Prism creates a new standalone directory under `.prism-workspaces.local/` in the launch directory, initializes its stores, publishes the local registry and opens the project without restarting. The browser sends a title, profile and UUID request token only; it cannot choose a path or overwrite a folder. The project ID is stable. Retrying a successful request with the same token and inputs returns the same registered workspace. A failed initialization may leave an unregistered directory; Prism never recursively deletes an uncertain directory. Inspect it locally before registering or removing it. The managed folder and local registry are ignored by Git; back up authored data separately. Explicit environment overrides disable creation; if the registry changed outside the running app, restart before retrying. Existing project paths remain unchanged.
 
-When using Manage projects, supply the entire desired profile list and include the existing owner/repository argument if you want to retain a GitHub association. Omitting it or supplying a dash clears the association.
+**Connect existing project** and **Manage projects** still provide local CLI guidance. Stop Prism for those commands. When changing settings, supply the full profile list and keep the existing GitHub association argument if desired; omitting it or using a dash clears the association. Existing folder selection and graphical settings are separate follow-up work.

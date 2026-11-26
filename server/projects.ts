@@ -1,7 +1,7 @@
 import { lstat, mkdir, readFile, realpath } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
-import { selectRegistry,validateRegistration } from './localRegistry';
-import { registrySchema, type ProjectConfig, type ProjectInfo } from '../shared/projects';
+import { resolve, join,relative } from 'node:path';
+import { selectRegistry,validateRegistration,changeLocalRegistry,managedWorkspaceDirectory,RegistryChanged } from './localRegistry';
+import { registrySchema,createWorkspaceSchema,workspaceProfile,type CreateWorkspaceInput,type WorkspaceCreationAvailability,type ProjectConfig, type ProjectInfo } from '../shared/projects';
 import { ConflictError,MissingError, RecordStore } from './store';
 import { ViewStore } from './views';
 import { TemplateStore } from './templates';
@@ -11,6 +11,8 @@ import { gitHistory } from './git';
 import { readVerification } from './verification';
 export type OpenProject = { info:ProjectInfo; root:string; store:RecordStore; views:ViewStore; templates:TemplateStore; acceptance:AcceptanceStore };
 export class Projects {
+  private context:{cwd:string;env:NodeJS.ProcessEnv}|undefined;
+  private creating=false;
   private constructor(private projects:Map<string,OpenProject>) {}
   static async open(configs:ProjectConfig[]) {
     // Preflight the complete registry before creating any project store, regardless
@@ -42,6 +44,38 @@ export class Projects {
     }
     return new Projects(result);
   }
+  enableLocalCreation(cwd:string,env:NodeJS.ProcessEnv){this.context={cwd,env};return this;}
+  creationAvailability():WorkspaceCreationAvailability{
+    if(!this.context||this.context.env.PRISM_PROJECTS||this.context.env.PRISM_PROJECT)return {available:false,reason:'Workspace creation is unavailable while an explicit project configuration is active.'};
+    if(this.projects.size>=40)return {available:false,reason:'The project limit has been reached.'};
+    return {available:true};
+  }
+  async createWorkspace(raw:CreateWorkspaceInput):Promise<ProjectInfo>{
+    const input=createWorkspaceSchema.parse(raw),id='workspace-'+input.requestId;
+    if(!this.context||this.context.env.PRISM_PROJECTS||this.context.env.PRISM_PROJECT)throw new ConflictError('Workspace creation is unavailable while an explicit project configuration is active.');
+    const existing=this.projects.get(id);
+    if(existing){
+      const expected=join(await realpath(this.context.cwd),managedWorkspaceDirectory,id);
+      if(relative(expected,existing.root)===''&&existing.info.storage==='standalone'&&existing.info.title===input.title&&JSON.stringify(existing.info.profiles)===JSON.stringify(workspaceProfile(input.profile)))return existing.info;
+      throw new ConflictError('This creation request already belongs to another workspace. Start a new request.');
+    }
+    if(this.creating)throw new ConflictError('Another workspace is being created. Try again.');
+    this.creating=true;
+    try{
+      const expected=[...this.projects.values()].map(p=>({...p.info,root:p.root}));
+      const prepared:OpenProject[]=[];
+      await changeLocalRegistry(this.context.cwd,this.context.env,{action:'create-managed',input,expected,prepare:async config=>{
+        prepared.push((await Projects.open([config])).get(config.id));
+      }});
+      const opened=prepared[0];
+      if(!opened)throw new Error('Workspace initialization missing');
+      this.projects.set(opened.info.id,opened);
+      return opened.info;
+    }catch(e){
+      if(e instanceof RegistryChanged)throw new ConflictError(e.message);
+      throw e;
+    }finally{this.creating=false;}
+  }
   list(){return [...this.projects.values()].map(p=>p.info);}
   get(id:string){const project=this.projects.get(id);if(!project)throw new MissingError('Unknown project');return project;}
 }
@@ -51,5 +85,5 @@ export class Projects {
 export async function loadProjects(cwd=process.cwd(),env:NodeJS.ProcessEnv=process.env){
  const selection=await selectRegistry(cwd,env);
  if(selection.fallback)await mkdir(selection.configs[0].root,{recursive:true});
- return Projects.open(selection.configs.map(config=>({...config,root:resolve(cwd,config.root)})));
+ return (await Projects.open(selection.configs.map(config=>({...config,root:resolve(cwd,config.root)})))).enableLocalCreation(cwd,env);
 }

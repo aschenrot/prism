@@ -4,6 +4,7 @@ import { join,resolve,relative,isAbsolute,sep } from 'node:path';
 import { parse,stringify } from 'yaml';
 import { registrySchema,projectSchema,type ProjectConfig } from '../shared/projects';
 import { rejectIncompleteRestore } from './projectBackup';
+import { createWorkspaceSchema,workspaceProfile,type CreateWorkspaceInput } from '../shared/projects';
 
 const candidates=['.prism/projects.local.yaml','.prism/projects.yaml','examples/bevy.projects.yaml'];
 const local=candidates[0],LIMIT=256_000;
@@ -42,7 +43,9 @@ export async function validateRegistration(configs:ProjectConfig[],cwd:string){
   dataRoots.push(data);
  }
 }
-export type RegistryChange={action:'add';config:ProjectConfig}|{action:'settings';id:string;title:string;profiles:ProjectConfig['profiles'];githubRepository?:string};
+export const managedWorkspaceDirectory='.prism-workspaces.local';
+export class RegistryChanged extends Error {}
+export type RegistryChange={action:'create-managed';input:CreateWorkspaceInput;expected:ProjectConfig[];prepare:(config:ProjectConfig)=>Promise<void>}|{action:'add';config:ProjectConfig}|{action:'settings';id:string;title:string;profiles:ProjectConfig['profiles'];githubRepository?:string};
 export async function changeLocalRegistry(cwd:string,env:NodeJS.ProcessEnv,change:RegistryChange){
  if(env.PRISM_PROJECTS||env.PRISM_PROJECT)throw Error('Explicit project override active. Unset it before changing the default local registry.');
  const dir=join(cwd,'.prism');await mkdir(dir,{recursive:true});
@@ -52,7 +55,28 @@ export async function changeLocalRegistry(cwd:string,env:NodeJS.ProcessEnv,chang
  try{
   const before=await selectRegistry(cwd,{},true);
   let configs=before.configs.map(p=>({...p}));
-  if(change.action==='add'){
+  if(change.action==='create-managed'){
+   const input=createWorkspaceSchema.parse(change.input),id='workspace-'+input.requestId;
+   const normalize=async(items:ProjectConfig[])=>Promise.all(items.map(async p=>projectSchema.parse({...p,root:await realDirectory(resolve(cwd,p.root))})));
+   const current=await normalize(configs),expected=await normalize(change.expected);
+   if(JSON.stringify(current)!==JSON.stringify(expected))throw new RegistryChanged('Project configuration changed on disk. Restart Prism before creating a workspace.');
+   if(current.length>=40)throw new RegistryChanged('The project limit has been reached.');
+   if(current.some(p=>p.id===id))throw new RegistryChanged('This workspace identity is already registered. Restart Prism to refresh the project list.');
+   await validateRegistration(current,cwd);
+   const parent=join(await realDirectory(cwd),managedWorkspaceDirectory),root=join(parent,id);
+   for(const p of current){
+    const data=p.storage==='repository'?join(p.root,'.prism'):p.root;
+    if(contains(data,parent)||contains(data,root)||contains(root,data))throw new RegistryChanged('Managed workspace storage overlaps an existing project. Use a separate Prism installation folder.');
+   }
+   try{await mkdir(parent,{mode:0o700});}catch(e){if((e as NodeJS.ErrnoException).code!=='EEXIST')throw e;}
+   if(!(await lstat(parent)).isDirectory()||relative(parent,await realpath(parent))!=='')throw new RegistryChanged('Managed workspace storage must be a real directory.');
+   try{await mkdir(root,{mode:0o700});}catch(e){if((e as NodeJS.ErrnoException).code==='EEXIST')throw new RegistryChanged('An unregistered workspace folder already exists for this request. No existing files were changed. Close this dialog and start a new request.');throw e;}
+   const config=projectSchema.parse({id,title:input.title,root,storage:'standalone',profiles:workspaceProfile(input.profile)});
+   configs.push(config);
+   await validateRegistration(configs,cwd);
+   // Initialize only the new stores before publication. Never delete uncertain files.
+   await change.prepare(config);
+  }else if(change.action==='add'){
    const config=projectSchema.parse(change.config);if(configs.some(p=>p.id===config.id))throw Error('Project ID already registered');
    const root=await realDirectory(resolve(cwd,config.root));configs.push({...config,root});
   }else{
@@ -71,5 +95,5 @@ export async function changeLocalRegistry(cwd:string,env:NodeJS.ProcessEnv,chang
   // exact observed revision and a cooperative lock; stop Prism before changes.
   if(before.path===target)await rename(temp,target);else await link(temp,target);
   return registrySchema.parse(configs);
- }finally{await unlink(temp).catch(()=>{});await unlink(lock);}
+ }finally{await unlink(temp).catch(()=>{});await unlink(lock).catch(()=>{});}
 }

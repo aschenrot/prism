@@ -87,3 +87,7 @@ These are the original texts from the prior review definition, retained verbatim
 
 ## Task-first acceptance and project setup follow-up
 Developer-owned viewport regression for a representative P02-length case (1440×900 and 1280×800), explicit keyboard focus on case advance, preserved review history, and project registration guide with no registry writes or guard bypass. This addresses reported usability issues; it does not assert broader accessibility or native graphical folder creation.
+
+
+## Managed native workspace creation
+Developer-owned coverage: strict validated request, registry publication only after initialization, restart persistence, identical-request replay, explicit override/external edit/link rejection, failed initialization preservation, isolated graphical create and retry, draft guard and project switching. See m1-native-workspace-creation. No human acceptance inferred.

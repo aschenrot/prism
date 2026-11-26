@@ -17,3 +17,14 @@ export type ProjectConfig = z.infer<typeof projectSchema>;
 export type ProjectInfo = Omit<ProjectConfig,'root'>;
 export type RepositoryFile = { path:string; kind:'documentation'|'source'|'manifest'; size:number };
 export type RepositoryIndex = { files:RepositoryFile[]; truncated:boolean };
+
+export const createWorkspaceSchema=z.strictObject({
+ title:z.string().trim().min(1).max(120),
+ profile:z.enum(['general','product','game']),
+ requestId:z.string().regex(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/)
+});
+export type CreateWorkspaceInput=z.infer<typeof createWorkspaceSchema>;
+export type WorkspaceCreationAvailability={available:boolean;reason?:string};
+export function workspaceProfile(profile:CreateWorkspaceInput['profile']):ProjectConfig['profiles']{
+ return profile==='game'?['core','game','product','project']:profile==='product'?['core','product','project']:['core','project'];
+}

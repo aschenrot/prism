@@ -6,7 +6,7 @@ status: In progress
 priority: High
 accent: teal
 tags: [quality, management, milestone]
-relationships: [knowledge-engine, m1-milestone-acceptance, quality-gates, development-workflow-decision, m1-functional-verification, m1-task-first-workspace, record-navigation, editor-acceptance, collection-interaction, collection-acceptance, public-preview-readiness, ci-verification]
+relationships: [m1-product-quality-corrections, m1-native-workspace-creation, knowledge-engine, m1-milestone-acceptance, quality-gates, development-workflow-decision, m1-functional-verification, m1-task-first-workspace, record-navigation, editor-acceptance, collection-interaction, collection-acceptance, public-preview-readiness, ci-verification]
 ---
 ## Closure criteria
 - Explicit Milestone → Increment → Task/Test scope, with repository-qualified PR references and one consolidated review definition. Review all seven increments; no omitted implementation tasks in recent work.
@@ -35,3 +35,6 @@ Owner explicitly delegated remaining functional verification and requested a rep
 
 ## Additional owner feedback during the five-case review
 P01 passed and P02 was pending in the screenshot on 566d836; the owner reported excessive vertical lead-in, cut-off active review controls and no add-project entry. See m1-task-first-workspace. Preserve the in-progress historical run; only a new explicit decision applies to a new exact revision. No new cases added to the five-workflow review. Developer owns viewport, focus, navigation and local registration regressions.
+
+## Current corrective programme (2026-11-26)
+Owner requested continued development after the comprehensive review. See m1-product-quality-corrections. Managed workspace creation is the first corrective slice. The prior review stays historical; do not request another review until the integrated corrective scope and full developer checks are ready.

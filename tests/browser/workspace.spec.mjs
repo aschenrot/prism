@@ -782,16 +782,16 @@ test('project dropdown exposes create connect and manage guidance without mutati
  await page.goto('/#/projects/'+project+'/overview');const selector=page.locator('select[aria-label="Active project"]');await expect(selector).toHaveValue(project);
  const before=await (await request.get('/api/projects')).json();
  let writes=0;page.on('request',r=>{if(/\/api\/projects(?:\/|$)/.test(r.url())&&!['GET','HEAD'].includes(r.method()))writes++;});
- for(const [value,name] of [[':add','Create project'],[':connect','Connect existing project'],[':manage','Manage projects']]){
-  await selector.focus();await selector.selectOption(value);const dialog=page.getByRole('dialog',{name,exact:true});await expect(dialog).toBeVisible();await expect(dialog.getByText(/does not create, access or modify a folder/)).toBeVisible();await expect(dialog.getByLabel('Registration command template')).toContainText('npm run project --');await expect(selector).toHaveValue(project);await expect(page).toHaveURL(new RegExp('/'+project+'/overview$'));
-  if(value===':add'){await expect(dialog.getByLabel('Project storage')).toHaveValue('standalone');await page.screenshot({path:testInfo.outputPath('create-project-guide.png'),animations:'disabled'});}
+ for(const [value,name] of [[':add','Create workspace'],[':connect','Connect existing project'],[':manage','Manage projects']]){
+  await selector.focus();await selector.selectOption(value);const dialog=page.getByRole('dialog',{name,exact:true});await expect(dialog).toBeVisible();if(value!==':add'){await expect(dialog.getByText(/does not create, access or modify a folder/)).toBeVisible();await expect(dialog.getByLabel('Registration command template')).toContainText('npm run project --');}await expect(selector).toHaveValue(project);await expect(page).toHaveURL(new RegExp('/'+project+'/overview$'));
+  if(value===':add'){await expect(dialog.getByLabel('Workspace name')).toBeVisible();await expect(dialog.getByRole('button',{name:'Create workspace',exact:true})).toBeDisabled();await page.screenshot({path:testInfo.outputPath('create-project-guide.png'),animations:'disabled'});}
   if(value===':connect'){await expect(dialog.getByLabel('Project storage')).toHaveValue('repository');await expect(dialog.getByLabel('Registration command template')).toContainText('repository');await page.screenshot({path:testInfo.outputPath('connect-project-guide.png'),animations:'disabled'});}
   if(value===':manage'){await expect(dialog.getByText('Browser other fixture',{exact:true})).toBeVisible();await expect(dialog.getByText(/omitting it or using a dash clears it/)).toBeVisible();await page.screenshot({path:testInfo.outputPath('manage-projects-guide.png'),animations:'disabled'});}
   await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(selector).toBeFocused();
  }
  expect(writes).toBe(0);expect(await (await request.get('/api/projects')).json()).toEqual(before);
  const task=await create(request,'Registration guide draft fixture');await open(page,task);await edit(page);await title(page).fill('Unsaved draft before registration');
- await selector.selectOption(':add');const dialog=page.getByRole('dialog',{name:'Create project',exact:true});await expect(dialog.getByText(/Resolve this before stopping Prism/)).toBeVisible();await dialog.getByRole('button',{name:'Done',exact:true}).click();await expect(title(page)).toHaveValue('Unsaved draft before registration');
+ await selector.selectOption(':add');const dialog=page.getByRole('dialog',{name:'Create workspace',exact:true});await expect(dialog.getByText(/Save, keep your draft, or cancel editing/)).toBeVisible();await dialog.getByLabel('Workspace name').fill('Blocked creation');await expect(dialog.getByRole('button',{name:'Create workspace',exact:true})).toBeDisabled();await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await expect(title(page)).toHaveValue('Unsaved draft before registration');
  await selector.selectOption(other);await expect(title(page)).toHaveValue('Unsaved draft before registration');await keep(page).click();await selector.selectOption(other);await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();await expect(selector).toHaveValue(other);
 });
 
@@ -803,7 +803,7 @@ test('project setup focus survives delayed initial record loading and repeated d
  const loading=page.getByText('Opening your workspace…',{exact:true});
  try{
   await page.goto('/#/projects/'+project+'/overview');await expect(loading).toBeVisible();await expect.poll(()=>gates.length).toBe(1);
-  await selector.focus();await selector.selectOption(':add');const createGuide=page.getByRole('dialog',{name:'Create project',exact:true});await expect(createGuide).toBeVisible();
+  await selector.focus();await selector.selectOption(':add');const createGuide=page.getByRole('dialog',{name:'Create workspace',exact:true});await expect(createGuide).toBeVisible();
   await page.keyboard.press('Escape');await expect(createGuide).toHaveCount(0);await expect(selector).toBeFocused();
   gates[0]();await expect(loading).toHaveCount(0);await expect(selector).toBeFocused();
   await page.reload();await expect(loading).toBeVisible();await expect.poll(()=>gates.length).toBe(2);
@@ -811,4 +811,28 @@ test('project setup focus survives delayed initial record loading and repeated d
   gates[1]();await expect(loading).toHaveCount(0);await expect(connectGuide.getByRole('button',{name:'Close project setup',exact:true})).toBeFocused();
   await connectGuide.getByRole('button',{name:'Done',exact:true}).click();await expect(connectGuide).toHaveCount(0);await expect(selector).toBeFocused();
  }finally{for(const release of gates)release();}
+});
+
+test('native workspace creation retains failed input, switches immediately, persists registry and isolates records',async({page,request},testInfo)=>{
+ const before=await (await request.get('/api/projects')).json();
+ await page.goto('/#/projects/'+project+'/overview');
+ const selector=page.locator('select[aria-label="Active project"]');
+ await selector.selectOption(':add');
+ const dialog=page.getByRole('dialog',{name:'Create workspace',exact:true});
+ const name=dialog.getByLabel('Workspace name'),submit=dialog.getByRole('button',{name:'Create workspace',exact:true});
+ await name.fill('New game fixture');await dialog.getByRole('radio',{name:/Game development/}).check();await expect(submit).toBeEnabled();
+ await page.screenshot({path:testInfo.outputPath('native-create-workspace.png'),animations:'disabled'});
+ let failed=false;
+ await page.route('**/api/projects',async route=>{if(route.request().method()==='POST'&&!failed){failed=true;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Fixture registry conflict'})});}else await route.continue();});
+ await submit.click();await expect(dialog.getByRole('alert')).toContainText('Fixture registry conflict');await expect(name).toHaveValue('New game fixture');await expect(dialog.getByRole('radio',{name:/Game development/})).toBeChecked();
+ await submit.click();await expect(dialog).toHaveCount(0);
+ const after=await (await request.get('/api/projects')).json(),added=after.find(p=>!before.some(x=>x.id===p.id));
+ expect(added).toBeTruthy();expect(after).toHaveLength(before.length+1);expect(added).toMatchObject({title:'New game fixture',storage:'standalone',profiles:['core','game','product','project']});expect(added).not.toHaveProperty('root');
+ await expect(selector).toHaveValue(added.id);await expect(page.getByRole('heading',{name:'Overview',exact:true,level:1})).toBeVisible();
+ await expect(page.getByRole('link',{name:'Gameplay',exact:true})).toBeVisible();
+ const registry=await readFile(join(process.env.PRISM_BROWSER_FIXTURE_ROOT,'.prism','projects.local.yaml'),'utf8');expect(registry).toContain(added.id);
+ const record=await create(request,'New workspace only','Task',added.id);expect((await (await request.get('/api/projects/'+added.id+'/records')).json()).records.map(r=>r.id)).toEqual([record.id]);
+ expect((await (await request.get(prefix+'/records')).json()).records.some(r=>r.id===record.id)).toBe(false);
+ await page.reload();await expect(selector).toHaveValue(added.id);
+ await page.screenshot({path:testInfo.outputPath('native-workspace-created.png'),animations:'disabled'});
 });
